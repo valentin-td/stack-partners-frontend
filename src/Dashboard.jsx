@@ -29,12 +29,38 @@ export default function Dashboard() {
   // États Profil
   const [profilData, setProfilData] = useState({ nom: '', prenom: '', email: '', telephone: '', siret_agent: '', numero_rsac: '', iban: '' });
 
+  // États God Mode (Super-Admin)
+  const isSuperAdmin = agent.email === 'tardy.valentin04@gmail.com';
+  const [adminAgents, setAdminAgents] = useState([]);
+  const [adminCommissions, setAdminCommissions] = useState([]);
+
   useEffect(() => {
     if (activeTab === 'bord') fetchStats();
     if (activeTab === 'factures') fetchFactures();
     if (activeTab === 'prospects') fetchProspects();
     if (activeTab === 'profil') fetchProfil();
+    if (activeTab === 'godmode' && isSuperAdmin) fetchAdminData();
   }, [activeTab]);
+
+  const fetchAdminData = async () => {
+    const resAgents = await fetch(`${API_URL}/admin/agents`, { headers: { 'Authorization': `Bearer ${token}` } });
+    if (resAgents.ok) setAdminAgents(await resAgents.json());
+    
+    const resCom = await fetch(`${API_URL}/admin/commissions`, { headers: { 'Authorization': `Bearer ${token}` } });
+    if (resCom.ok) setAdminCommissions(await resCom.json());
+  };
+
+  const handleValidateAgent = async (id) => {
+    await fetch(`${API_URL}/admin/agents/${id}/valider`, { method: 'PATCH', headers: { 'Authorization': `Bearer ${token}` } });
+    fetchAdminData();
+    notify("Agent activé avec succès !");
+  };
+
+  const handlePayCommission = async (id) => {
+    await fetch(`${API_URL}/admin/commissions/${id}/payer`, { method: 'PATCH', headers: { 'Authorization': `Bearer ${token}` } });
+    fetchAdminData();
+    notify("Commission marquée comme payée (virement effectué).");
+  };
 
   const fetchProfil = async () => {
     const res = await fetch(`${API_URL}/profil`, { headers: { 'Authorization': `Bearer ${token}` } });
@@ -195,6 +221,11 @@ export default function Dashboard() {
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
       </svg>
+    ),
+    Shield: () => (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      </svg>
     )
   };
 
@@ -285,6 +316,15 @@ export default function Dashboard() {
           <button onClick={() => setActiveTab('profil')} style={navBtnStyle(activeTab === 'profil')}>
             <Icon.User /> Profil & Informations
           </button>
+
+          {isSuperAdmin && (
+            <>
+              <div style={{ margin: '12px 0', borderTop: '1px solid #e5e7eb' }} />
+              <button onClick={() => setActiveTab('godmode')} style={{ ...navBtnStyle(activeTab === 'godmode'), color: activeTab === 'godmode' ? '#8b5cf6' : '#6b7280', backgroundColor: activeTab === 'godmode' ? '#f5f3ff' : 'transparent' }}>
+                <Icon.Shield /> God Mode
+              </button>
+            </>
+          )}
         </div>
         
         <button onClick={logout} style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'transparent', color: '#dc2626', border: '1px solid #fecaca', padding: '11px 14px', cursor: 'pointer', borderRadius: '12px', fontSize: '13.5px', fontWeight: '600' }}>
@@ -612,6 +652,84 @@ export default function Dashboard() {
                 </button>
               </div>
             </form>
+          </>
+        )}
+
+        {/* ONGLET 5 : GOD MODE (SUPER-ADMIN) */}
+        {activeTab === 'godmode' && isSuperAdmin && (
+          <>
+            <div style={{ marginBottom: '32px' }}>
+              <h1 style={{ fontSize: '26px', fontWeight: '700', margin: '0 0 6px 0', letterSpacing: '-0.02em', color: '#8b5cf6' }}>God Mode (Super-Admin)</h1>
+              <span style={{ fontSize: '14px', color: '#6b7280' }}>Espace strictement réservé au fondateur. Validation des agents et exécution des virements.</span>
+            </div>
+
+            <div style={{ fontSize: '13px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '12px' }}>
+              1. Validation des Agents
+            </div>
+            <div style={{ ...cardStyle, padding: 0, overflow: 'hidden', marginBottom: '32px' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
+                <thead style={{ backgroundColor: '#f9fafb', borderBottom: '1px solid #e5e7eb', color: '#6b7280', fontSize: '12px', textTransform: 'uppercase' }}>
+                  <tr>
+                    <th style={{ padding: '14px 20px' }}>Identité & Contact</th>
+                    <th style={{ padding: '14px 20px' }}>SIRET & Code</th>
+                    <th style={{ padding: '14px 20px' }}>Statut</th>
+                    <th style={{ padding: '14px 20px' }}>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {adminAgents.length === 0 ? <tr><td colSpan="4" style={{ padding: '24px', textAlign: 'center', color: '#6b7280' }}>Aucun agent inscrit.</td></tr> : adminAgents.map(a => (
+                    <tr key={a.id_agent} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                      <td style={{ padding: '16px 20px', fontWeight: '600' }}>{a.prenom} {a.nom}<br/><span style={{ fontWeight: '400', fontSize: '12px', color: '#6b7280' }}>{a.email}</span></td>
+                      <td style={{ padding: '16px 20px' }}>{a.siret_agent}<br/><span style={{ fontSize: '12px', color: '#6b7280', fontFamily: 'monospace' }}>{a.code_partenaire}</span></td>
+                      <td style={{ padding: '16px 20px' }}>
+                        <span style={{ padding: '5px 10px', borderRadius: '8px', fontSize: '12px', fontWeight: '600', backgroundColor: a.statut_compte === 'ACTIF' ? '#dcfce7' : '#fef3c7', color: a.statut_compte === 'ACTIF' ? '#166534' : '#92400e' }}>
+                          {a.statut_compte === 'ACTIF' ? 'Actif' : 'En attente'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '16px 20px' }}>
+                        {a.statut_compte !== 'ACTIF' && (
+                          <button onClick={() => handleValidateAgent(a.id_agent)} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '7px 12px', cursor: 'pointer', border: 'none', borderRadius: '10px', backgroundColor: '#8b5cf6', color: '#ffffff', fontSize: '12.5px', fontWeight: '600' }}>
+                            <Icon.Check /> Valider le compte
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div style={{ fontSize: '13px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '12px' }}>
+              2. Paiement des Commissions (Virements à effectuer)
+            </div>
+            <div style={{ ...cardStyle, padding: 0, overflow: 'hidden' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
+                <thead style={{ backgroundColor: '#f9fafb', borderBottom: '1px solid #e5e7eb', color: '#6b7280', fontSize: '12px', textTransform: 'uppercase' }}>
+                  <tr>
+                    <th style={{ padding: '14px 20px' }}>Agent Bénéficiaire</th>
+                    <th style={{ padding: '14px 20px' }}>Mois & Salon</th>
+                    <th style={{ padding: '14px 20px' }}>Montant</th>
+                    <th style={{ padding: '14px 20px' }}>IBAN Virement</th>
+                    <th style={{ padding: '14px 20px' }}>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {adminCommissions.length === 0 ? <tr><td colSpan="5" style={{ padding: '24px', textAlign: 'center', color: '#6b7280' }}>Aucune commission en attente de paiement.</td></tr> : adminCommissions.map(c => (
+                    <tr key={c.id_commission} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                      <td style={{ padding: '16px 20px', fontWeight: '600' }}>{c.prenom} {c.nom}</td>
+                      <td style={{ padding: '16px 20px' }}>{c.periode_mois}<br/><span style={{ fontSize: '12px', color: '#6b7280' }}>{c.nom_salon}</span></td>
+                      <td style={{ padding: '16px 20px', fontWeight: '700', color: '#111827' }}>{c.montant_commission} €</td>
+                      <td style={{ padding: '16px 20px', fontFamily: 'monospace', fontSize: '13px' }}>{c.iban}</td>
+                      <td style={{ padding: '16px 20px' }}>
+                        <button onClick={() => handlePayCommission(c.id_commission)} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '7px 12px', cursor: 'pointer', border: 'none', borderRadius: '10px', backgroundColor: '#111827', color: '#ffffff', fontSize: '12.5px', fontWeight: '600' }}>
+                          <Icon.Check /> Marquer Payée
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </>
         )}
 
