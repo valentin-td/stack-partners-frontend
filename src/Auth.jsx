@@ -45,7 +45,7 @@ export default function Auth() {
     width: '100%',
     padding: '13px 16px',
     backgroundColor: '#f3f4f6',
-    border: '1px solid #e5e7eb',
+    border: '1px solid #e5e7eb', 
     borderRadius: '12px',
     fontSize: '14px',
     color: '#111827',
