@@ -26,19 +26,35 @@ export default function Dashboard() {
   const [prospectData, setProspectData] = useState({ nom_salon: '', ville: '', code_postal: '', siret_prospect: '', telephone_salon: '', email_gerant: '' });
   const [prospectError, setProspectError] = useState('');
 
-  // États Profil
-  const [profilData, setProfilData] = useState({ nom: '', prenom: '', email: '', telephone: '', siret_agent: '', numero_rsac: '', iban: '' });
+  // États Paramètres & Conformité (Ordre de déblocage 1 à 6)
+  const [profilData, setProfilData] = useState({
+    nom: '', prenom: '', email: '', telephone: '', siret_agent: '', numero_rsac: '', iban: '', statut_compte: 'EN_ATTENTE_VALIDATION',
+    contrat_signe: false, statut_contrat: 'MANQUANT',
+    date_naissance: '', date_expiration_identite: '', fichier_identite: '', statut_identite: 'MANQUANT',
+    forme_juridique: 'EI', date_debut_activite: '', adresse_pro: '', statut_siret: 'MANQUANT',
+    greffe_rsac: '', date_emission_rsac: '', fichier_rsac: '', statut_rsac: 'MANQUANT',
+    date_emission_kbis: '', fichier_kbis: '', statut_kbis: 'NON_REQUIS',
+    code_verif_urssaf: '', date_emission_urssaf: '', date_expiration_urssaf: '', fichier_urssaf: '', statut_urssaf: 'MANQUANT',
+    assureur_nom: '', assureur_contrat: '', assureur_plafond: '', date_expiration_rc_pro: '', fichier_rc_pro: '', statut_rc_pro: 'MANQUANT',
+    titulaire_iban: '', statut_iban: 'MANQUANT', regime_tva: 'FRANCHISE_293B', numero_tva_intra: '', statut_tva: 'MANQUANT',
+    honneur_aucune_interdiction: false, honneur_pas_exclusivite_employeur: false, honneur_pas_mandat_concurrent: false,
+    charte_acceptee: false, quiz_score: 0, formation_validee: false, telephone_confirme: false,
+    autorise_a_vendre: false, motifs_blocage: [], alertes_expiration: [], historique: []
+  });
+  const [quizAnswers, setQuizAnswers] = useState({ q1: '', q2: '', q3: '', q4: '' });
+  const [changementMotif, setChangementMotif] = useState('');
 
   // États God Mode (Super-Admin)
   const isSuperAdmin = agent.email === 'tardy.valentin04@gmail.com';
   const [adminAgents, setAdminAgents] = useState([]);
   const [adminCommissions, setAdminCommissions] = useState([]);
+  const [selectedAgentAdmin, setSelectedAgentAdmin] = useState(null);
 
   useEffect(() => {
+    fetchProfil(); // Toujours charger l'état de conformité et les alertes à 30 jours
     if (activeTab === 'bord') fetchStats();
     if (activeTab === 'factures') fetchFactures();
     if (activeTab === 'prospects') fetchProspects();
-    if (activeTab === 'profil') fetchProfil();
     if (activeTab === 'godmode' && isSuperAdmin) fetchAdminData();
   }, [activeTab]);
 
@@ -50,16 +66,31 @@ export default function Dashboard() {
     if (resCom.ok) setAdminCommissions(await resCom.json());
   };
 
-  const handleValidateAgent = async (id) => {
-    await fetch(`${API_URL}/admin/agents/${id}/valider`, { method: 'PATCH', headers: { 'Authorization': `Bearer ${token}` } });
-    fetchAdminData();
-    notify("Agent activé avec succès !");
+  const handleVerifyPieceAdmin = async (idAgent, champ_statut, decision, purge_identite_rgpd = false) => {
+    const commentaire = decision === 'REFUSE' ? prompt("Motif du refus (affiché à l'agent) :") || 'Pièce non conforme' : 'Vérifié et validé par le fondateur';
+    const res = await fetch(`${API_URL}/admin/agents/${idAgent}/verifier-piece`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ champ_statut, decision, commentaire, purge_identite_rgpd })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      notify(data.message);
+      fetchAdminData();
+    } else {
+      notify(data.error || "Action refusée", true);
+    }
   };
 
   const handlePayCommission = async (id) => {
-    await fetch(`${API_URL}/admin/commissions/${id}/payer`, { method: 'PATCH', headers: { 'Authorization': `Bearer ${token}` } });
-    fetchAdminData();
-    notify("Commission marquée comme payée (virement effectué).");
+    const res = await fetch(`${API_URL}/admin/commissions/${id}/payer`, { method: 'PATCH', headers: { 'Authorization': `Bearer ${token}` } });
+    const data = await res.json();
+    if (res.ok) {
+      fetchAdminData();
+      notify("Commission marquée comme payée (virement effectué).");
+    } else {
+      notify(data.error || "Paiement bloqué", true);
+    }
   };
 
   const fetchProfil = async () => {
@@ -67,15 +98,41 @@ export default function Dashboard() {
     if (res.ok) setProfilData(await res.json());
   };
 
-  const handleUpdateProfil = async (e) => {
-    e.preventDefault();
-    const res = await fetch(`${API_URL}/profil`, {
+  const handleFileUpload = (e, fieldName) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2.5 * 1024 * 1024) {
+      notify("Fichier trop volumineux (max 2,5 Mo).", true);
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => setProfilData(prev => ({ ...prev, [fieldName]: reader.result }));
+    reader.readAsDataURL(file);
+  };
+
+  const submitEtapeConformite = async (etape, customPayload = null) => {
+    const res = await fetch(`${API_URL}/profil/etape`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify(profilData)
+      body: JSON.stringify({ etape, payload: customPayload || profilData })
     });
-    if (res.ok) notify("Vos informations ont été mises à jour.");
-    else notify("Erreur lors de la mise à jour.", true);
+    const data = await res.json();
+    if (res.ok) {
+      notify(data.message);
+      fetchProfil();
+    } else {
+      notify(data.error || "Erreur lors de l'enregistrement.", true);
+    }
+  };
+
+  const handleQuizSubmit = (e) => {
+    e.preventDefault();
+    const score = (quizAnswers.q1 === 'nf525' ? 25 : 0) + (quizAnswers.q2 === 'interdit' ? 25 : 0) + (quizAnswers.q3 === 'mandataire' ? 25 : 0) + (quizAnswers.q4 === '99' ? 25 : 0);
+    if (score < 100) {
+      notify(`Score insuffisant (${score}/100). Un score de 100% est exigé sur les règles NF525 et le mandat.`, true);
+      return;
+    }
+    submitEtapeConformite(5, { telephone: profilData.telephone, quiz_score: 100, telephone_confirme: profilData.telephone_confirme });
   };
 
   const notify = (text, isError = false) => {
@@ -298,10 +355,39 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div style={{ backgroundColor: '#f6f6f7', border: '1px solid #e5e7eb', borderRadius: '14px', padding: '12px 14px', marginBottom: '28px' }}>
-          <div style={{ fontSize: '13px', fontWeight: '600', color: '#111827', textTransform: 'capitalize' }}>{agent.prenom} {agent.nom}</div>
-          <div style={{ fontSize: '11.5px', color: '#6b7280', marginTop: '4px', fontFamily: 'monospace' }}>{agent.code}</div>
-        </div>
+        {/* CARTE AGENT CLIQUABLE -> OUVRE LES PARAMÈTRES & CONFORMITÉ */}
+        <button
+          onClick={() => setActiveTab('profil')}
+          style={{
+            width: '100%',
+            textAlign: 'left',
+            backgroundColor: activeTab === 'profil' ? '#111827' : '#f6f6f7',
+            border: activeTab === 'profil' ? '1px solid #111827' : '1px solid #e5e7eb',
+            borderRadius: '14px',
+            padding: '12px 14px',
+            marginBottom: '28px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            transition: 'all 0.15s ease'
+          }}
+        >
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: profilData.autorise_a_vendre ? '#22c55e' : '#f59e0b' }} />
+              <span style={{ fontSize: '13px', fontWeight: '700', color: activeTab === 'profil' ? '#ffffff' : '#111827', textTransform: 'capitalize' }}>
+                {agent.prenom} {agent.nom}
+              </span>
+            </div>
+            <div style={{ fontSize: '11.5px', color: activeTab === 'profil' ? '#9ca3af' : '#6b7280', marginTop: '4px', fontFamily: 'monospace' }}>
+              {agent.code}
+            </div>
+          </div>
+          <div style={{ color: activeTab === 'profil' ? '#ffffff' : '#6b7280', display: 'flex', alignItems: 'center' }}>
+            <Icon.User />
+          </div>
+        </button>
         
         <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
           <button onClick={() => setActiveTab('bord')} style={navBtnStyle(activeTab === 'bord')}>
@@ -312,9 +398,6 @@ export default function Dashboard() {
           </button>
           <button onClick={() => setActiveTab('factures')} style={navBtnStyle(activeTab === 'factures')}>
             <Icon.Factures /> Factures Onboarding
-          </button>
-          <button onClick={() => setActiveTab('profil')} style={navBtnStyle(activeTab === 'profil')}>
-            <Icon.User /> Profil & Informations
           </button>
 
           {isSuperAdmin && (
@@ -604,54 +687,348 @@ export default function Dashboard() {
           </>
         )}
 
-        {/* ONGLET 4 : PROFIL & CONFORMITÉ */}
+        {/* ONGLET PARAMÈTRES & CONFORMITÉ LÉGALE (ORDRE DE DÉBLOCAGE 1 À 6) */}
         {activeTab === 'profil' && (
           <>
-            <div style={{ marginBottom: '32px' }}>
-              <h1 style={{ fontSize: '26px', fontWeight: '700', margin: '0 0 6px 0', letterSpacing: '-0.02em' }}>Profil & Informations Légal</h1>
-              <span style={{ fontSize: '14px', color: '#6b7280' }}>Gérez vos coordonnées et vos données de facturation (IBAN, SIRET)</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+              <div>
+                <h1 style={{ fontSize: '26px', fontWeight: '700', margin: '0 0 6px 0', letterSpacing: '-0.02em' }}>Paramètres & Dossier de Conformité</h1>
+                <span style={{ fontSize: '14px', color: '#6b7280' }}>
+                  La prospection, la facturation et l'onboarding sont verrouillés tant que les 6 étapes ci-dessous ne sont pas intégralement vérifiées.
+                </span>
+              </div>
+              <span style={{
+                padding: '8px 14px', borderRadius: '12px', fontSize: '13px', fontWeight: '700',
+                backgroundColor: profilData.autorise_a_vendre ? '#dcfce7' : '#fef2f2',
+                color: profilData.autorise_a_vendre ? '#166534' : '#dc2626'
+              }}>
+                {profilData.autorise_a_vendre ? 'Compte Actif — Vente Autorisée' : 'Vente Verrouillée'}
+              </span>
             </div>
 
-            <form onSubmit={handleUpdateProfil} style={{ ...cardStyle, display: 'flex', flexDirection: 'column', gap: '20px', maxWidth: '700px' }}>
-              
-              <div>
-                <div style={{ fontSize: '13px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '12px' }}>Identité (Lecture seule)</div>
-                <div style={{ display: 'flex', gap: '12px' }}>
-                  <input type="text" value={profilData.nom} disabled style={{ ...inputStyle, backgroundColor: '#f9fafb', opacity: 0.8 }} />
-                  <input type="text" value={profilData.prenom} disabled style={{ ...inputStyle, backgroundColor: '#f9fafb', opacity: 0.8 }} />
+            {/* Alertes d'expiration à 30 jours */}
+            {profilData.alertes_expiration?.length > 0 && (
+              <div style={{ backgroundColor: '#fffbeb', border: '1px solid #fde68a', color: '#92400e', padding: '16px 20px', borderRadius: '16px', marginBottom: '20px', fontSize: '13.5px' }}>
+                <div style={{ fontWeight: '700', marginBottom: '4px' }}>Rappel d'échéance réglementaire (Alerte à 30 jours) :</div>
+                {profilData.alertes_expiration.map((al, idx) => <div key={idx}>• {al}</div>)}
+              </div>
+            )}
+
+            {/* Liste des verrous actifs */}
+            {!profilData.autorise_a_vendre && profilData.motifs_blocage?.length > 0 && (
+              <div style={{ backgroundColor: '#ffffff', border: '1px solid #fecaca', padding: '18px 22px', borderRadius: '18px', marginBottom: '24px' }}>
+                <div style={{ fontSize: '13px', fontWeight: '700', color: '#dc2626', textTransform: 'uppercase', marginBottom: '8px' }}>
+                  Éléments requis pour débloquer votre droit de vente :
                 </div>
-                <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
-                  <input type="email" value={profilData.email} disabled style={{ ...inputStyle, backgroundColor: '#f9fafb', opacity: 0.8 }} />
-                  <input type="text" value={`SIRET : ${profilData.siret_agent}`} disabled style={{ ...inputStyle, backgroundColor: '#f9fafb', opacity: 0.8 }} />
+                {profilData.motifs_blocage.map((m, i) => (
+                  <div key={i} style={{ fontSize: '13.5px', color: '#374151', padding: '3px 0' }}>• {m}</div>
+                ))}
+              </div>
+            )}
+
+            {/* ÉTAPE 1 : CONTRAT D'AGENT COMMERCIAL À EFFET CONDITIONNEL */}
+            <div style={cardStyle}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <div style={{ fontSize: '16px', fontWeight: '700' }}>1. Contrat de mandat d'agent commercial (à prise d'effet conditionnelle)</div>
+                <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '12px', fontWeight: '600', backgroundColor: profilData.statut_contrat === 'VALIDE' ? '#dcfce7' : '#fef3c7', color: profilData.statut_contrat === 'VALIDE' ? '#166534' : '#92400e' }}>
+                  {profilData.statut_contrat}
+                </span>
+              </div>
+              <p style={{ fontSize: '13.5px', color: '#4b5563', lineHeight: 1.5, margin: '0 0 16px 0' }}>
+                Conformément au Code de commerce, la conclusion du contrat de mandat précède votre immatriculation au Registre Spécial des Agents Commerciaux (RSAC). Ce contrat est conclu sous condition suspensive : vous pouvez utiliser cette copie pour votre inscription au greffe, mais toute prospection ou vente demeure interdite tant que les étapes 2 à 6 ne sont pas validées.
+              </p>
+              {profilData.contrat_signe ? (
+                <div style={{ fontSize: '13px', fontWeight: '600', color: '#16a34a' }}>
+                  Contrat signé électroniquement le {profilData.date_signature_contrat ? new Date(profilData.date_signature_contrat).toLocaleString('fr-FR') : 'ce jour'}.
+                </div>
+              ) : (
+                <button type="button" onClick={() => submitEtapeConformite(1)} style={primaryBtn}>
+                  <Icon.Check /> Signer le contrat de mandat à effet conditionnel
+                </button>
+              )}
+            </div>
+
+            {/* ÉTAPE 2 : IDENTITÉ, SIREN/SIRET, RSAC & KBIS */}
+            <div style={{ ...cardStyle, opacity: profilData.contrat_signe ? 1 : 0.55 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <div style={{ fontSize: '16px', fontWeight: '700' }}>2. Immatriculation RSAC, Identité & Statut Juridique (INSEE / Kbis)</div>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '11.5px', fontWeight: '600', backgroundColor: '#f3f4f6' }}>Identité : {profilData.statut_identite}</span>
+                  <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '11.5px', fontWeight: '600', backgroundColor: '#f3f4f6' }}>SIRET : {profilData.statut_siret}</span>
+                  <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '11.5px', fontWeight: '600', backgroundColor: '#f3f4f6' }}>RSAC : {profilData.statut_rsac}</span>
                 </div>
               </div>
 
-              <div style={{ borderTop: '1px solid #e5e7eb', margin: '4px 0' }} />
-
-              <div>
-                <div style={{ fontSize: '13px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '12px' }}>Coordonnées & Facturation (Modifiables)</div>
-                <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
-                  <div style={{ flex: 1 }}>
-                    <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px', fontWeight: '500' }}>Téléphone</label>
-                    <input type="text" value={profilData.telephone || ''} onChange={e => setProfilData({...profilData, telephone: e.target.value})} style={inputStyle} />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px', fontWeight: '500' }}>Numéro RSAC (Optionnel)</label>
-                    <input type="text" value={profilData.numero_rsac || ''} onChange={e => setProfilData({...profilData, numero_rsac: e.target.value})} style={inputStyle} />
-                  </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '14px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Date de naissance (Majeur requis)</label>
+                  <input type="date" value={profilData.date_naissance ? profilData.date_naissance.slice(0,10) : ''} onChange={e => setProfilData({...profilData, date_naissance: e.target.value})} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px', fontWeight: '500' }}>IBAN (Pour le virement de vos commissions STACK)</label>
-                  <input type="text" required value={profilData.iban || ''} onChange={e => setProfilData({...profilData, iban: e.target.value})} style={{ ...inputStyle, width: '100%' }} />
+                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Expiration Pièce d'identité</label>
+                  <input type="date" value={profilData.date_expiration_identite ? profilData.date_expiration_identite.slice(0,10) : ''} onChange={e => setProfilData({...profilData, date_expiration_identite: e.target.value})} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Pièce d'identité (PDF / Image)</label>
+                  <input type="file" accept=".pdf,image/*" onChange={e => handleFileUpload(e, 'fichier_identite')} style={{ fontSize: '12px', marginTop: '6px' }} />
                 </div>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
-                <button type="submit" style={primaryBtn}>
-                  <Icon.Check /> Enregistrer les modifications
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '14px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Numéro SIRET (14 chiffres)</label>
+                  <input type="text" value={profilData.siret_agent || ''} onChange={e => setProfilData({...profilData, siret_agent: e.target.value})} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Forme juridique</label>
+                  <select value={profilData.forme_juridique || 'EI'} onChange={e => setProfilData({...profilData, forme_juridique: e.target.value})} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }}>
+                    <option value="EI">Entrepreneur Individuel / Micro-entreprise</option>
+                    <option value="SOCIETE">Société (SASU, EURL, SAS, SARL...)</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Date de début d'activité</label>
+                  <input type="date" value={profilData.date_debut_activite ? profilData.date_debut_activite.slice(0,10) : ''} onChange={e => setProfilData({...profilData, date_debut_activite: e.target.value})} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '14px' }}>
+                <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Adresse professionnelle complète (figurant sur vos factures)</label>
+                <input type="text" placeholder="Ex: 12 rue de la Paix, 67000 Strasbourg" value={profilData.adresse_pro || ''} onChange={e => setProfilData({...profilData, adresse_pro: e.target.value})} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '12px', marginBottom: '14px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Numéro RSAC (Obligatoire)</label>
+                  <input type="text" placeholder="Ex: 902 123 456" value={profilData.numero_rsac || ''} onChange={e => setProfilData({...profilData, numero_rsac: e.target.value})} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Greffe / Tribunal Judiciaire</label>
+                  <input type="text" placeholder="Ex: TJ de Strasbourg" value={profilData.greffe_rsac || ''} onChange={e => setProfilData({...profilData, greffe_rsac: e.target.value})} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Date extrait RSAC (&lt; 3 mois)</label>
+                  <input type="date" value={profilData.date_emission_rsac ? profilData.date_emission_rsac.slice(0,10) : ''} onChange={e => setProfilData({...profilData, date_emission_rsac: e.target.value})} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Extrait RSAC (PDF)</label>
+                  <input type="file" accept=".pdf,image/*" onChange={e => handleFileUpload(e, 'fichier_rsac')} style={{ fontSize: '12px', marginTop: '6px' }} />
+                </div>
+              </div>
+
+              {profilData.forme_juridique === 'SOCIETE' && (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', backgroundColor: '#f9fafb', padding: '14px', borderRadius: '12px', marginBottom: '14px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Date d'émission de l'extrait Kbis (&lt; 3 mois)</label>
+                    <input type="date" value={profilData.date_emission_kbis ? profilData.date_emission_kbis.slice(0,10) : ''} onChange={e => setProfilData({...profilData, date_emission_kbis: e.target.value})} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Extrait Kbis mentionnant l'activité d'agent commercial ({profilData.statut_kbis})</label>
+                    <input type="file" accept=".pdf,image/*" onChange={e => handleFileUpload(e, 'fichier_kbis')} style={{ fontSize: '12px', marginTop: '6px' }} />
+                  </div>
+                </div>
+              )}
+
+              <button type="button" disabled={!profilData.contrat_signe} onClick={() => submitEtapeConformite(2)} style={primaryBtn}>
+                <Icon.Check /> Soumettre l'Étape 2 (Identité, SIRET & RSAC)
+              </button>
+            </div>
+
+            {/* ÉTAPE 3 : ATTESTATION DE VIGILANCE URSSAF */}
+            <div style={cardStyle}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                <div style={{ fontSize: '16px', fontWeight: '700' }}>3. Attestation de vigilance URSSAF (Renouvellement tous les 6 mois)</div>
+                <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '12px', fontWeight: '600', backgroundColor: profilData.statut_urssaf === 'VALIDE' ? '#dcfce7' : '#fef3c7', color: profilData.statut_urssaf === 'VALIDE' ? '#166534' : '#92400e' }}>
+                  {profilData.statut_urssaf}
+                </span>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '12px', marginBottom: '14px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Code de sécurité / vérification</label>
+                  <input type="text" placeholder="Code de vérification URSSAF" value={profilData.code_verif_urssaf || ''} onChange={e => setProfilData({...profilData, code_verif_urssaf: e.target.value})} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Date de délivrance</label>
+                  <input type="date" value={profilData.date_emission_urssaf ? profilData.date_emission_urssaf.slice(0,10) : ''} onChange={e => setProfilData({...profilData, date_emission_urssaf: e.target.value})} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Date d'expiration (6 mois)</label>
+                  <input type="date" value={profilData.date_expiration_urssaf ? profilData.date_expiration_urssaf.slice(0,10) : ''} onChange={e => setProfilData({...profilData, date_expiration_urssaf: e.target.value})} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Fichier PDF URSSAF</label>
+                  <input type="file" accept=".pdf,image/*" onChange={e => handleFileUpload(e, 'fichier_urssaf')} style={{ fontSize: '12px', marginTop: '6px' }} />
+                </div>
+              </div>
+              <button type="button" onClick={() => submitEtapeConformite(3)} style={primaryBtn}>
+                <Icon.Check /> Soumettre l'Étape 3 (Vigilance URSSAF)
+              </button>
+            </div>
+
+            {/* ÉTAPE 4 : ASSURANCE RC PRO, IBAN, TVA, DÉCLARATIONS SUR L'HONNEUR & CHARTE */}
+            <div style={cardStyle}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                <div style={{ fontSize: '16px', fontWeight: '700' }}>4. Assurance RC Pro, IBAN, TVA, Déclarations sur l'honneur & Charte</div>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '11.5px', fontWeight: '600', backgroundColor: '#f3f4f6' }}>RC Pro : {profilData.statut_rc_pro}</span>
+                  <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '11.5px', fontWeight: '600', backgroundColor: '#f3f4f6' }}>IBAN : {profilData.statut_iban}</span>
+                  <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '11.5px', fontWeight: '600', backgroundColor: '#f3f4f6' }}>TVA : {profilData.statut_tva}</span>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr', gap: '10px', marginBottom: '16px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Compagnie d'assurance</label>
+                  <input type="text" placeholder="Ex: Hiscox, AXA..." value={profilData.assureur_nom || ''} onChange={e => setProfilData({...profilData, assureur_nom: e.target.value})} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>N° de police / contrat</label>
+                  <input type="text" value={profilData.assureur_contrat || ''} onChange={e => setProfilData({...profilData, assureur_contrat: e.target.value})} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Plafond de garantie</label>
+                  <input type="text" placeholder="Ex: 500 000 € / an" value={profilData.assureur_plafond || ''} onChange={e => setProfilData({...profilData, assureur_plafond: e.target.value})} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Expiration RC Pro</label>
+                  <input type="date" value={profilData.date_expiration_rc_pro ? profilData.date_expiration_rc_pro.slice(0,10) : ''} onChange={e => setProfilData({...profilData, date_expiration_rc_pro: e.target.value})} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Attestation RC Pro</label>
+                  <input type="file" accept=".pdf,image/*" onChange={e => handleFileUpload(e, 'fichier_rc_pro')} style={{ fontSize: '12px', marginTop: '6px' }} />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Nom du titulaire de l'IBAN (Jamais un tiers)</label>
+                  <input type="text" placeholder="Votre nom ou raison sociale" value={profilData.titulaire_iban || ''} onChange={e => setProfilData({...profilData, titulaire_iban: e.target.value})} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>IBAN</label>
+                  <input type="text" value={profilData.iban || ''} onChange={e => setProfilData({...profilData, iban: e.target.value})} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Régime de TVA</label>
+                  <select value={profilData.regime_tva || 'FRANCHISE_293B'} onChange={e => setProfilData({...profilData, regime_tva: e.target.value})} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }}>
+                    <option value="FRANCHISE_293B">Franchise en base de TVA (art. 293 B CGI)</option>
+                    <option value="ASSUJETTI_TVA">Assujetti à la TVA</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>N° TVA Intracommunautaire (si assujetti)</label>
+                  <input type="text" placeholder="FR..." value={profilData.numero_tva_intra || ''} onChange={e => setProfilData({...profilData, numero_tva_intra: e.target.value})} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
+                </div>
+              </div>
+
+              <div style={{ backgroundColor: '#f9fafb', padding: '14px 16px', borderRadius: '14px', marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={!!profilData.honneur_aucune_interdiction} onChange={e => setProfilData({...profilData, honneur_aucune_interdiction: e.target.checked})} />
+                  <span>Je déclare sur l'honneur ne faire l'objet d'aucune interdiction ni incapacité d'exercer une activité commerciale ou de gérer.</span>
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={!!profilData.honneur_pas_exclusivite_employeur} onChange={e => setProfilData({...profilData, honneur_pas_exclusivite_employeur: e.target.checked})} />
+                  <span>Je déclare sur l'honneur n'être lié par aucune clause d'exclusivité ou de non-concurrence avec un employeur m'empêchant d'agir.</span>
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={!!profilData.honneur_pas_mandat_concurrent} onChange={e => setProfilData({...profilData, honneur_pas_mandat_concurrent: e.target.checked})} />
+                  <span>Je déclare sur l'honneur ne détenir aucun mandat concurrent non déclaré (logiciels d'encaissement / gestion de salons).</span>
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontWeight: '600', marginTop: '4px' }}>
+                  <input type="checkbox" checked={!!profilData.charte_acceptee} onChange={e => setProfilData({...profilData, charte_acceptee: e.target.checked})} />
+                  <span>J'accepte la Charte Commerciale STACK (v1.0) : je m'engage à ne tenir que des promesses validées par STACK, à ne jamais signer au nom de STACK et à respecter les règles de démarchage B2B et RGPD.</span>
+                </label>
+              </div>
+
+              <button type="button" onClick={() => submitEtapeConformite(4)} style={primaryBtn}>
+                <Icon.Check /> Soumettre l'Étape 4 (Assurance, IBAN, TVA & Déclarations)
+              </button>
+            </div>
+
+            {/* ÉTAPE 5 : FORMATION & QUIZ NF525 + CONTACT VÉRIFIÉ */}
+            <form onSubmit={handleQuizSubmit} style={cardStyle}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                <div style={{ fontSize: '16px', fontWeight: '700' }}>5. Examen de Certification STACK & Conformité Fiscale NF525</div>
+                <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '12px', fontWeight: '600', backgroundColor: profilData.formation_validee ? '#dcfce7' : '#fef3c7', color: profilData.formation_validee ? '#166534' : '#92400e' }}>
+                  {profilData.formation_validee ? `Validé (${profilData.quiz_score}%)` : 'Quiz requis (100% exigé)'}
+                </span>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Q1. Quelle norme fiscale encadre obligatoirement le logiciel de caisse STACK ?</label>
+                  <select required value={quizAnswers.q1} onChange={e => setQuizAnswers({...quizAnswers, q1: e.target.value})} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }}>
+                    <option value="">Sélectionner...</option>
+                    <option value="nf525">La certification NF525 (inaltérabilité, sécurisation, conservation, archivage)</option>
+                    <option value="aucune">Aucune norme obligatoire</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Q2. Un agent peut-il modifier ou supprimer une transaction d'encaissement d'un salon ?</label>
+                  <select required value={quizAnswers.q2} onChange={e => setQuizAnswers({...quizAnswers, q2: e.target.value})} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }}>
+                    <option value="">Sélectionner...</option>
+                    <option value="interdit">Strictement interdit (séparation étanche et zéro accès aux tables NF525)</option>
+                    <option value="autorise">Autorisé sur demande du gérant</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Q3. Quel est votre statut juridique vis-à-vis de STACK ?</label>
+                  <select required value={quizAnswers.q3} onChange={e => setQuizAnswers({...quizAnswers, q3: e.target.value})} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }}>
+                    <option value="">Sélectionner...</option>
+                    <option value="mandataire">Mandataire indépendant sans lien de subordination, qui ne signe jamais au nom de STACK</option>
+                    <option value="salarie">Salarié habilité à engager l'entreprise</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Q4. Comment sont facturés les 99 € HT de mise en service et formation ?</label>
+                  <select required value={quizAnswers.q4} onChange={e => setQuizAnswers({...quizAnswers, q4: e.target.value})} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }}>
+                    <option value="">Sélectionner...</option>
+                    <option value="99">Facturés directement par l'agent au salon (avec mention obligatoire du numéro RSAC)</option>
+                    <option value="stack">Encaissés par STACK</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '16px', alignItems: 'center', marginBottom: '14px' }}>
+                <input type="text" placeholder="Téléphone mobile actif" required value={profilData.telephone || ''} onChange={e => setProfilData({...profilData, telephone: e.target.value})} style={{ ...inputStyle, maxWidth: '260px' }} />
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', cursor: 'pointer' }}>
+                  <input type="checkbox" required checked={!!profilData.telephone_confirme} onChange={e => setProfilData({...profilData, telephone_confirme: e.target.checked})} />
+                  <span>Je confirme que mon e-mail ({profilData.email}) et mon numéro de téléphone sont actifs et vérifiés.</span>
+                </label>
+              </div>
+
+              <button type="submit" style={primaryBtn}>
+                <Icon.Check /> Valider le Quiz NF525 & mon contact (Étape 5)
+              </button>
+            </form>
+
+            {/* ÉTAPE 6 : CHANGEMENT DE SITUATION & HISTORIQUE D'AUDIT */}
+            <div style={cardStyle}>
+              <div style={{ fontSize: '16px', fontWeight: '700', marginBottom: '8px' }}>6. Signalement de changement de situation & Historique des vérifications</div>
+              <p style={{ fontSize: '13px', color: '#6b7280', margin: '0 0 12px 0' }}>
+                Vous avez l'obligation de signaler tout changement de statut, d'adresse ou de forme juridique, et d'informer le greffe du RSAC de tout événement modifiant votre extrait.
+              </p>
+              <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
+                <input type="text" placeholder="Décrivez votre changement de situation (nouvelle adresse, passage en société, greffe...)" value={changementMotif} onChange={e => setChangementMotif(e.target.value)} style={inputStyle} />
+                <button type="button" onClick={() => { submitEtapeConformite('CHANGEMENT_SITUATION', { motif_changement: changementMotif }); setChangementMotif(''); }} style={{ ...primaryBtn, backgroundColor: '#374151' }}>
+                  Déclarer un changement
                 </button>
               </div>
-            </form>
+
+              <div style={{ fontSize: '12px', fontWeight: '700', color: '#6b7280', textTransform: 'uppercase', marginBottom: '8px' }}>Journal d'audit des pièces</div>
+              {profilData.historique?.length === 0 ? (
+                <div style={{ fontSize: '13px', color: '#9ca3af' }}>Aucun événement enregistré.</div>
+              ) : (
+                <div style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid #f3f4f6', borderRadius: '12px' }}>
+                  {profilData.historique?.map(h => (
+                    <div key={h.id_historique} style={{ padding: '10px 14px', borderBottom: '1px solid #f3f4f6', fontSize: '12.5px', display: 'flex', justifyContent: 'space-between' }}>
+                      <span><strong>{h.type_piece}</strong> — {h.commentaire} ({h.verifie_par})</span>
+                      <span style={{ color: '#6b7280' }}>{new Date(h.date_evenement).toLocaleString('fr-FR')} [{h.statut_resultat}]</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </>
         )}
 
@@ -659,50 +1036,69 @@ export default function Dashboard() {
         {activeTab === 'godmode' && isSuperAdmin && (
           <>
             <div style={{ marginBottom: '32px' }}>
-              <h1 style={{ fontSize: '26px', fontWeight: '700', margin: '0 0 6px 0', letterSpacing: '-0.02em', color: '#8b5cf6' }}>God Mode (Super-Admin)</h1>
-              <span style={{ fontSize: '14px', color: '#6b7280' }}>Espace strictement réservé au fondateur. Validation des agents et exécution des virements.</span>
+              <h1 style={{ fontSize: '26px', fontWeight: '700', margin: '0 0 6px 0', letterSpacing: '-0.02em', color: '#8b5cf6' }}>God Mode (Contrôle Légal & Paiements)</h1>
+              <span style={{ fontSize: '14px', color: '#6b7280' }}>Vérifiez chaque pièce dans l'ordre (Contrat, Identité, SIRET/INSEE, RSAC, Kbis, URSSAF, RC Pro, IBAN, TVA) avant d'activer un agent.</span>
             </div>
 
-            <div style={{ fontSize: '13px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '12px' }}>
-              1. Validation des Agents
-            </div>
-            <div style={{ ...cardStyle, padding: 0, overflow: 'hidden', marginBottom: '32px' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
-                <thead style={{ backgroundColor: '#f9fafb', borderBottom: '1px solid #e5e7eb', color: '#6b7280', fontSize: '12px', textTransform: 'uppercase' }}>
-                  <tr>
-                    <th style={{ padding: '14px 20px' }}>Identité & Contact</th>
-                    <th style={{ padding: '14px 20px' }}>SIRET & Code</th>
-                    <th style={{ padding: '14px 20px' }}>Statut</th>
-                    <th style={{ padding: '14px 20px' }}>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {adminAgents.length === 0 ? <tr><td colSpan="4" style={{ padding: '24px', textAlign: 'center', color: '#6b7280' }}>Aucun agent inscrit.</td></tr> : adminAgents.map(a => (
-                    <tr key={a.id_agent} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                      <td style={{ padding: '16px 20px', fontWeight: '600' }}>{a.prenom} {a.nom}<br/><span style={{ fontWeight: '400', fontSize: '12px', color: '#6b7280' }}>{a.email}</span></td>
-                      <td style={{ padding: '16px 20px' }}>{a.siret_agent}<br/><span style={{ fontSize: '12px', color: '#6b7280', fontFamily: 'monospace' }}>{a.code_partenaire}</span></td>
-                      <td style={{ padding: '16px 20px' }}>
-                        <span style={{ padding: '5px 10px', borderRadius: '8px', fontSize: '12px', fontWeight: '600', backgroundColor: a.statut_compte === 'ACTIF' ? '#dcfce7' : '#fef3c7', color: a.statut_compte === 'ACTIF' ? '#166534' : '#92400e' }}>
-                          {a.statut_compte === 'ACTIF' ? 'Actif' : 'En attente'}
-                        </span>
-                      </td>
-                      <td style={{ padding: '16px 20px' }}>
-                        {a.statut_compte !== 'ACTIF' && (
-                          <button onClick={() => handleValidateAgent(a.id_agent)} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '7px 12px', cursor: 'pointer', border: 'none', borderRadius: '10px', backgroundColor: '#8b5cf6', color: '#ffffff', fontSize: '12.5px', fontWeight: '600' }}>
-                            <Icon.Check /> Valider le compte
-                          </button>
+            {adminAgents.map(a => (
+              <div key={a.id_agent} style={cardStyle}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                  <div>
+                    <div style={{ fontSize: '17px', fontWeight: '700' }}>{a.prenom} {a.nom} ({a.code_partenaire})</div>
+                    <div style={{ fontSize: '13px', color: '#6b7280' }}>
+                      {a.email} • Tél : {a.telephone || 'N/A'} • SIRET : {a.siret_agent} ({a.forme_juridique || 'EI'}) • RSAC : {a.numero_rsac || 'Manquant'} ({a.greffe_rsac || 'Greffe N/A'})
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <span style={{ padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: '700', backgroundColor: a.statut_compte === 'ACTIF' ? '#dcfce7' : '#fef3c7', color: a.statut_compte === 'ACTIF' ? '#166534' : '#92400e' }}>
+                      Compte : {a.statut_compte}
+                    </span>
+                    <button onClick={() => handleVerifyPieceAdmin(a.id_agent, 'STATUT_COMPTE_FINAL', 'ACTIF')} style={{ ...primaryBtn, backgroundColor: '#8b5cf6', padding: '8px 14px', fontSize: '12.5px' }}>
+                      Activer le compte (Étape 6)
+                    </button>
+                    <button onClick={() => handleVerifyPieceAdmin(a.id_agent, 'STATUT_COMPTE_FINAL', 'BLOQUE_CONFORMITE')} style={{ ...primaryBtn, backgroundColor: '#dc2626', padding: '8px 14px', fontSize: '12.5px' }}>
+                      Bloquer
+                    </button>
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', fontSize: '12.5px' }}>
+                  {[
+                    { label: '1. Contrat signé', field: 'statut_contrat', val: a.statut_contrat, info: a.contrat_signe ? 'Signé' : 'Non signé' },
+                    { label: '2a. Pièce Identité', field: 'statut_identite', val: a.statut_identite, file: a.fichier_identite, info: `Né(e): ${a.date_naissance ? a.date_naissance.slice(0,10) : '?'} | Exp: ${a.date_expiration_identite ? a.date_expiration_identite.slice(0,10) : '?'}`, rgpd: true },
+                    { label: '2b. SIREN/SIRET (INSEE)', field: 'statut_siret', val: a.statut_siret, info: `${a.siret_agent} (${a.forme_juridique || 'EI'})` },
+                    { label: '2c. Extrait RSAC (<3m)', field: 'statut_rsac', val: a.statut_rsac, file: a.fichier_rsac, info: `N° ${a.numero_rsac || 'Aucun'} | Émis: ${a.date_emission_rsac ? a.date_emission_rsac.slice(0,10) : '?'}` },
+                    { label: '2d. Extrait Kbis (Société)', field: 'statut_kbis', val: a.statut_kbis, file: a.fichier_kbis, info: a.forme_juridique === 'SOCIETE' ? `Émis: ${a.date_emission_kbis ? a.date_emission_kbis.slice(0,10) : '?'}` : 'Non requis (EI)' },
+                    { label: '3. Vigilance URSSAF', field: 'statut_urssaf', val: a.statut_urssaf, file: a.fichier_urssaf, info: `Code: ${a.code_verif_urssaf || '?'} | Exp: ${a.date_expiration_urssaf ? a.date_expiration_urssaf.slice(0,10) : '?'}` },
+                    { label: '4a. Assurance RC Pro', field: 'statut_rc_pro', val: a.statut_rc_pro, file: a.fichier_rc_pro, info: `${a.assureur_nom || '?'} (${a.assureur_plafond || '?'}) | Exp: ${a.date_expiration_rc_pro ? a.date_expiration_rc_pro.slice(0,10) : '?'}` },
+                    { label: '4b. IBAN & Titulaire', field: 'statut_iban', val: a.statut_iban, info: `Titulaire: ${a.titulaire_iban || '?'} | ${a.iban || ''}` },
+                    { label: '4c. TVA & Déclarations', field: 'statut_tva', val: a.statut_tva, info: `${a.regime_tva || '293B'} ${a.numero_tva_intra || ''} | Quiz: ${a.quiz_score || 0}%` }
+                  ].map(item => (
+                    <div key={item.field} style={{ border: '1px solid #e5e7eb', borderRadius: '12px', padding: '10px 12px', backgroundColor: '#f9fafb' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: '700', marginBottom: '4px' }}>
+                        <span>{item.label}</span>
+                        <span style={{ color: item.val === 'VALIDE' ? '#16a34a' : (item.val === 'REFUSE' ? '#dc2626' : '#d97706') }}>{item.val || 'MANQUANT'}</span>
+                      </div>
+                      <div style={{ color: '#6b7280', fontSize: '11.5px', marginBottom: '8px' }}>{item.info}</div>
+                      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                        {item.file && item.file.startsWith('data:') && (
+                          <a href={item.file} download={`${a.nom}_${item.field}`} style={{ padding: '4px 8px', backgroundColor: '#ffffff', border: '1px solid #d1d5db', borderRadius: '6px', textDecoration: 'none', color: '#111827', fontWeight: '600' }}>Voir pièce</a>
                         )}
-                      </td>
-                    </tr>
+                        <button onClick={() => handleVerifyPieceAdmin(a.id_agent, item.field, 'VALIDE', item.rgpd)} style={{ padding: '4px 8px', backgroundColor: '#16a34a', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600' }}>
+                          {item.rgpd ? 'Valider + Purger RGPD' : 'Valider'}
+                        </button>
+                        <button onClick={() => handleVerifyPieceAdmin(a.id_agent, item.field, 'REFUSE')} style={{ padding: '4px 8px', backgroundColor: '#dc2626', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600' }}>Refuser</button>
+                      </div>
+                    </div>
                   ))}
-                </tbody>
-              </table>
-            </div>
+                </div>
+              </div>
+            ))}
 
-            <div style={{ fontSize: '13px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '12px' }}>
-              2. Paiement des Commissions (Virements à effectuer)
+            <div style={{ fontSize: '13px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.04em', margin: '28px 0 12px 0' }}>
+              Paiement des Commissions (Suspendu automatiquement si URSSAF ou RC Pro expirée)
             </div>
-            <div style={{ ...cardStyle, padding: 0, overflow: 'hidden' }}>
+            <div style={{ ...cardStyle, padding: '0', overflow: 'hidden' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
                 <thead style={{ backgroundColor: '#f9fafb', borderBottom: '1px solid #e5e7eb', color: '#6b7280', fontSize: '12px', textTransform: 'uppercase' }}>
                   <tr>
