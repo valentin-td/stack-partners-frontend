@@ -41,34 +41,64 @@ export default function Auth() {
     }
   };
 
+  const inputStyle = {
+    width: '100%',
+    padding: '13px 16px',
+    backgroundColor: '#f3f4f6',
+    border: '1px solid #e5e7eb',
+    borderRadius: '12px',
+    fontSize: '14px',
+    color: '#111827',
+    outline: 'none',
+    boxSizing: 'border-box'
+  };
+
   return (
-    <div style={{ maxWidth: '400px', margin: '50px auto', fontFamily: 'sans-serif' }}>
-      <h2>{isLogin ? 'Connexion Partenaire' : 'Devenir Agent Stack'}</h2>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      {message && <p style={{ color: 'green' }}>{message}</p>}
-      
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        {!isLogin && (
-          <>
-            <input type="text" name="nom" placeholder="Nom" required onChange={handleChange} />
-            <input type="text" name="prenom" placeholder="Prénom" required onChange={handleChange} />
-            <input type="text" name="telephone" placeholder="Téléphone" onChange={handleChange} />
-            <input type="text" name="siret_agent" placeholder="SIRET" required onChange={handleChange} />
-            <input type="text" name="numero_rsac" placeholder="Numéro RSAC (Optionnel)" onChange={handleChange} />
-            <input type="text" name="iban" placeholder="IBAN pour commissions" required onChange={handleChange} />
-          </>
-        )}
-        <input type="email" name="email" placeholder="Email" required onChange={handleChange} />
-        <input type="password" name="mot_de_passe" placeholder="Mot de passe" required onChange={handleChange} />
+    <div style={{ minHeight: '100vh', backgroundColor: '#f6f6f7', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
+      <div style={{ width: '100%', maxWidth: '420px', backgroundColor: '#ffffff', borderRadius: '24px', padding: '36px 32px', boxShadow: '0 10px 30px rgba(0, 0, 0, 0.05)', border: '1px solid #e5e7eb', boxSizing: 'border-box' }}>
         
-        <button type="submit" style={{ padding: '10px', background: 'black', color: 'white', cursor: 'pointer' }}>
-          {isLogin ? 'Se connecter' : "S'inscrire"}
-        </button>
-      </form>
-      
-      <button onClick={() => setIsLogin(!isLogin)} style={{ marginTop: '15px', background: 'none', border: 'none', color: 'blue', cursor: 'pointer' }}>
-        {isLogin ? "Pas encore de compte ? S'inscrire" : "Déjà un compte ? Se connecter"}
-      </button>
+        {/* En-tête Logo STACK Partners */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginBottom: '28px' }}>
+          <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'linear-gradient(135deg, #863bff 0%, #47bfff 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: '800', fontSize: '18px' }}>
+            S
+          </div>
+          <span style={{ fontSize: '22px', fontWeight: '800', letterSpacing: '0.04em', color: '#111827' }}>STACK</span>
+          <span style={{ fontSize: '11px', fontWeight: '700', backgroundColor: '#f3f4f6', color: '#4b5563', padding: '3px 8px', borderRadius: '6px', textTransform: 'uppercase' }}>Partners</span>
+        </div>
+
+        {/* Sélecteur Connexion / Inscription façon pilule */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '24px' }}>
+          <button type="button" onClick={() => setIsLogin(true)} style={{ padding: '10px', borderRadius: '10px', border: isLogin ? 'none' : '1px solid #e5e7eb', backgroundColor: isLogin ? '#111827' : '#f3f4f6', color: isLogin ? '#ffffff' : '#6b7280', fontWeight: '600', fontSize: '13px', cursor: 'pointer' }}>
+            Connexion
+          </button>
+          <button type="button" onClick={() => setIsLogin(false)} style={{ padding: '10px', borderRadius: '10px', border: !isLogin ? 'none' : '1px solid #e5e7eb', backgroundColor: !isLogin ? '#111827' : '#f3f4f6', color: !isLogin ? '#ffffff' : '#6b7280', fontWeight: '600', fontSize: '13px', cursor: 'pointer' }}>
+            Devenir Agent
+          </button>
+        </div>
+
+        {error && <div style={{ backgroundColor: '#fef2f2', color: '#dc2626', padding: '10px 14px', borderRadius: '10px', fontSize: '13px', marginBottom: '16px', fontWeight: '500' }}>{error}</div>}
+        {message && <div style={{ backgroundColor: '#f0fdf4', color: '#16a34a', padding: '10px 14px', borderRadius: '10px', fontSize: '13px', marginBottom: '16px', fontWeight: '500' }}>{message}</div>}
+        
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {!isLogin && (
+            <>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <input type="text" name="nom" placeholder="Nom" required onChange={handleChange} style={inputStyle} />
+                <input type="text" name="prenom" placeholder="Prénom" required onChange={handleChange} style={inputStyle} />
+              </div>
+              <input type="text" name="telephone" placeholder="Téléphone" onChange={handleChange} style={inputStyle} />
+              <input type="text" name="siret_agent" placeholder="Numéro SIRET (14 chiffres)" required onChange={handleChange} style={inputStyle} />
+              <input type="text" name="numero_rsac" placeholder="Numéro RSAC (Optionnel)" onChange={handleChange} style={inputStyle} />
+              <input type="text" name="iban" placeholder="IBAN (Pour vos virements)" required onChange={handleChange} style={inputStyle} />
+            </>
+          )}
+          <input type="email" name="email" placeholder="Adresse e-mail" required onChange={handleChange} style={inputStyle} />
+          <input type="password" name="mot_de_passe" placeholder="Mot de passe" required onChange={handleChange} style={inputStyle} />
+          
+          <button type="submit" style={{ marginTop: '8px', padding: '14px', backgroundColor: '#111827', color: '#ffffff', border: 'none', borderRadius: '12px', fontWeight: '600', fontSize: '14px', cursor: 'pointer' }}>
+            {isLogin ? 'Se connecter' : "Créer mon compte partenaire"}
+          </button>
+        </form>
+      </div>
     </div>
   );
-}
