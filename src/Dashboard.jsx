@@ -8,7 +8,7 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('bord');
   const [toastMsg, setToastMsg] = useState(null);
 
-  // États Dashboard & Commissions (Briques 5 et 6)
+  // États Dashboard & Commissions (Briques 5 et 6) 
   const [stats, setStats] = useState({
     kpis: { nb_salons_actifs: 0, nb_salons_essai: 0, seuil_deblocage: 3, commissions_en_attente: '0.00', commissions_acquises: '0.00', commissions_payees: '0.00' },
     salons: [],
