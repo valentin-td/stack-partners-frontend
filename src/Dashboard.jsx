@@ -66,6 +66,22 @@ export default function Dashboard() {
     if (res.ok) setProspects(await res.json());
   };
 
+  const handleOnboarding = async (id_prospect) => {
+    try {
+      const res = await fetch(`${API_URL}/prospects/${id_prospect}/onboarding`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      
+      alert(` Succès ! Envoyez ce lien d'inscription au gérant du salon :\n\n${data.lien}`);
+      fetchProspects();
+    } catch (err) {
+      alert(`Erreur : ${err.message}`);
+    }
+  };
+
   const handleCreateProspect = async (e) => {
     e.preventDefault();
     setProspectError('');
@@ -102,10 +118,10 @@ export default function Dashboard() {
         
         <div style={{ flexGrow: 1, marginTop: '40px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
           <button onClick={() => setActiveTab('prospects')} style={{ width: '100%', padding: '10px', backgroundColor: activeTab === 'prospects' ? '#3b82f6' : 'transparent', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', textAlign: 'left' }}>
-            🎯 Mes Prospects
+            Mes Prospects
           </button>
           <button onClick={() => setActiveTab('factures')} style={{ width: '100%', padding: '10px', backgroundColor: activeTab === 'factures' ? '#3b82f6' : 'transparent', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', textAlign: 'left' }}>
-            📄 Factures Onboarding
+            Factures Onboarding
           </button>
         </div>
         
@@ -153,6 +169,7 @@ export default function Dashboard() {
                     <th style={{ padding: '15px' }}>Contact</th>
                     <th style={{ padding: '15px' }}>Statut</th>
                     <th style={{ padding: '15px' }}>Expiration</th>
+                    <th style={{ padding: '15px' }}>Action</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -167,7 +184,14 @@ export default function Dashboard() {
                         </span>
                       </td>
                       <td style={{ padding: '15px', color: p.jours_restants <= 7 && p.est_protege ? '#ef4444' : 'inherit', fontWeight: p.jours_restants <= 7 ? 'bold' : 'normal' }}>
-                        {p.est_protege ? `Dans ${Math.max(0, p.jours_restants)} jours` : 'Libre'}
+                        {p.statut_prospect === 'SIGNE' ? 'Converti' : (p.est_protege ? `Dans ${Math.max(0, p.jours_restants)} jours` : 'Libre')}
+                      </td>
+                      <td style={{ padding: '15px' }}>
+                        {p.statut_prospect !== 'SIGNE' && p.est_protege && (
+                          <button onClick={() => handleOnboarding(p.id_prospect)} style={{ padding: '6px 12px', cursor: 'pointer', border: 'none', borderRadius: '5px', backgroundColor: '#8b5cf6', color: 'white', fontWeight: 'bold' }}>
+                            Lancer l'Onboarding
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}
