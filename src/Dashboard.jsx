@@ -190,6 +190,11 @@ export default function Dashboard() {
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
       </svg>
+    ),
+    User: () => (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+      </svg>
     )
   };
 
@@ -276,6 +281,9 @@ export default function Dashboard() {
           </button>
           <button onClick={() => setActiveTab('factures')} style={navBtnStyle(activeTab === 'factures')}>
             <Icon.Factures /> Factures Onboarding
+          </button>
+          <button onClick={() => setActiveTab('profil')} style={navBtnStyle(activeTab === 'profil')}>
+            <Icon.User /> Profil & Informations
           </button>
         </div>
         
@@ -555,6 +563,58 @@ export default function Dashboard() {
             </div>
           </>
         )}
+
+        {/* ONGLET 4 : PROFIL & CONFORMITÉ */}
+        {activeTab === 'profil' && (
+          <>
+            <div style={{ marginBottom: '32px' }}>
+              <h1 style={{ fontSize: '26px', fontWeight: '700', margin: '0 0 6px 0', letterSpacing: '-0.02em' }}>Profil & Informations Légal</h1>
+              <span style={{ fontSize: '14px', color: '#6b7280' }}>Gérez vos coordonnées et vos données de facturation (IBAN, SIRET)</span>
+            </div>
+
+            <form onSubmit={handleUpdateProfil} style={{ ...cardStyle, display: 'flex', flexDirection: 'column', gap: '20px', maxWidth: '700px' }}>
+              
+              <div>
+                <div style={{ fontSize: '13px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '12px' }}>Identité (Lecture seule)</div>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <input type="text" value={profilData.nom} disabled style={{ ...inputStyle, backgroundColor: '#f9fafb', opacity: 0.8 }} />
+                  <input type="text" value={profilData.prenom} disabled style={{ ...inputStyle, backgroundColor: '#f9fafb', opacity: 0.8 }} />
+                </div>
+                <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
+                  <input type="email" value={profilData.email} disabled style={{ ...inputStyle, backgroundColor: '#f9fafb', opacity: 0.8 }} />
+                  <input type="text" value={`SIRET : ${profilData.siret_agent}`} disabled style={{ ...inputStyle, backgroundColor: '#f9fafb', opacity: 0.8 }} />
+                </div>
+              </div>
+
+              <div style={{ borderTop: '1px solid #e5e7eb', margin: '4px 0' }} />
+
+              <div>
+                <div style={{ fontSize: '13px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '12px' }}>Coordonnées & Facturation (Modifiables)</div>
+                <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px', fontWeight: '500' }}>Téléphone</label>
+                    <input type="text" value={profilData.telephone || ''} onChange={e => setProfilData({...profilData, telephone: e.target.value})} style={inputStyle} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px', fontWeight: '500' }}>Numéro RSAC (Optionnel)</label>
+                    <input type="text" value={profilData.numero_rsac || ''} onChange={e => setProfilData({...profilData, numero_rsac: e.target.value})} style={inputStyle} />
+                  </div>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px', fontWeight: '500' }}>IBAN (Pour le virement de vos commissions STACK)</label>
+                  <input type="text" required value={profilData.iban || ''} onChange={e => setProfilData({...profilData, iban: e.target.value})} style={{ ...inputStyle, width: '100%' }} />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
+                <button type="submit" style={primaryBtn}>
+                  <Icon.Check /> Enregistrer les modifications
+                </button>
+              </div>
+            </form>
+          </>
+        )}
+
       </div>
     </div>
   );
