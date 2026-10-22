@@ -26,11 +26,31 @@ export default function Dashboard() {
   const [prospectData, setProspectData] = useState({ nom_salon: '', ville: '', code_postal: '', siret_prospect: '', telephone_salon: '', email_gerant: '' });
   const [prospectError, setProspectError] = useState('');
 
+  // États Profil
+  const [profilData, setProfilData] = useState({ nom: '', prenom: '', email: '', telephone: '', siret_agent: '', numero_rsac: '', iban: '' });
+
   useEffect(() => {
     if (activeTab === 'bord') fetchStats();
     if (activeTab === 'factures') fetchFactures();
     if (activeTab === 'prospects') fetchProspects();
+    if (activeTab === 'profil') fetchProfil();
   }, [activeTab]);
+
+  const fetchProfil = async () => {
+    const res = await fetch(`${API_URL}/profil`, { headers: { 'Authorization': `Bearer ${token}` } });
+    if (res.ok) setProfilData(await res.json());
+  };
+
+  const handleUpdateProfil = async (e) => {
+    e.preventDefault();
+    const res = await fetch(`${API_URL}/profil`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify(profilData)
+    });
+    if (res.ok) notify("Vos informations ont été mises à jour.");
+    else notify("Erreur lors de la mise à jour.", true);
+  };
 
   const notify = (text, isError = false) => {
     setToastMsg({ text, isError });
