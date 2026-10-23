@@ -318,14 +318,20 @@ export default function Dashboard() {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || `Erreur ${res.status}: Route API introuvable sur le backend.`);
+      }
+      
       const data = await res.json();
-      if (res.ok && data.signatureLink) {
+      if (data.signatureLink) {
         window.location.href = data.signatureLink;
       } else {
-        notify(data.error || "Impossible de générer le contrat Yousign.", true);
+        throw new Error("Lien de signature manquant dans la réponse du serveur.");
       }
     } catch (e) {
-      notify("Erreur de communication avec le serveur.", true);
+      notify(e.message || "Erreur de communication avec le serveur.", true);
     } finally {
       setIsYousignLoading(false);
     }
