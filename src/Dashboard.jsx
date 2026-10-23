@@ -43,6 +43,7 @@ export default function Dashboard() {
   });
   const [quizAnswers, setQuizAnswers] = useState({ q1: '', q2: '', q3: '', q4: '' });
   const [changementMotif, setChangementMotif] = useState('');
+  const [isYousignLoading, setIsYousignLoading] = useState(false);
 
   // États Carte Interactive de Prospection
   const [mapCenter, setMapCenter] = useState({ lat: 48.5734, lng: 7.7521, label: 'Strasbourg' });
@@ -309,6 +310,26 @@ export default function Dashboard() {
     const reader = new FileReader();
     reader.onload = () => setProfilData(prev => ({ ...prev, [fieldName]: reader.result }));
     reader.readAsDataURL(file);
+  };
+
+  const handleYousignSignature = async () => {
+    setIsYousignLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/profil/yousign/initiate`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (res.ok && data.signatureLink) {
+        window.location.href = data.signatureLink;
+      } else {
+        notify(data.error || "Impossible de générer le contrat Yousign.", true);
+      }
+    } catch (e) {
+      notify("Erreur de communication avec le serveur.", true);
+    } finally {
+      setIsYousignLoading(false);
+    }
   };
 
   const submitEtapeConformite = async (etape, customPayload = null) => {
@@ -1192,12 +1213,12 @@ export default function Dashboard() {
                 Conformément au Code de commerce, la conclusion du contrat de mandat précède votre immatriculation au Registre Spécial des Agents Commerciaux (RSAC). Ce contrat est conclu sous condition suspensive : vous pouvez utiliser cette copie pour votre inscription au greffe, mais toute prospection ou vente demeure interdite tant que les étapes 2 à 6 ne sont pas validées.
               </p>
               {profilData.contrat_signe ? (
-                <div style={{ fontSize: '13px', fontWeight: '600', color: '#16a34a' }}>
-                  Contrat signé électroniquement le {profilData.date_signature_contrat ? new Date(profilData.date_signature_contrat).toLocaleString('fr-FR') : 'ce jour'}.
+                <div style={{ fontSize: '13px', fontWeight: '600', color: '#16a34a', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Icon.Check /> Contrat signé électroniquement via Yousign le {profilData.date_signature_contrat ? new Date(profilData.date_signature_contrat).toLocaleString('fr-FR') : 'ce jour'}.
                 </div>
               ) : (
-                <button type="button" onClick={() => submitEtapeConformite(1)} style={primaryBtn}>
-                  <Icon.Check /> Signer le contrat de mandat à effet conditionnel
+                <button type="button" onClick={handleYousignSignature} disabled={isYousignLoading} style={{ ...primaryBtn, opacity: isYousignLoading ? 0.7 : 1 }}>
+                  <Icon.Check /> {isYousignLoading ? "Génération du contrat sécurisé..." : "Signer le contrat de mandat via Yousign"}
                 </button>
               )}
             </div>
