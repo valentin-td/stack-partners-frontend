@@ -400,6 +400,9 @@ export default function Dashboard() {
       setFactureData({ nom_salon: '', adresse_salon: '', siret_salon: '' });
       fetchFactures();
       notify("Facture générée avec succès.");
+    } else {
+      const data = await res.json().catch(() => ({}));
+      notify(data.error || "Action non autorisée. Votre dossier de conformité n'est pas complètement validé.", true);
     }
   };
 
