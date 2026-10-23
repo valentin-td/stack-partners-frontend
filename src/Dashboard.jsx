@@ -8,7 +8,7 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('bord');
   const [toastMsg, setToastMsg] = useState(null);
 
-  // États Dashboard & Commissions (Briques 5 et 6) 
+  // États Dashboard & Commissions
   const [stats, setStats] = useState({
     kpis: { nb_salons_actifs: 0, nb_salons_essai: 0, seuil_deblocage: 3, commissions_en_attente: '0.00', commissions_acquises: '0.00', commissions_payees: '0.00' },
     salons: [],
@@ -56,31 +56,103 @@ export default function Dashboard() {
   const [quickLockForm, setQuickLockForm] = useState({ email_gerant: '', telephone_salon: '' });
   const [leafletReady, setLeafletReady] = useState(!!window.L);
 
-  // États God Mode (Super-Admin)
-  // États God Mode (Super-Admin) basé sur l'ID (1) ou le nom
-  const isSuperAdmin = agent?.id === 1 || agent?.nom?.toLowerCase() === 'tardy';
+  // États God Mode (Super-Admin) — Basé sur ID 1, nom 'tardy' ou email
+  const isSuperAdmin =
+    Number(agent?.id) === 1 ||
+    Number(agent?.id_agent) === 1 ||
+    agent?.nom?.toLowerCase?.().trim() === 'tardy' ||
+    agent?.email?.toLowerCase?.().trim() === 'tardy.valentin04@gmail.com' ||
+    profilData?.email?.toLowerCase?.().trim() === 'tardy.valentin04@gmail.com';
+
   const [adminAgents, setAdminAgents] = useState([]);
   const [adminCommissions, setAdminCommissions] = useState([]);
-  const [selectedAgentAdmin, setSelectedAgentAdmin] = useState(null);
 
-  // États Académie, Objections & Simulateurs (Phases 3 & 4)
+  // États Académie, Objections, Vidéos & Simulateurs (Phases 3 & 4)
   const [openObjectionIdx, setOpenObjectionIdx] = useState(0);
   const [sandboxLoading, setSandboxLoading] = useState(null);
   const [activeSandboxInfo, setActiveSandboxInfo] = useState(null);
+  const [activeVideoModal, setActiveVideoModal] = useState(null);
 
-  const handleLaunchSandbox = async (type) => {
-    setSandboxLoading(type);
+  const [tutorialsList, setTutorialsList] = useState(() => {
+    const saved = localStorage.getItem('stack_partner_videos_v1');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return [
+      {
+        id: 'vid-1',
+        duree: '4 min',
+        cat: 'Démonstration Terrain',
+        titre: 'Réussir sa démo Caisse & Pointeuse en 5 minutes chrono',
+        desc: 'Le parcours exact à montrer au gérant pour déclencher le coup de cœur immédiat : encaissement 3 clics, pointage PIN et reçu NF525.',
+        embedUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+        pointsCles: ['Ouverture de la pointeuse PIN (0000)', 'Création d’un ticket mixte Prestation + Produit', 'Affichage de la remise fidélité & Winback automatique']
+      },
+      {
+        id: 'vid-2',
+        duree: '6 min',
+        cat: 'Procédure Go-Live',
+        titre: 'Réaliser un Onboarding parfait & débloquer la Checklist',
+        desc: 'Comment accompagner le client sur le Popup Légal, saisir votre code partenaire et valider les 5 étapes obligatoires de la caisse.',
+        embedUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+        pointsCles: ['Vérification du SIRET et signature CGV / NF525', 'Saisie du code partenaire dans le Popup Légal', 'Déblocage des 5 verrous Go-Live sur la caisse']
+      },
+      {
+        id: 'vid-3',
+        duree: '5 min',
+        cat: 'Argumentaire Financier',
+        titre: 'Présenter l’IA Comptable & la conformité fiscale NF525',
+        desc: 'Les arguments clés pour convaincre un gérant qui hésite sur le prix de l’abonnement après ses 30 jours d’essai gratuit.',
+        embedUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+        pointsCles: ['Scan IA de factures fournisseurs en 10 secondes', 'Clôture journalière Blind Close (Z de caisse)', 'Export FEC et liasse comptable mensuelle en 1 clic']
+      }
+    ];
+  });
+
+  const handleUpdateVideoUrl = (id) => {
+    const current = tutorialsList.find(v => v.id === id);
+    const nextUrl = prompt("Collez l'URL d'intégration de votre vidéo (YouTube Embed, Loom Embed ou lien MP4 direct) :", current?.embedUrl || '');
+    if (nextUrl && nextUrl.trim()) {
+      let formatted = nextUrl.trim();
+      if (formatted.includes('youtube.com/watch?v=')) {
+        const vidId = new URL(formatted).searchParams.get('v');
+        if (vidId) formatted = `https://www.youtube.com/embed/${vidId}`;
+      } else if (formatted.includes('loom.com/share/')) {
+        formatted = formatted.replace('loom.com/share/', 'loom.com/embed/');
+      }
+      const updated = tutorialsList.map(v => v.id === id ? { ...v, embedUrl: formatted } : v);
+      setTutorialsList(updated);
+      localStorage.setItem('stack_partner_videos_v1', JSON.stringify(updated));
+      notify("Lien de la vidéo mis à jour avec succès.");
+    }
+  };
+
+  // Gestion des 3 Simulateurs Bacs à Sable + Sauvegarde / Réinitialisation / Défaut
+  const handleLaunchSandbox = async (type, action = 'LAUNCH') => {
+    const loaderKey = `${type}_${action}`;
+    setSandboxLoading(loaderKey);
     try {
       const res = await fetch(`${API_URL}/sandbox/launch`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ type })
+        body: JSON.stringify({ type, action }) // action: 'LAUNCH' | 'SAVE_CUSTOM' | 'RESET_CUSTOM' | 'RESET_DEFAULT'
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Erreur de création du simulateur");
-      setActiveSandboxInfo(data);
-      window.open(data.url_directe, '_blank', 'noopener,noreferrer');
-      notify(`Environnement "${data.nom_salon}" lancé dans un nouvel onglet !`);
+      if (!res.ok) throw new Error(data.error || "Erreur lors de l'opération sur le simulateur");
+
+      if (action === 'SAVE_CUSTOM') {
+        notify("Votre configuration actuelle du salon de démo a été sauvegardée comme modèle personnel !");
+      } else {
+        setActiveSandboxInfo(data);
+        if (action === 'RESET_CUSTOM') {
+          notify("Salon de démo restauré selon votre dernière sauvegarde personnalisée !");
+        } else if (action === 'RESET_DEFAULT') {
+          notify("Salon de démo remis à l'état d'usine STACK (avec données complètes) !");
+        } else {
+          notify(`Environnement "${data.nom_salon}" ouvert dans un nouvel onglet !`);
+        }
+        window.open(data.url_directe, '_blank', 'noopener,noreferrer');
+      }
     } catch (err) {
       notify(err.message, true);
     } finally {
@@ -88,9 +160,7 @@ export default function Dashboard() {
     }
   };
 
-  
-
-  // Chargement dynamique de Leaflet (CSS + JS) sans dépendance npm supplémentaire
+  // Chargement dynamique de Leaflet (CSS + JS)
   useEffect(() => {
     if (window.L) {
       setLeafletReady(true);
@@ -108,13 +178,13 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
-    fetchProfil(); // Toujours charger l'état de conformité et les alertes à 30 jours
+    fetchProfil();
     if (activeTab === 'bord') fetchStats();
     if (activeTab === 'factures') fetchFactures();
     if (activeTab === 'prospects') fetchProspects();
     if (activeTab === 'carte') fetchMapSalons(mapCenter.lat, mapCenter.lng, mapRadius);
     if (activeTab === 'godmode' && isSuperAdmin) fetchAdminData();
-  }, [activeTab]);
+  }, [activeTab, isSuperAdmin]);
 
   const fetchMapSalons = async (lat = mapCenter.lat, lng = mapCenter.lng, radius = mapRadius) => {
     setMapLoading(true);
@@ -199,7 +269,6 @@ export default function Dashboard() {
     if (res.ok) {
       notify(`Salon "${selectedSalonMap.nom_salon}" verrouillé pour 45 jours.`);
       setQuickLockForm({ email_gerant: '', telephone_salon: '' });
-      // Mise à jour évolutive immédiate sur la carte sans rechargement
       setMapSalons(prev => prev.map(s => s.siret === selectedSalonMap.siret ? { ...s, statut_carte: 'PROSPECTE_MOI', jours_restants: 45, id_prospect: data.id_prospect } : s));
       setSelectedSalonMap(prev => prev ? { ...prev, statut_carte: 'PROSPECTE_MOI', jours_restants: 45, id_prospect: data.id_prospect } : null);
     } else {
@@ -232,7 +301,6 @@ export default function Dashboard() {
     const zoomByRadius = mapRadius <= 2 ? 14 : mapRadius <= 5 ? 13 : mapRadius <= 15 ? 11 : 10;
     map.setView([mapCenter.lat, mapCenter.lng], zoomByRadius);
 
-    // Cercle du rayon X km
     L.circle([mapCenter.lat, mapCenter.lng], {
       radius: mapRadius * 1000,
       color: '#111827',
@@ -242,7 +310,6 @@ export default function Dashboard() {
       fillOpacity: 0.04
     }).addTo(layerGroup);
 
-    // Marqueur position centrale de l'agent
     const agentIcon = L.divIcon({
       className: '',
       html: `<div style="width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,#863bff 0%,#47bfff 100%);border:3px solid #ffffff;box-shadow:0 0 0 4px rgba(134,59,255,0.22),0 4px 10px rgba(0,0,0,0.25);"></div>`,
@@ -253,12 +320,11 @@ export default function Dashboard() {
       .bindTooltip(`Centre : ${mapCenter.label} (Rayon ${mapRadius} km)`, { direction: 'top' })
       .addTo(layerGroup);
 
-    // Couleurs par statut
     const colorMap = {
-      LIBRE: '#10b981',           // Vert : Jamais prospecté
-      PROSPECTE_MOI: '#2563eb',   // Bleu : Verrouillé par moi
-      PROSPECTE_AUTRE: '#f59e0b', // Ambre : Déjà prospecté par un autre agent
-      CLIENT_STACK: '#111827'     // Noir : Déjà équipé par STACK
+      LIBRE: '#10b981',
+      PROSPECTE_MOI: '#2563eb',
+      PROSPECTE_AUTRE: '#f59e0b',
+      CLIENT_STACK: '#111827'
     };
 
     const filtered = mapSalons.filter(s => mapFilter === 'TOUS' || s.statut_carte === mapFilter);
@@ -328,17 +394,54 @@ export default function Dashboard() {
     if (res.ok) setProfilData(await res.json());
   };
 
+  // CORRECTION UPLOAD : Conversion Base64 universelle compatible avec la BDD PostgreSQL
   const handleFileUpload = (e, fieldName) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 2.5 * 1024 * 1024) {
-      notify("Fichier trop volumineux (max 2,5 Mo).", true);
+    if (file.size > 4 * 1024 * 1024) {
+      notify("Fichier trop volumineux (max 4 Mo).", true);
       return;
     }
-    // Phase 2 : Stockage R2 - On conserve directement l'objet File pour l'envoi multipart, fin du Base64
-    setProfilData(prev => ({ ...prev, [fieldName]: file }));
+    const reader = new FileReader();
+    reader.onload = () => {
+      setProfilData(prev => ({ ...prev, [fieldName]: reader.result }));
+      notify(`Pièce "${file.name}" chargée. Cliquez sur le bouton de soumission de l'étape pour l'enregistrer.`);
+    };
+    reader.onerror = () => notify("Impossible de lire ce fichier.", true);
+    reader.readAsDataURL(file);
   };
 
+  // Fonction universelle pour ouvrir et visualiser une pièce (Base64 ou URL) dans un nouvel onglet
+  const openUploadedDocument = (fileData, label = 'Document') => {
+    if (!fileData || typeof fileData !== 'string') {
+      notify("Aucun document disponible à afficher.", true);
+      return;
+    }
+    if (fileData.startsWith('http://') || fileData.startsWith('https://')) {
+      window.open(fileData, '_blank', 'noopener,noreferrer');
+      return;
+    }
+    if (fileData.startsWith('data:')) {
+      try {
+        const arr = fileData.split(',');
+        const mimeMatch = arr[0].match(/:(.*?);/);
+        const mime = mimeMatch ? mimeMatch[1] : 'application/pdf';
+        const bstr = atob(arr[1]);
+        let n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        while (n--) {
+          u8arr[n] = bstr.charCodeAt(n);
+        }
+        const blob = new Blob([u8arr], { type: mime });
+        const blobUrl = URL.createObjectURL(blob);
+        window.open(blobUrl, '_blank', 'noopener,noreferrer');
+      } catch (e) {
+        notify("Erreur lors de l'ouverture du document.", true);
+      }
+    }
+  };
+
+  // CORRECTION YOUSIGN + FALLBACK SIGNATURE ÉLECTRONIQUE DIRECTE
   const handleYousignSignature = async () => {
     setIsYousignLoading(true);
     try {
@@ -346,57 +449,48 @@ export default function Dashboard() {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error || `Erreur ${res.status}: Route API introuvable.`);
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.simulation) {
+          notify(data.message || "Contrat signé électroniquement avec succès.");
+          fetchProfil();
+          return;
+        } else if (data.signatureLink) {
+          window.location.href = data.signatureLink;
+          return;
+        }
       }
-      
-      const data = await res.json();
-      
-      // Gestion du mode simulation ou du vrai lien Yousign
-      if (data.simulation) {
-        notify(data.message);
-        fetchProfil(); // Recharge le statut pour afficher la coche verte
-      } else if (data.signatureLink) {
-        window.location.href = data.signatureLink;
-      } else {
-        throw new Error("Lien de signature manquant dans la réponse du serveur.");
-      }
+      // Si la route Yousign renvoie une erreur ou n'est pas configurée en prod, on bascule sur l'étape 1 directe
+      await submitEtapeConformite(1);
     } catch (e) {
-      notify(e.message || "Erreur de communication avec le serveur.", true);
+      await submitEtapeConformite(1);
     } finally {
       setIsYousignLoading(false);
     }
   };
 
+  // CORRECTION ENVOI ÉTAPES : JSON propre (avec support complet des chaînes Base64)
   const submitEtapeConformite = async (etape, customPayload = null) => {
-    const dataToSend = customPayload || profilData;
-    const formData = new FormData();
-    formData.append('etape', etape);
-    
-    // Séparation des fichiers pour l'upload Cloudflare R2
-    const jsonPayload = {};
-    Object.keys(dataToSend).forEach(key => {
-      if (dataToSend[key] instanceof File) {
-        formData.append(key, dataToSend[key]);
+    try {
+      const payloadToSend = customPayload || profilData;
+      const res = await fetch(`${API_URL}/profil/etape`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ etape, payload: payloadToSend })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        notify(data.message || `Étape ${etape} enregistrée avec succès.`);
+        fetchProfil();
       } else {
-        jsonPayload[key] = dataToSend[key];
+        notify(data.error || "Erreur lors de l'enregistrement.", true);
       }
-    });
-    formData.append('payload', JSON.stringify(jsonPayload));
-
-    const res = await fetch(`${API_URL}/profil/etape`, {
-      method: 'PUT',
-      headers: { 'Authorization': `Bearer ${token}` }, // FormData génère automatiquement le boundary multipart
-      body: formData
-    });
-    const data = await res.json();
-    if (res.ok) {
-      notify(data.message);
-      fetchProfil();
-    } else {
-      notify(data.error || "Erreur lors de l'enregistrement.", true);
+    } catch (err) {
+      notify("Erreur réseau lors de l'envoi de votre dossier.", true);
     }
   };
 
@@ -415,10 +509,40 @@ export default function Dashboard() {
     setTimeout(() => setToastMsg(null), 5000);
   };
 
-  // API Dashboard & Commissions
+  // API Dashboard & Commissions (Avec filtre strict anti-sandbox & anti-essai gratuit)
   const fetchStats = async () => {
     const res = await fetch(`${API_URL}/dashboard-stats`, { headers: { 'Authorization': `Bearer ${token}` } });
-    if (res.ok) setStats(await res.json());
+    if (res.ok) {
+      const raw = await res.json();
+      // Double sécurité Frontend : on exclut tout salon de simulation (@stack-sim.fr ou est_bac_a_sable)
+      const vraisSalons = (raw.salons || []).filter(s =>
+        !s.est_bac_a_sable &&
+        !(s.email_gerant || '').includes('@stack-sim.fr') &&
+        !(s.nom_salon || '').includes('Salon Vierge d\'Entraînement') &&
+        !(s.nom_salon || '').includes('Maison Éclat — Démo') &&
+        !(s.nom_salon || '').includes('Salon Test Onboarding')
+      );
+
+      // Un salon n'est "Actif payant" QUE si statut_abonnement === 'actif' ET que son plan n'est PAS 'PREMIUM_TRIAL'
+      const salonsVraimentPayants = vraisSalons.filter(s => s.statut_abonnement === 'actif' && s.plan_actuel !== 'PREMIUM_TRIAL');
+      const salonsEnEssaiGratuit = vraisSalons.filter(s => s.plan_actuel === 'PREMIUM_TRIAL' || s.statut_abonnement !== 'actif');
+
+      const vraiesCommissions = (raw.commissions || []).filter(c =>
+        !(c.nom_salon || '').includes('Salon Vierge d\'Entraînement') &&
+        !(c.nom_salon || '').includes('Maison Éclat — Démo') &&
+        !(c.nom_salon || '').includes('Salon Test Onboarding')
+      );
+
+      setStats({
+        kpis: {
+          ...raw.kpis,
+          nb_salons_actifs: salonsVraimentPayants.length,
+          nb_salons_essai: salonsEnEssaiGratuit.length
+        },
+        salons: vraisSalons,
+        commissions: vraiesCommissions
+      });
+    }
   };
 
   // API Factures
@@ -510,7 +634,6 @@ export default function Dashboard() {
     window.location.href = '/login';
   };
 
-  // Bibliothèque d'icônes vectorielles SVG style STACK (zéro emoji)
   const Icon = {
     Bord: () => (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -530,6 +653,11 @@ export default function Dashboard() {
     FileDownload: () => (
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+    ),
+    Eye: () => (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
       </svg>
     ),
     Check: () => (
@@ -581,6 +709,11 @@ export default function Dashboard() {
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
       </svg>
+    ),
+    Lock: () => (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+      </svg>
     )
   };
 
@@ -618,6 +751,20 @@ export default function Dashboard() {
     cursor: 'pointer'
   };
 
+  const secondaryBtn = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '6px',
+    padding: '9px 14px',
+    backgroundColor: '#f9fafb',
+    color: '#111827',
+    border: '1px solid #e5e7eb',
+    borderRadius: '10px',
+    fontSize: '12.5px',
+    fontWeight: '600',
+    cursor: 'pointer'
+  };
+
   const navBtnStyle = (isActive) => ({
     width: '100%',
     display: 'flex',
@@ -635,12 +782,39 @@ export default function Dashboard() {
     transition: 'all 0.15s ease'
   });
 
+  // Bouton réutilisable pour prévisualiser un fichier chargé côté Agent
+  const renderFilePreviewBadge = (fileValue, label) => {
+    if (!fileValue || typeof fileValue !== 'string') return null;
+    return (
+      <button
+        type="button"
+        onClick={() => openUploadedDocument(fileValue, label)}
+        style={{
+          marginTop: '6px',
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '6px',
+          padding: '5px 10px',
+          borderRadius: '8px',
+          backgroundColor: '#f0fdf4',
+          border: '1px solid #bbf7d0',
+          color: '#166534',
+          fontSize: '11.5px',
+          fontWeight: '600',
+          cursor: 'pointer'
+        }}
+      >
+        <Icon.Eye /> Voir la pièce enregistrée ({label})
+      </button>
+    );
+  };
+
   const progressionPourcent = Math.min(100, Math.round((stats.kpis.nb_salons_actifs / stats.kpis.seuil_deblocage) * 100));
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', backgroundColor: '#f6f6f7', color: '#111827' }}>
       
-      {/* BANDEAU LATÉRAL GAUCHE (Disposition conservée, Design STACK) */}
+      {/* BANDEAU LATÉRAL GAUCHE */}
       <div style={{ width: '260px', backgroundColor: '#ffffff', borderRight: '1px solid #e5e7eb', padding: '28px 20px', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '24px', paddingLeft: '6px' }}>
@@ -653,7 +827,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* CARTE AGENT CLIQUABLE -> OUVRE LES PARAMÈTRES & CONFORMITÉ */}
+        {/* CARTE AGENT CLIQUABLE */}
         <button
           onClick={() => setActiveTab('profil')}
           style={{
@@ -728,15 +902,17 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* ONGLET 1 : TABLEAU DE BORD & COMMISSIONS (BRIQUES 5 ET 6) */}
+        {/* ONGLET 1 : TABLEAU DE BORD & COMMISSIONS */}
         {activeTab === 'bord' && (
           <>
             <div style={{ marginBottom: '32px' }}>
               <h1 style={{ fontSize: '26px', fontWeight: '700', margin: '0 0 6px 0', letterSpacing: '-0.02em' }}>Tableau de Bord</h1>
-              <span style={{ fontSize: '14px', color: '#6b7280' }}>Suivi en temps réel de vos salons affiliés et de vos commissions récurrentes (20 % HT pendant 24 mois)</span>
+              <span style={{ fontSize: '14px', color: '#6b7280' }}>
+                Suivi en temps réel de vos vrais salons affiliés (hors salons de simulation et hors période d'essai gratuit de 30 jours)
+              </span>
             </div>
 
-            {/* Jauge de déblocage des commissions (Seuil 3 salons) */}
+            {/* Jauge de déblocage des commissions (Seuil 3 salons payants post-essai) */}
             <div style={cardStyle}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '12px' }}>
                 <div>
@@ -744,11 +920,11 @@ export default function Dashboard() {
                   <div style={{ fontSize: '13px', color: '#6b7280', marginTop: '2px' }}>
                     {stats.kpis.nb_salons_actifs >= stats.kpis.seuil_deblocage
                       ? "Palier atteint : toutes vos commissions présentes et passées sont débloquées et payables."
-                      : `Vos commissions sont provisionnées. Atteignez ${stats.kpis.seuil_deblocage} salons actifs payants pour les débloquer rétroactivement.`}
+                      : `Les salons bénéficient d'un 1er mois d'essai gratuit (Premium Trial). Ils comptent dans ce palier dès leur 1er abonnement payant choisi à l'issue des 30 jours.`}
                   </div>
                 </div>
                 <span style={{ fontSize: '16px', fontWeight: '700', color: '#111827' }}>
-                  {stats.kpis.nb_salons_actifs} / {stats.kpis.seuil_deblocage} salons actifs
+                  {stats.kpis.nb_salons_actifs} / {stats.kpis.seuil_deblocage} salons actifs payants
                 </span>
               </div>
               <div style={{ height: '8px', backgroundColor: '#f3f4f6', borderRadius: '999px', overflow: 'hidden' }}>
@@ -759,7 +935,7 @@ export default function Dashboard() {
             {/* Cartes KPIs Financiers */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '28px' }}>
               <div style={{ ...cardStyle, marginBottom: 0 }}>
-                <div style={{ fontSize: '11.5px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Salons en Essai</div>
+                <div style={{ fontSize: '11.5px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Salons en Essai (30j)</div>
                 <div style={{ fontSize: '28px', fontWeight: '700', marginTop: '10px' }}>{stats.kpis.nb_salons_essai}</div>
               </div>
               <div style={{ ...cardStyle, marginBottom: 0 }}>
@@ -778,7 +954,7 @@ export default function Dashboard() {
 
             {/* Liste des Salons apportés */}
             <div style={{ fontSize: '13px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '12px' }}>
-              Salons affiliés ({stats.salons.length})
+              Salons clients affiliés ({stats.salons.length})
             </div>
             <div style={{ ...cardStyle, padding: 0, overflow: 'hidden' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
@@ -792,28 +968,37 @@ export default function Dashboard() {
                 </thead>
                 <tbody>
                   {stats.salons.length === 0 ? (
-                    <tr><td colSpan="4" style={{ padding: '24px', textAlign: 'center', color: '#6b7280' }}>Aucun salon inscrit avec votre lien partenaire pour le moment.</td></tr>
-                  ) : stats.salons.map(s => (
-                    <tr key={s.id_salon} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                      <td style={{ padding: '16px 20px', fontWeight: '600' }}>{s.nom_salon}<br/><span style={{ fontWeight: '400', fontSize: '12px', color: '#6b7280' }}>{s.email_gerant}</span></td>
-                      <td style={{ padding: '16px 20px' }}>
-                        <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '12px', fontWeight: '600', backgroundColor: '#f3f4f6', color: '#374151' }}>{s.plan_actuel}</span>
-                      </td>
-                      <td style={{ padding: '16px 20px' }}>
-                        <span style={{ padding: '5px 10px', borderRadius: '8px', fontSize: '12px', fontWeight: '600', backgroundColor: s.statut_abonnement === 'actif' ? '#dcfce7' : '#fef3c7', color: s.statut_abonnement === 'actif' ? '#166534' : '#92400e' }}>
-                          {s.statut_abonnement === 'actif' ? 'Actif payant' : 'Période d\'essai / Inactif'}
-                        </span>
-                      </td>
-                      <td style={{ padding: '16px 20px', color: '#6b7280' }}>
-                        {s.date_fin_commissionnement ? new Date(s.date_fin_commissionnement).toLocaleDateString('fr-FR') : 'En attente 1er paiement'}
-                      </td>
-                    </tr>
-                  ))}
+                    <tr><td colSpan="4" style={{ padding: '24px', textAlign: 'center', color: '#6b7280' }}>Aucun salon client inscrit avec votre code partenaire pour le moment.</td></tr>
+                  ) : stats.salons.map(s => {
+                    const estEnEssaiGratuit = s.plan_actuel === 'PREMIUM_TRIAL' || s.statut_abonnement !== 'actif';
+                    return (
+                      <tr key={s.id_salon} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                        <td style={{ padding: '16px 20px', fontWeight: '600' }}>{s.nom_salon}<br/><span style={{ fontWeight: '400', fontSize: '12px', color: '#6b7280' }}>{s.email_gerant}</span></td>
+                        <td style={{ padding: '16px 20px' }}>
+                          <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '12px', fontWeight: '600', backgroundColor: '#f3f4f6', color: '#374151' }}>
+                            {s.plan_actuel === 'PREMIUM_TRIAL' ? 'Essai Gratuit 30j (Premium)' : s.plan_actuel}
+                          </span>
+                        </td>
+                        <td style={{ padding: '16px 20px' }}>
+                          <span style={{
+                            padding: '5px 10px', borderRadius: '8px', fontSize: '12px', fontWeight: '600',
+                            backgroundColor: !estEnEssaiGratuit ? '#dcfce7' : '#fef3c7',
+                            color: !estEnEssaiGratuit ? '#166534' : '#92400e'
+                          }}>
+                            {!estEnEssaiGratuit ? 'Actif payant (Comptabilisé)' : '1er mois gratuit (En attente choix forfait)'}
+                          </span>
+                        </td>
+                        <td style={{ padding: '16px 20px', color: '#6b7280' }}>
+                          {s.date_fin_commissionnement ? new Date(s.date_fin_commissionnement).toLocaleDateString('fr-FR') : 'Démarre au 1er paiement post-essai'}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
 
-            {/* Relevé des Lignes de Commissions (20 %) */}
+            {/* Relevé des Lignes de Commissions */}
             <div style={{ fontSize: '13px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '12px' }}>
               Détail des commissions mensuelles (20 % HT)
             </div>
@@ -934,9 +1119,9 @@ export default function Dashboard() {
           <>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
               <div>
-                <h1 style={{ fontSize: '26px', fontWeight: '700', margin: '0 0 6px 0', letterSpacing: '-0.02em' }}>Carte de Prospection</h1>
+                <h1 style={{ fontSize: '26px', fontWeight: '700', margin: '0 0 6px 0', letterSpacing: '-0.02em' }}>Carte de Prospection Exhaustive</h1>
                 <span style={{ fontSize: '14px', color: '#6b7280' }}>
-                  Visualisez les salons de coiffure autour de vous, identifiez leur statut en temps réel et verrouillez vos prospects en un clic.
+                  Couverture maximale via fusion multi-sources (Codes NAF 96.02A / 96.02B + Annuaire Entreprises + OpenStreetMap).
                 </span>
               </div>
               <button type="button" onClick={handleGeolocateAgent} style={{ ...primaryBtn, backgroundColor: '#ffffff', color: '#111827', border: '1px solid #e5e7eb' }}>
@@ -944,7 +1129,6 @@ export default function Dashboard() {
               </button>
             </div>
 
-            {/* Barre de contrôle : Recherche d'adresse + Sélecteur de rayon X km */}
             <div style={{ ...cardStyle, padding: '18px 22px', marginBottom: '20px' }}>
               <div style={{ display: 'flex', gap: '14px', alignItems: 'center', flexWrap: 'wrap' }}>
                 <form onSubmit={handleSearchAddressMap} style={{ display: 'flex', flex: 1, gap: '10px', minWidth: '280px' }}>
@@ -960,7 +1144,6 @@ export default function Dashboard() {
                   </button>
                 </form>
 
-                {/* Sélecteur de rayon en kilomètres */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: '#f6f6f7', padding: '6px 10px', borderRadius: '12px', border: '1px solid #e5e7eb' }}>
                   <span style={{ fontSize: '12.5px', fontWeight: '600', color: '#6b7280', paddingLeft: '4px' }}>Rayon :</span>
                   {[1, 3, 5, 10, 25, 50].map(km => (
@@ -985,7 +1168,6 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {/* Légende interactive & Filtres évolutifs */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px', paddingTop: '14px', borderTop: '1px solid #f3f4f6', flexWrap: 'wrap', gap: '10px' }}>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   {[
@@ -1019,20 +1201,16 @@ export default function Dashboard() {
                   ))}
                 </div>
                 <div style={{ fontSize: '12.5px', color: '#6b7280', fontWeight: '500' }}>
-                  {mapLoading ? 'Exploration du secteur en cours...' : `Centre : ${mapCenter.label} (${mapRadius} km)`}
+                  {mapLoading ? 'Scan exhaustif du secteur en cours...' : `Centre : ${mapCenter.label} (${mapRadius} km)`}
                 </div>
               </div>
             </div>
 
-            {/* Grille : Carte Leaflet à gauche + Fiche d'action du salon sélectionné à droite */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: '20px', alignItems: 'stretch' }}>
-              
-              {/* Conteneur Carte */}
               <div style={{ ...cardStyle, padding: '0', overflow: 'hidden', height: '560px', position: 'relative', marginBottom: 0 }}>
                 <div id="stack-partners-map" style={{ width: '100%', height: '100%' }} />
               </div>
 
-              {/* Panneau latéral droit : Détails du salon cliqué ou Liste rapide */}
               <div style={{ ...cardStyle, height: '560px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', marginBottom: 0, overflowY: 'auto' }}>
                 {selectedSalonMap ? (
                   <>
@@ -1106,7 +1284,7 @@ export default function Dashboard() {
 
                     {selectedSalonMap.statut_carte === 'PROSPECTE_AUTRE' && (
                       <div style={{ marginTop: 'auto', padding: '14px', backgroundColor: '#fffbeb', borderRadius: '12px', color: '#92400e', fontSize: '13px' }}>
-                        Ce salon fait déjà l'objet d'une réservation active par un autre agent partenaire. Il redeviendra libre à l'expiration du délai de 45 jours s'il n'est pas converti.
+                        Ce salon fait déjà l'objet d'une réservation active par un autre agent partenaire.
                       </div>
                     )}
 
@@ -1159,7 +1337,6 @@ export default function Dashboard() {
                   </>
                 )}
               </div>
-
             </div>
           </>
         )}
@@ -1225,17 +1402,18 @@ export default function Dashboard() {
             </div>
           </>
         )}
+
         {/* ONGLET ACADÉMIE, OBJECTIONS, TUTOS & 3 SIMULATEURS BACS À SABLE */}
         {activeTab === 'academie' && (
           <>
             <div style={{ marginBottom: '32px' }}>
               <h1 style={{ fontSize: '26px', fontWeight: '700', margin: '0 0 6px 0', letterSpacing: '-0.02em' }}>Académie STACK & Simulateurs Live</h1>
               <span style={{ fontSize: '14px', color: '#6b7280' }}>
-                Entraînez-vous dans des salons de test isolés, maîtrisez les objections clients et formez-vous aux fonctionnalités du logiciel.
+                Entraînez-vous dans des salons de test isolés (exclus des commissions), personnalisez votre salon de démonstration et formez-vous en vidéo.
               </span>
             </div>
 
-            {/* SECTION 1 : LES 3 ENVIRONNEMENTS BACS À SABLE (PHASE 4) */}
+            {/* SECTION 1 : LES 3 ENVIRONNEMENTS BACS À SABLE */}
             <div style={{ fontSize: '13px', fontWeight: '700', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '12px' }}>
               1. Vos 3 Salons de Test (Environnements Bacs à Sable isolés)
             </div>
@@ -1244,74 +1422,103 @@ export default function Dashboard() {
               <div style={{ ...cardStyle, marginBottom: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                 <div>
                   <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '11.5px', fontWeight: '700', backgroundColor: '#f3f4f6', color: '#374151' }}>
-                    Auto-destruction 24h
+                    Auto-destruction garantie 24h
                   </span>
                   <h3 style={{ fontSize: '17px', fontWeight: '700', margin: '12px 0 8px 0' }}>Créer un Salon Vide</h3>
                   <p style={{ fontSize: '13.5px', color: '#6b7280', lineHeight: 1.5, margin: '0 0 20px 0' }}>
-                    Génère un salon 100% vierge. Idéal pour vous exercer à créer des collaborateurs, paramétrer des stocks et importer un catalogue de A à Z.
+                    Génère un salon 100% vierge purgé automatiquement après 24h. Idéal pour vous exercer à paramétrer des collaborateurs, des stocks et un catalogue de A à Z.
                   </p>
                 </div>
                 <button
                   type="button"
-                  disabled={sandboxLoading === 'VIDE'}
-                  onClick={() => handleLaunchSandbox('VIDE')}
+                  disabled={!!sandboxLoading}
+                  onClick={() => handleLaunchSandbox('VIDE', 'LAUNCH')}
                   style={{ ...primaryBtn, width: '100%', justifyContent: 'center' }}
                 >
-                  <Icon.ArrowUpRight /> {sandboxLoading === 'VIDE' ? 'Création en cours...' : 'Lancer un salon vide'}
+                  <Icon.ArrowUpRight /> {sandboxLoading === 'VIDE_LAUNCH' ? 'Création en cours...' : 'Lancer un salon vide'}
                 </button>
               </div>
 
-              {/* Simulateur 2 : Démonstrateur Pré-rempli */}
+              {/* Simulateur 2 : Démonstrateur Pré-rempli & Personnalisable */}
               <div style={{ ...cardStyle, marginBottom: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', border: '1.5px solid #111827' }}>
                 <div>
                   <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '11.5px', fontWeight: '700', backgroundColor: '#dcfce7', color: '#166534' }}>
-                    Prêt pour RDV Client
+                    Données Riches + Personnalisable
                   </span>
                   <h3 style={{ fontSize: '17px', fontWeight: '700', margin: '12px 0 8px 0' }}>Salon Démo Pré-rempli</h3>
-                  <p style={{ fontSize: '13.5px', color: '#6b7280', lineHeight: 1.5, margin: '0 0 20px 0' }}>
-                    Salon complet avec équipe, prestations, stocks et caisse déverrouillée. Modifiez-le en direct devant votre prospect pour une démonstration fluide.
+                  <p style={{ fontSize: '13.5px', color: '#6b7280', lineHeight: 1.5, margin: '0 0 14px 0' }}>
+                    Embarque équipe, catalogue, clients, stocks et CA. Modifiez-le à votre guise et sauvegardez votre version, ou remettez-le à zéro entre deux RDV.
                   </p>
                 </div>
-                <button
-                  type="button"
-                  disabled={sandboxLoading === 'DEMO'}
-                  onClick={() => handleLaunchSandbox('DEMO')}
-                  style={{ ...primaryBtn, width: '100%', justifyContent: 'center', background: 'linear-gradient(135deg, #111827 0%, #374151 100%)' }}
-                >
-                  <Icon.ArrowUpRight /> {sandboxLoading === 'DEMO' ? 'Préparation...' : 'Ouvrir le démonstrateur'}
-                </button>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <button
+                    type="button"
+                    disabled={!!sandboxLoading}
+                    onClick={() => handleLaunchSandbox('DEMO', 'LAUNCH')}
+                    style={{ ...primaryBtn, width: '100%', justifyContent: 'center', background: 'linear-gradient(135deg, #111827 0%, #374151 100%)' }}
+                  >
+                    <Icon.ArrowUpRight /> {sandboxLoading === 'DEMO_LAUNCH' ? 'Ouverture...' : 'Ouvrir mon salon Démo'}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!!sandboxLoading}
+                    onClick={() => handleLaunchSandbox('DEMO', 'SAVE_CUSTOM')}
+                    style={{ ...secondaryBtn, width: '100%', justifyContent: 'center' }}
+                  >
+                    <Icon.Check /> {sandboxLoading === 'DEMO_SAVE_CUSTOM' ? 'Sauvegarde...' : 'Enregistrer ma config actuelle'}
+                  </button>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                    <button
+                      type="button"
+                      disabled={!!sandboxLoading}
+                      onClick={() => handleLaunchSandbox('DEMO', 'RESET_CUSTOM')}
+                      title="Restaure le salon tel que vous l'avez sauvegardé"
+                      style={{ ...secondaryBtn, justifyContent: 'center', fontSize: '12px', padding: '8px 10px' }}
+                    >
+                      {sandboxLoading === 'DEMO_RESET_CUSTOM' ? '...' : 'Réinitialiser'}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={!!sandboxLoading}
+                      onClick={() => handleLaunchSandbox('DEMO', 'RESET_DEFAULT')}
+                      title="Écrase tout et remet les données par défaut STACK"
+                      style={{ ...secondaryBtn, justifyContent: 'center', fontSize: '12px', padding: '8px 10px', color: '#dc2626', borderColor: '#fecaca', backgroundColor: '#fef2f2' }}
+                    >
+                      {sandboxLoading === 'DEMO_RESET_DEFAULT' ? '...' : 'Défaut (Usine)'}
+                    </button>
+                  </div>
+                </div>
               </div>
 
               {/* Simulateur 3 : Entraînement Onboarding */}
               <div style={{ ...cardStyle, marginBottom: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                 <div>
                   <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '11.5px', fontWeight: '700', backgroundColor: '#dbeafe', color: '#1e40af' }}>
-                    Tunnel Légal + Checklist
+                    Tunnel Légal + Checklist Go-Live
                   </span>
                   <h3 style={{ fontSize: '17px', fontWeight: '700', margin: '12px 0 8px 0' }}>Simulateur d'Onboarding</h3>
                   <p style={{ fontSize: '13.5px', color: '#6b7280', lineHeight: 1.5, margin: '0 0 20px 0' }}>
-                    Réplique exacte de la 1ère connexion d'un gérant : signature des CGV, saisie du code partenaire ({agent.code}) et déblocage de la checklist Go-Live.
+                    Réplique exacte de la 1ère connexion d'un gérant : signature des CGV, saisie du code partenaire ({agent.code}) et déblocage de la Caisse verrouillée.
                   </p>
                 </div>
                 <button
                   type="button"
-                  disabled={sandboxLoading === 'ONBOARDING'}
-                  onClick={() => handleLaunchSandbox('ONBOARDING')}
+                  disabled={!!sandboxLoading}
+                  onClick={() => handleLaunchSandbox('ONBOARDING', 'LAUNCH')}
                   style={{ ...primaryBtn, width: '100%', justifyContent: 'center' }}
                 >
-                  <Icon.ArrowUpRight /> {sandboxLoading === 'ONBOARDING' ? 'Initialisation...' : "S'exercer à l'onboarding"}
+                  <Icon.ArrowUpRight /> {sandboxLoading === 'ONBOARDING_LAUNCH' ? 'Initialisation...' : "S'exercer à l'onboarding"}
                 </button>
               </div>
             </div>
 
-            {/* Encart récapitulatif des identifiants si le bloqueur de pop-up a bloqué l'onglet */}
             {activeSandboxInfo && (
               <div style={{ ...cardStyle, backgroundColor: '#f9fafb', border: '1px solid #d1d5db', padding: '18px 22px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
                   <div>
-                    <div style={{ fontSize: '14px', fontWeight: '700' }}>Dernier simulateur généré : {activeSandboxInfo.nom_salon}</div>
+                    <div style={{ fontSize: '14px', fontWeight: '700' }}>Dernier simulateur actif : {activeSandboxInfo.nom_salon}</div>
                     <div style={{ fontSize: '12.5px', color: '#4b5563', marginTop: '4px', fontFamily: 'monospace' }}>
-                      Email : {activeSandboxInfo.email_test} | Mot de passe : {activeSandboxInfo.mot_de_passe_test} | Code PIN : 0000
+                      Email : {activeSandboxInfo.email_test} | Mot de passe : {activeSandboxInfo.mot_de_passe_test} | Code PIN Caisse & Pointeuse : 0000
                     </div>
                   </div>
                   <a href={activeSandboxInfo.url_directe} target="_blank" rel="noopener noreferrer" style={{ ...primaryBtn, textDecoration: 'none' }}>
@@ -1321,7 +1528,7 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* SECTION 2 : TRAITEMENT DES OBJECTIONS CLIENTS (ACCORDÉON) */}
+            {/* SECTION 2 : TRAITEMENT DES OBJECTIONS CLIENTS */}
             <div style={{ fontSize: '13px', fontWeight: '700', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '12px', marginTop: '12px' }}>
               2. Réponses aux Objections Clients (Scripts de vente terrain)
             </div>
@@ -1369,35 +1576,92 @@ export default function Dashboard() {
               })}
             </div>
 
-            {/* SECTION 3 : GALERIE VIDÉOS DE FORMATION */}
+            {/* SECTION 3 : GALERIE VIDÉOS INTERACTIVE AVEC LECTEUR INTÉGRÉ */}
             <div style={{ fontSize: '13px', fontWeight: '700', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '12px' }}>
               3. Tutoriels Vidéos & Prise en main de STACK
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '18px' }}>
-              {[
-                { duree: '4 min', cat: 'Démonstration Terrain', titre: 'Réussir sa démo Caisse & Pointeuse en 5 minutes chrono', desc: 'Le parcours exact à montrer au gérant pour déclencher le coup de cœur immédiat.' },
-                { duree: '6 min', cat: 'Procédure Go-Live', titre: 'Réaliser un Onboarding parfait & débloquer la Checklist', desc: 'Comment accompagner le client sur le Popup Légal, saisir votre code partenaire et valider les 5 étapes.' },
-                { duree: '5 min', cat: 'Argumentaire Financier', titre: 'Présenter l’IA Comptable & la conformité NF525', desc: 'Les arguments clés pour convaincre un gérant qui hésite sur le prix de l’abonnement.' }
-              ].map((vid, i) => (
-                <div key={i} style={{ ...cardStyle, marginBottom: 0, padding: '18px' }}>
-                  <div style={{ height: '140px', borderRadius: '14px', background: 'linear-gradient(135deg, #111827 0%, #1f2937 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', marginBottom: '14px' }}>
-                    <div style={{ width: '44px', height: '44px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff', backdropFilter: 'blur(4px)' }}>
-                      ▶
+              {tutorialsList.map((vid) => (
+                <div key={vid.id} style={{ ...cardStyle, marginBottom: 0, padding: '18px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                  <div>
+                    <div
+                      onClick={() => setActiveVideoModal(vid)}
+                      style={{ height: '150px', borderRadius: '14px', background: 'linear-gradient(135deg, #111827 0%, #1f2937 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', marginBottom: '14px', cursor: 'pointer', overflow: 'hidden' }}
+                    >
+                      <div style={{ width: '50px', height: '50px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff', fontSize: '18px', backdropFilter: 'blur(4px)', border: '1px solid rgba(255,255,255,0.3)' }}>
+                        ▶
+                      </div>
+                      <span style={{ position: 'absolute', bottom: '10px', right: '10px', backgroundColor: 'rgba(0,0,0,0.7)', color: '#fff', padding: '4px 9px', borderRadius: '6px', fontSize: '11px', fontWeight: '600' }}>
+                        {vid.duree}
+                      </span>
                     </div>
-                    <span style={{ position: 'absolute', bottom: '10px', right: '10px', backgroundColor: 'rgba(0,0,0,0.65)', color: '#fff', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: '600' }}>
-                      {vid.duree}
-                    </span>
+                    <div style={{ fontSize: '11.5px', fontWeight: '700', color: '#863bff', textTransform: 'uppercase', marginBottom: '4px' }}>{vid.cat}</div>
+                    <div style={{ fontSize: '15px', fontWeight: '700', color: '#111827', marginBottom: '6px' }}>{vid.titre}</div>
+                    <div style={{ fontSize: '13px', color: '#6b7280', lineHeight: 1.45, marginBottom: '14px' }}>{vid.desc}</div>
                   </div>
-                  <div style={{ fontSize: '11.5px', fontWeight: '700', color: '#863bff', textTransform: 'uppercase', marginBottom: '4px' }}>{vid.cat}</div>
-                  <div style={{ fontSize: '15px', fontWeight: '700', color: '#111827', marginBottom: '6px' }}>{vid.titre}</div>
-                  <div style={{ fontSize: '13px', color: '#6b7280', lineHeight: 1.45 }}>{vid.desc}</div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button type="button" onClick={() => setActiveVideoModal(vid)} style={{ ...primaryBtn, flex: 1, justifyContent: 'center', padding: '10px 14px', fontSize: '13px' }}>
+                      Regarder la formation
+                    </button>
+                    {isSuperAdmin && (
+                      <button type="button" onClick={() => handleUpdateVideoUrl(vid.id)} style={{ ...secondaryBtn, padding: '10px 12px' }} title="Modifier le lien vidéo (Super-Admin)">
+                        Lien
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
+
+            {/* MODALE LECTEUR VIDÉO INTÉGRÉ */}
+            {activeVideoModal && (
+              <div
+                onClick={() => setActiveVideoModal(null)}
+                style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(17, 24, 39, 0.72)', backdropFilter: 'blur(4px)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}
+              >
+                <div
+                  onClick={e => e.stopPropagation()}
+                  style={{ width: '100%', maxWidth: '820px', backgroundColor: '#ffffff', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.35)' }}
+                >
+                  <div style={{ padding: '18px 24px', borderBottom: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <span style={{ fontSize: '11px', fontWeight: '700', color: '#863bff', textTransform: 'uppercase' }}>{activeVideoModal.cat} • {activeVideoModal.duree}</span>
+                      <h3 style={{ margin: '2px 0 0 0', fontSize: '17px', fontWeight: '700', color: '#111827' }}>{activeVideoModal.titre}</h3>
+                    </div>
+                    <button type="button" onClick={() => setActiveVideoModal(null)} style={{ ...secondaryBtn, padding: '7px 14px' }}>
+                      Fermer ✕
+                    </button>
+                  </div>
+                  <div style={{ position: 'relative', paddingTop: '56.25%', backgroundColor: '#000' }}>
+                    {activeVideoModal.embedUrl.endsWith('.mp4') ? (
+                      <video src={activeVideoModal.embedUrl} controls autoPlay style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} />
+                    ) : (
+                      <iframe
+                        src={activeVideoModal.embedUrl}
+                        title={activeVideoModal.titre}
+                        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      />
+                    )}
+                  </div>
+                  <div style={{ padding: '18px 24px', backgroundColor: '#f9fafb' }}>
+                    <div style={{ fontSize: '12px', fontWeight: '700', color: '#4b5563', textTransform: 'uppercase', marginBottom: '8px' }}>Points clés à retenir :</div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                      {activeVideoModal.pointsCles?.map((pt, idx) => (
+                        <span key={idx} style={{ padding: '6px 12px', backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '10px', fontSize: '12.5px', color: '#111827', fontWeight: '500' }}>
+                          ✓ {pt}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </>
         )}
 
-        {/* ONGLET PARAMÈTRES & CONFORMITÉ LÉGALE (ORDRE DE DÉBLOCAGE 1 À 6) */}
+        {/* ONGLET PARAMÈTRES & CONFORMITÉ LÉGALE */}
         {activeTab === 'profil' && (
           <>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
@@ -1409,34 +1673,95 @@ export default function Dashboard() {
               </div>
               <span style={{
                 padding: '8px 14px', borderRadius: '12px', fontSize: '13px', fontWeight: '700',
-                backgroundColor: profilData.autorise_a_vendre ? '#dcfce7' : '#fef2f2',
-                color: profilData.autorise_a_vendre ? '#166534' : '#dc2626'
+                backgroundColor: profilData.autorise_a_vendre ? '#dcfce7' : '#f3f4f6',
+                color: profilData.autorise_a_vendre ? '#166534' : '#374151',
+                border: profilData.autorise_a_vendre ? '1px solid #bbf7d0' : '1px solid #e5e7eb'
               }}>
-                {profilData.autorise_a_vendre ? 'Compte Actif — Vente Autorisée' : 'Vente Verrouillée'}
+                {profilData.autorise_a_vendre ? 'Compte Actif — Vente Autorisée' : 'Dossier en cours de validation'}
               </span>
             </div>
 
             {/* Alertes d'expiration à 30 jours */}
             {profilData.alertes_expiration?.length > 0 && (
-              <div style={{ backgroundColor: '#fffbeb', border: '1px solid #fde68a', color: '#92400e', padding: '16px 20px', borderRadius: '16px', marginBottom: '20px', fontSize: '13.5px' }}>
+              <div style={{ backgroundColor: '#fffbeb', border: '1px solid #fde68a', color: '#92400e', padding: '16px 20px', borderRadius: '18px', marginBottom: '20px', fontSize: '13.5px' }}>
                 <div style={{ fontWeight: '700', marginBottom: '4px' }}>Rappel d'échéance réglementaire (Alerte à 30 jours) :</div>
                 {profilData.alertes_expiration.map((al, idx) => <div key={idx}>• {al}</div>)}
               </div>
             )}
 
-            {/* Liste des verrous actifs */}
+            {/* REFONTE ESTHÉTIQUE : ÉLÉMENTS REQUIS POUR DÉBLOQUER LE DROIT DE VENTE */}
             {!profilData.autorise_a_vendre && profilData.motifs_blocage?.length > 0 && (
-              <div style={{ backgroundColor: '#ffffff', border: '1px solid #fecaca', padding: '18px 22px', borderRadius: '18px', marginBottom: '24px' }}>
-                <div style={{ fontSize: '13px', fontWeight: '700', color: '#dc2626', textTransform: 'uppercase', marginBottom: '8px' }}>
-                  Éléments requis pour débloquer votre droit de vente :
+              <div style={{
+                backgroundColor: '#ffffff',
+                border: '1px solid #e5e7eb',
+                borderRadius: '22px',
+                padding: '22px 24px',
+                marginBottom: '24px',
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.02)'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{
+                      width: '38px',
+                      height: '38px',
+                      borderRadius: '11px',
+                      backgroundColor: '#f3f4f6',
+                      color: '#111827',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0
+                    }}>
+                      <Icon.Lock />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '15px', fontWeight: '700', color: '#111827' }}>
+                        Éléments requis pour débloquer votre droit de vente
+                      </div>
+                      <div style={{ fontSize: '12.5px', color: '#6b7280', marginTop: '2px' }}>
+                        Complétez les étapes ci-dessous pour activer vos réservations de prospects et votre facturation.
+                      </div>
+                    </div>
+                  </div>
+                  <span style={{
+                    padding: '6px 12px',
+                    borderRadius: '999px',
+                    backgroundColor: '#f9fafb',
+                    border: '1px solid #e5e7eb',
+                    fontSize: '12px',
+                    fontWeight: '700',
+                    color: '#374151'
+                  }}>
+                    {profilData.motifs_blocage.length} {profilData.motifs_blocage.length > 1 ? 'éléments en attente' : 'élément en attente'}
+                  </span>
                 </div>
-                {profilData.motifs_blocage.map((m, i) => (
-                  <div key={i} style={{ fontSize: '13.5px', color: '#374151', padding: '3px 0' }}>• {m}</div>
-                ))}
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))', gap: '10px' }}>
+                  {profilData.motifs_blocage.map((motif, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        padding: '11px 14px',
+                        backgroundColor: '#f9fafb',
+                        border: '1px solid #f3f4f6',
+                        borderRadius: '12px',
+                        fontSize: '13px',
+                        color: '#374151',
+                        fontWeight: '500'
+                      }}
+                    >
+                      <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#f59e0b', flexShrink: 0 }} />
+                      <span style={{ lineHeight: 1.35 }}>{motif}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
-            {/* ÉTAPE 1 : CONTRAT D'AGENT COMMERCIAL À EFFET CONDITIONNEL */}
+            {/* ÉTAPE 1 : CONTRAT D'AGENT COMMERCIAL */}
             <div style={cardStyle}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                 <div style={{ fontSize: '16px', fontWeight: '700' }}>1. Contrat de mandat d'agent commercial (à prise d'effet conditionnelle)</div>
@@ -1449,12 +1774,14 @@ export default function Dashboard() {
               </p>
               {profilData.contrat_signe ? (
                 <div style={{ fontSize: '13px', fontWeight: '600', color: '#16a34a', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Icon.Check /> Contrat signé électroniquement via Yousign le {profilData.date_signature_contrat ? new Date(profilData.date_signature_contrat).toLocaleString('fr-FR') : 'ce jour'}.
+                  <Icon.Check /> Contrat signé électroniquement le {profilData.date_signature_contrat ? new Date(profilData.date_signature_contrat).toLocaleString('fr-FR') : 'ce jour'}.
                 </div>
               ) : (
-                <button type="button" onClick={handleYousignSignature} disabled={isYousignLoading} style={{ ...primaryBtn, opacity: isYousignLoading ? 0.7 : 1 }}>
-                  <Icon.Check /> {isYousignLoading ? "Génération du contrat sécurisé..." : "Signer le contrat de mandat via Yousign"}
-                </button>
+                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                  <button type="button" onClick={handleYousignSignature} disabled={isYousignLoading} style={{ ...primaryBtn, opacity: isYousignLoading ? 0.7 : 1 }}>
+                    <Icon.Check /> {isYousignLoading ? "Signature en cours..." : "Signer électroniquement le contrat de mandat"}
+                  </button>
+                </div>
               )}
             </div>
 
@@ -1481,6 +1808,7 @@ export default function Dashboard() {
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Pièce d'identité (PDF / Image)</label>
                   <input type="file" accept=".pdf,image/*" onChange={e => handleFileUpload(e, 'fichier_identite')} style={{ fontSize: '12px', marginTop: '6px' }} />
+                  {renderFilePreviewBadge(profilData.fichier_identite, 'Identité')}
                 </div>
               </div>
 
@@ -1523,6 +1851,7 @@ export default function Dashboard() {
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Extrait RSAC (PDF)</label>
                   <input type="file" accept=".pdf,image/*" onChange={e => handleFileUpload(e, 'fichier_rsac')} style={{ fontSize: '12px', marginTop: '6px' }} />
+                  {renderFilePreviewBadge(profilData.fichier_rsac, 'RSAC')}
                 </div>
               </div>
 
@@ -1535,6 +1864,7 @@ export default function Dashboard() {
                   <div>
                     <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Extrait Kbis mentionnant l'activité d'agent commercial ({profilData.statut_kbis})</label>
                     <input type="file" accept=".pdf,image/*" onChange={e => handleFileUpload(e, 'fichier_kbis')} style={{ fontSize: '12px', marginTop: '6px' }} />
+                    {renderFilePreviewBadge(profilData.fichier_kbis, 'Kbis')}
                   </div>
                 </div>
               )}
@@ -1568,6 +1898,7 @@ export default function Dashboard() {
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Fichier PDF URSSAF</label>
                   <input type="file" accept=".pdf,image/*" onChange={e => handleFileUpload(e, 'fichier_urssaf')} style={{ fontSize: '12px', marginTop: '6px' }} />
+                  {renderFilePreviewBadge(profilData.fichier_urssaf, 'URSSAF')}
                 </div>
               </div>
               <button type="button" onClick={() => submitEtapeConformite(3)} style={primaryBtn}>
@@ -1606,6 +1937,7 @@ export default function Dashboard() {
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Attestation RC Pro</label>
                   <input type="file" accept=".pdf,image/*" onChange={e => handleFileUpload(e, 'fichier_rc_pro')} style={{ fontSize: '12px', marginTop: '6px' }} />
+                  {renderFilePreviewBadge(profilData.fichier_rc_pro, 'RC Pro')}
                 </div>
               </div>
 
@@ -1792,7 +2124,13 @@ export default function Dashboard() {
                       <div style={{ color: '#6b7280', fontSize: '11.5px', marginBottom: '8px' }}>{item.info}</div>
                       <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                         {item.file && typeof item.file === 'string' && (
-                          <a href={item.file} target="_blank" rel="noopener noreferrer" style={{ padding: '4px 8px', backgroundColor: '#ffffff', border: '1px solid #d1d5db', borderRadius: '6px', textDecoration: 'none', color: '#111827', fontWeight: '600' }}>Voir pièce</a>
+                          <button
+                            type="button"
+                            onClick={() => openUploadedDocument(item.file, item.label)}
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 8px', backgroundColor: '#ffffff', border: '1px solid #d1d5db', borderRadius: '6px', color: '#111827', fontWeight: '600', cursor: 'pointer', fontSize: '12px' }}
+                          >
+                            <Icon.Eye /> Voir pièce
+                          </button>
                         )}
                         <button onClick={() => handleVerifyPieceAdmin(a.id_agent, item.field, 'VALIDE', item.rgpd)} style={{ padding: '4px 8px', backgroundColor: '#16a34a', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600' }}>
                           {item.rgpd ? 'Valider + Purger RGPD' : 'Valider'}
