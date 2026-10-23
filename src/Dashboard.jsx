@@ -188,8 +188,8 @@ export default function Dashboard() {
     if (!window.__stackMap) {
       const map = L.map(container, { zoomControl: false }).setView([mapCenter.lat, mapCenter.lng], 13);
       L.control.zoom({ position: 'bottomright' }).addTo(map);
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-        attribution: '© OpenStreetMap, © CARTO',
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
         maxZoom: 19
       }).addTo(map);
       window.__stackMap = map;
