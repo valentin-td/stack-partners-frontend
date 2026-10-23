@@ -44,19 +44,220 @@ export default function Dashboard() {
   const [quizAnswers, setQuizAnswers] = useState({ q1: '', q2: '', q3: '', q4: '' });
   const [changementMotif, setChangementMotif] = useState('');
 
+  // États Carte Interactive de Prospection
+  const [mapCenter, setMapCenter] = useState({ lat: 48.5734, lng: 7.7521, label: 'Strasbourg' });
+  const [mapRadius, setMapRadius] = useState(5);
+  const [mapAddressQuery, setMapAddressQuery] = useState('');
+  const [mapSalons, setMapSalons] = useState([]);
+  const [mapLoading, setMapLoading] = useState(false);
+  const [mapFilter, setMapFilter] = useState('TOUS');
+  const [selectedSalonMap, setSelectedSalonMap] = useState(null);
+  const [quickLockForm, setQuickLockForm] = useState({ email_gerant: '', telephone_salon: '' });
+  const [leafletReady, setLeafletReady] = useState(!!window.L);
+
   // États God Mode (Super-Admin)
   const isSuperAdmin = agent.email === 'tardy.valentin04@gmail.com';
   const [adminAgents, setAdminAgents] = useState([]);
   const [adminCommissions, setAdminCommissions] = useState([]);
   const [selectedAgentAdmin, setSelectedAgentAdmin] = useState(null);
 
+  // Chargement dynamique de Leaflet (CSS + JS) sans dépendance npm supplémentaire
+  useEffect(() => {
+    if (window.L) {
+      setLeafletReady(true);
+      return;
+    }
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+    document.head.appendChild(link);
+
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+    script.onload = () => setLeafletReady(true);
+    document.body.appendChild(script);
+  }, []);
+
   useEffect(() => {
     fetchProfil(); // Toujours charger l'état de conformité et les alertes à 30 jours
     if (activeTab === 'bord') fetchStats();
     if (activeTab === 'factures') fetchFactures();
     if (activeTab === 'prospects') fetchProspects();
+    if (activeTab === 'carte') fetchMapSalons(mapCenter.lat, mapCenter.lng, mapRadius);
     if (activeTab === 'godmode' && isSuperAdmin) fetchAdminData();
   }, [activeTab]);
+
+  const fetchMapSalons = async (lat = mapCenter.lat, lng = mapCenter.lng, radius = mapRadius) => {
+    setMapLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/map-salons?lat=${lat}&lng=${lng}&radius=${radius}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setMapSalons(data.salons || []);
+      }
+    } catch (e) {
+      notify("Impossible de charger les salons du secteur.", true);
+    } finally {
+      setMapLoading(false);
+    }
+  };
+
+  const handleGeolocateAgent = () => {
+    if (!navigator.geolocation) {
+      notify("La géolocalisation n'est pas supportée par votre navigateur.", true);
+      return;
+    }
+    setMapLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const nextCenter = { lat: pos.coords.latitude, lng: pos.coords.longitude, label: 'Ma position actuelle' };
+        setMapCenter(nextCenter);
+        fetchMapSalons(nextCenter.lat, nextCenter.lng, mapRadius);
+      },
+      () => {
+        setMapLoading(false);
+        notify("Autorisez la localisation dans votre navigateur ou saisissez une adresse.", true);
+      },
+      { enableHighAccuracy: true }
+    );
+  };
+
+  const handleSearchAddressMap = async (e) => {
+    e.preventDefault();
+    if (!mapAddressQuery.trim()) return;
+    setMapLoading(true);
+    try {
+      const res = await fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(mapAddressQuery)}&limit=1`);
+      const data = await res.json();
+      if (data.features && data.features.length > 0) {
+        const [lng, lat] = data.features[0].geometry.coordinates;
+        const label = data.features[0].properties.label;
+        setMapCenter({ lat, lng, label });
+        fetchMapSalons(lat, lng, mapRadius);
+      } else {
+        setMapLoading(false);
+        notify("Adresse introuvable.", true);
+      }
+    } catch (err) {
+      setMapLoading(false);
+      notify("Erreur lors de la recherche d'adresse.", true);
+    }
+  };
+
+  const handleRadiusChange = (newRadius) => {
+    setMapRadius(newRadius);
+    fetchMapSalons(mapCenter.lat, mapCenter.lng, newRadius);
+  };
+
+  const handleQuickLockFromMap = async (e) => {
+    e.preventDefault();
+    if (!selectedSalonMap) return;
+    const res = await fetch(`${API_URL}/prospects`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({
+        nom_salon: selectedSalonMap.nom_salon,
+        ville: selectedSalonMap.ville,
+        code_postal: selectedSalonMap.code_postal,
+        siret_prospect: selectedSalonMap.siret,
+        telephone_salon: quickLockForm.telephone_salon,
+        email_gerant: quickLockForm.email_gerant
+      })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      notify(`Salon "${selectedSalonMap.nom_salon}" verrouillé pour 45 jours.`);
+      setQuickLockForm({ email_gerant: '', telephone_salon: '' });
+      // Mise à jour évolutive immédiate sur la carte sans rechargement
+      setMapSalons(prev => prev.map(s => s.siret === selectedSalonMap.siret ? { ...s, statut_carte: 'PROSPECTE_MOI', jours_restants: 45, id_prospect: data.id_prospect } : s));
+      setSelectedSalonMap(prev => prev ? { ...prev, statut_carte: 'PROSPECTE_MOI', jours_restants: 45, id_prospect: data.id_prospect } : null);
+    } else {
+      notify(data.error || "Verrouillage impossible.", true);
+    }
+  };
+
+  // Rendu et mise à jour évolutive de la carte Leaflet
+  useEffect(() => {
+    if (activeTab !== 'carte' || !leafletReady || !window.L) return;
+    const L = window.L;
+    const container = document.getElementById('stack-partners-map');
+    if (!container) return;
+
+    if (!window.__stackMap) {
+      const map = L.map(container, { zoomControl: false }).setView([mapCenter.lat, mapCenter.lng], 13);
+      L.control.zoom({ position: 'bottomright' }).addTo(map);
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '© OpenStreetMap, © CARTO',
+        maxZoom: 19
+      }).addTo(map);
+      window.__stackMap = map;
+      window.__stackLayerGroup = L.layerGroup().addTo(map);
+    }
+
+    const map = window.__stackMap;
+    const layerGroup = window.__stackLayerGroup;
+    layerGroup.clearLayers();
+
+    const zoomByRadius = mapRadius <= 2 ? 14 : mapRadius <= 5 ? 13 : mapRadius <= 15 ? 11 : 10;
+    map.setView([mapCenter.lat, mapCenter.lng], zoomByRadius);
+
+    // Cercle du rayon X km
+    L.circle([mapCenter.lat, mapCenter.lng], {
+      radius: mapRadius * 1000,
+      color: '#111827',
+      weight: 1.5,
+      dashArray: '6, 6',
+      fillColor: '#111827',
+      fillOpacity: 0.04
+    }).addTo(layerGroup);
+
+    // Marqueur position centrale de l'agent
+    const agentIcon = L.divIcon({
+      className: '',
+      html: `<div style="width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,#863bff 0%,#47bfff 100%);border:3px solid #ffffff;box-shadow:0 0 0 4px rgba(134,59,255,0.22),0 4px 10px rgba(0,0,0,0.25);"></div>`,
+      iconSize: [24, 24],
+      iconAnchor: [12, 12]
+    });
+    L.marker([mapCenter.lat, mapCenter.lng], { icon: agentIcon })
+      .bindTooltip(`Centre : ${mapCenter.label} (Rayon ${mapRadius} km)`, { direction: 'top' })
+      .addTo(layerGroup);
+
+    // Couleurs par statut
+    const colorMap = {
+      LIBRE: '#10b981',           // Vert : Jamais prospecté
+      PROSPECTE_MOI: '#2563eb',   // Bleu : Verrouillé par moi
+      PROSPECTE_AUTRE: '#f59e0b', // Ambre : Déjà prospecté par un autre agent
+      CLIENT_STACK: '#111827'     // Noir : Déjà équipé par STACK
+    };
+
+    const filtered = mapSalons.filter(s => mapFilter === 'TOUS' || s.statut_carte === mapFilter);
+
+    filtered.forEach(salon => {
+      const bg = colorMap[salon.statut_carte] || '#10b981';
+      const isSelected = selectedSalonMap?.siret === salon.siret;
+      const size = isSelected ? 22 : 16;
+
+      const markerIcon = L.divIcon({
+        className: '',
+        html: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${bg};border:2.5px solid #ffffff;box-shadow:0 3px 10px rgba(0,0,0,0.22);cursor:pointer;transition:transform 0.15s ease;"></div>`,
+        iconSize: [size + 4, size + 4],
+        iconAnchor: [(size + 4) / 2, (size + 4) / 2]
+      });
+
+      const marker = L.marker([salon.lat, salon.lng], { icon: markerIcon }).addTo(layerGroup);
+      marker.on('click', () => setSelectedSalonMap(salon));
+    });
+
+    return () => {
+      if (activeTab !== 'carte' && window.__stackMap) {
+        window.__stackMap.remove();
+        window.__stackMap = null;
+        window.__stackLayerGroup = null;
+      }
+    };
+  }, [activeTab, leafletReady, mapCenter, mapRadius, mapSalons, mapFilter, selectedSalonMap]);
 
   const fetchAdminData = async () => {
     const resAgents = await fetch(`${API_URL}/admin/agents`, { headers: { 'Authorization': `Bearer ${token}` } });
@@ -283,6 +484,21 @@ export default function Dashboard() {
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
       </svg>
+    ),
+    MapPin: () => (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+      </svg>
+    ),
+    Compass: () => (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>
+      </svg>
+    ),
+    Search: () => (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
     )
   };
 
@@ -395,6 +611,9 @@ export default function Dashboard() {
           </button>
           <button onClick={() => setActiveTab('prospects')} style={navBtnStyle(activeTab === 'prospects')}>
             <Icon.Prospects /> Mes Prospects
+          </button>
+          <button onClick={() => setActiveTab('carte')} style={navBtnStyle(activeTab === 'carte')}>
+            <Icon.MapPin /> Carte Prospection
           </button>
           <button onClick={() => setActiveTab('factures')} style={navBtnStyle(activeTab === 'factures')}>
             <Icon.Factures /> Factures Onboarding
@@ -621,6 +840,241 @@ export default function Dashboard() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          </>
+        )}
+
+        {/* ONGLET CARTE INTERACTIVE DE PROSPECTION */}
+        {activeTab === 'carte' && (
+          <>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+              <div>
+                <h1 style={{ fontSize: '26px', fontWeight: '700', margin: '0 0 6px 0', letterSpacing: '-0.02em' }}>Carte de Prospection</h1>
+                <span style={{ fontSize: '14px', color: '#6b7280' }}>
+                  Visualisez les salons de coiffure autour de vous, identifiez leur statut en temps réel et verrouillez vos prospects en un clic.
+                </span>
+              </div>
+              <button type="button" onClick={handleGeolocateAgent} style={{ ...primaryBtn, backgroundColor: '#ffffff', color: '#111827', border: '1px solid #e5e7eb' }}>
+                <Icon.Compass /> Autour de ma position GPS
+              </button>
+            </div>
+
+            {/* Barre de contrôle : Recherche d'adresse + Sélecteur de rayon X km */}
+            <div style={{ ...cardStyle, padding: '18px 22px', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', gap: '14px', alignItems: 'center', flexWrap: 'wrap' }}>
+                <form onSubmit={handleSearchAddressMap} style={{ display: 'flex', flex: 1, gap: '10px', minWidth: '280px' }}>
+                  <input
+                    type="text"
+                    placeholder="Saisir une adresse, un code postal ou une ville (ex: 15 rue des Francs-Bourgeois, Strasbourg)..."
+                    value={mapAddressQuery}
+                    onChange={e => setMapAddressQuery(e.target.value)}
+                    style={inputStyle}
+                  />
+                  <button type="submit" style={primaryBtn}>
+                    <Icon.Search /> Centrer ici
+                  </button>
+                </form>
+
+                {/* Sélecteur de rayon en kilomètres */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: '#f6f6f7', padding: '6px 10px', borderRadius: '12px', border: '1px solid #e5e7eb' }}>
+                  <span style={{ fontSize: '12.5px', fontWeight: '600', color: '#6b7280', paddingLeft: '4px' }}>Rayon :</span>
+                  {[1, 3, 5, 10, 25, 50].map(km => (
+                    <button
+                      key={km}
+                      type="button"
+                      onClick={() => handleRadiusChange(km)}
+                      style={{
+                        padding: '6px 10px',
+                        borderRadius: '8px',
+                        border: 'none',
+                        fontSize: '12.5px',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        backgroundColor: mapRadius === km ? '#111827' : 'transparent',
+                        color: mapRadius === km ? '#ffffff' : '#4b5563'
+                      }}
+                    >
+                      {km} km
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Légende interactive & Filtres évolutifs */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px', paddingTop: '14px', borderTop: '1px solid #f3f4f6', flexWrap: 'wrap', gap: '10px' }}>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {[
+                    { key: 'TOUS', label: `Tous (${mapSalons.length})`, dot: null },
+                    { key: 'LIBRE', label: `Jamais prospectés (${mapSalons.filter(s => s.statut_carte === 'LIBRE').length})`, dot: '#10b981' },
+                    { key: 'PROSPECTE_MOI', label: `Mes prospects (${mapSalons.filter(s => s.statut_carte === 'PROSPECTE_MOI').length})`, dot: '#2563eb' },
+                    { key: 'PROSPECTE_AUTRE', label: `Déjà prospectés (${mapSalons.filter(s => s.statut_carte === 'PROSPECTE_AUTRE').length})`, dot: '#f59e0b' },
+                    { key: 'CLIENT_STACK', label: `Équipés STACK (${mapSalons.filter(s => s.statut_carte === 'CLIENT_STACK').length})`, dot: '#111827' }
+                  ].map(tab => (
+                    <button
+                      key={tab.key}
+                      type="button"
+                      onClick={() => setMapFilter(tab.key)}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '7px',
+                        padding: '7px 12px',
+                        borderRadius: '10px',
+                        border: mapFilter === tab.key ? '1px solid #111827' : '1px solid #e5e7eb',
+                        backgroundColor: mapFilter === tab.key ? '#111827' : '#ffffff',
+                        color: mapFilter === tab.key ? '#ffffff' : '#374151',
+                        fontSize: '12.5px',
+                        fontWeight: '600',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {tab.dot && <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: tab.dot }} />}
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+                <div style={{ fontSize: '12.5px', color: '#6b7280', fontWeight: '500' }}>
+                  {mapLoading ? 'Exploration du secteur en cours...' : `Centre : ${mapCenter.label} (${mapRadius} km)`}
+                </div>
+              </div>
+            </div>
+
+            {/* Grille : Carte Leaflet à gauche + Fiche d'action du salon sélectionné à droite */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: '20px', alignItems: 'stretch' }}>
+              
+              {/* Conteneur Carte */}
+              <div style={{ ...cardStyle, padding: '0', overflow: 'hidden', height: '560px', position: 'relative', marginBottom: 0 }}>
+                <div id="stack-partners-map" style={{ width: '100%', height: '100%' }} />
+              </div>
+
+              {/* Panneau latéral droit : Détails du salon cliqué ou Liste rapide */}
+              <div style={{ ...cardStyle, height: '560px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', marginBottom: 0, overflowY: 'auto' }}>
+                {selectedSalonMap ? (
+                  <>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                      <span style={{
+                        padding: '5px 10px', borderRadius: '8px', fontSize: '11.5px', fontWeight: '700',
+                        backgroundColor: selectedSalonMap.statut_carte === 'LIBRE' ? '#dcfce7' : selectedSalonMap.statut_carte === 'PROSPECTE_MOI' ? '#dbeafe' : selectedSalonMap.statut_carte === 'PROSPECTE_AUTRE' ? '#fef3c7' : '#f3f4f6',
+                        color: selectedSalonMap.statut_carte === 'LIBRE' ? '#166534' : selectedSalonMap.statut_carte === 'PROSPECTE_MOI' ? '#1e40af' : selectedSalonMap.statut_carte === 'PROSPECTE_AUTRE' ? '#92400e' : '#111827'
+                      }}>
+                        {selectedSalonMap.statut_carte === 'LIBRE' && 'Jamais prospecté — Libre'}
+                        {selectedSalonMap.statut_carte === 'PROSPECTE_MOI' && `Mon prospect (${selectedSalonMap.jours_restants}j restants)`}
+                        {selectedSalonMap.statut_carte === 'PROSPECTE_AUTRE' && `Déjà prospecté (${selectedSalonMap.jours_restants}j restants)`}
+                        {selectedSalonMap.statut_carte === 'CLIENT_STACK' && 'Déjà équipé par STACK'}
+                      </span>
+                      <button type="button" onClick={() => setSelectedSalonMap(null)} style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>
+                        Fermer
+                      </button>
+                    </div>
+
+                    <h3 style={{ fontSize: '18px', fontWeight: '700', margin: '0 0 6px 0' }}>{selectedSalonMap.nom_salon}</h3>
+                    <div style={{ fontSize: '13.5px', color: '#4b5563', marginBottom: '4px' }}>{selectedSalonMap.adresse}</div>
+                    <div style={{ fontSize: '13px', color: '#6b7280', marginBottom: '12px' }}>
+                      {selectedSalonMap.code_postal} {selectedSalonMap.ville} • À {selectedSalonMap.distance_km} km
+                    </div>
+                    <div style={{ fontSize: '12px', fontFamily: 'monospace', backgroundColor: '#f6f6f7', padding: '8px 12px', borderRadius: '10px', color: '#374151', marginBottom: '20px' }}>
+                      SIRET : {selectedSalonMap.siret}
+                    </div>
+
+                    {selectedSalonMap.statut_carte === 'LIBRE' && (
+                      <form onSubmit={handleQuickLockFromMap} style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: 'auto', paddingTop: '16px', borderTop: '1px solid #f3f4f6' }}>
+                        <div style={{ fontSize: '13px', fontWeight: '700', color: '#111827' }}>Réserver ce salon (Protection 45 jours)</div>
+                        <input
+                          type="email"
+                          required
+                          placeholder="E-mail du gérant (Obligatoire)"
+                          value={quickLockForm.email_gerant}
+                          onChange={e => setQuickLockForm({ ...quickLockForm, email_gerant: e.target.value })}
+                          style={{ ...inputStyle, width: '100%', boxSizing: 'border-box', flex: 'none' }}
+                        />
+                        <input
+                          type="text"
+                          placeholder="Téléphone du salon (Optionnel)"
+                          value={quickLockForm.telephone_salon}
+                          onChange={e => setQuickLockForm({ ...quickLockForm, telephone_salon: e.target.value })}
+                          style={{ ...inputStyle, width: '100%', boxSizing: 'border-box', flex: 'none' }}
+                        />
+                        <button type="submit" style={{ ...primaryBtn, width: '100%', justifyContent: 'center' }}>
+                          <Icon.Check /> Verrouiller ce prospect
+                        </button>
+                      </form>
+                    )}
+
+                    {selectedSalonMap.statut_carte === 'PROSPECTE_MOI' && (
+                      <div style={{ marginTop: 'auto', paddingTop: '16px', borderTop: '1px solid #f3f4f6', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        <div style={{ fontSize: '13px', color: '#1e40af', fontWeight: '500' }}>
+                          Ce salon vous est réservé. Vous pouvez émettre sa facture d'installation de 99 € HT ou lancer son onboarding.
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setFactureData({ nom_salon: selectedSalonMap.nom_salon, siret_salon: selectedSalonMap.siret, adresse_salon: `${selectedSalonMap.adresse}, ${selectedSalonMap.code_postal} ${selectedSalonMap.ville}` });
+                            setShowFactureForm(true);
+                            setActiveTab('factures');
+                          }}
+                          style={{ ...primaryBtn, width: '100%', justifyContent: 'center' }}
+                        >
+                          <Icon.Factures /> Créer la facture 99 € HT
+                        </button>
+                      </div>
+                    )}
+
+                    {selectedSalonMap.statut_carte === 'PROSPECTE_AUTRE' && (
+                      <div style={{ marginTop: 'auto', padding: '14px', backgroundColor: '#fffbeb', borderRadius: '12px', color: '#92400e', fontSize: '13px' }}>
+                        Ce salon fait déjà l'objet d'une réservation active par un autre agent partenaire. Il redeviendra libre à l'expiration du délai de 45 jours s'il n'est pas converti.
+                      </div>
+                    )}
+
+                    {selectedSalonMap.statut_carte === 'CLIENT_STACK' && (
+                      <div style={{ marginTop: 'auto', padding: '14px', backgroundColor: '#f3f4f6', borderRadius: '12px', color: '#111827', fontSize: '13px', fontWeight: '500' }}>
+                        Ce salon est déjà équipé de la caisse certifiée STACK.
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <div style={{ fontSize: '13px', fontWeight: '700', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '12px' }}>
+                      Salons dans le rayon ({mapSalons.filter(s => mapFilter === 'TOUS' || s.statut_carte === mapFilter).length})
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', overflowY: 'auto' }}>
+                      {mapSalons.filter(s => mapFilter === 'TOUS' || s.statut_carte === mapFilter).length === 0 ? (
+                        <div style={{ fontSize: '13.5px', color: '#6b7280', textAlign: 'center', marginTop: '40px' }}>
+                          Aucun salon trouvé dans ce périmètre. Augmentez le rayon en kilomètres ou changez d'adresse.
+                        </div>
+                      ) : (
+                        mapSalons
+                          .filter(s => mapFilter === 'TOUS' || s.statut_carte === mapFilter)
+                          .map(s => (
+                            <div
+                              key={s.siret}
+                              onClick={() => setSelectedSalonMap(s)}
+                              style={{
+                                padding: '12px 14px',
+                                borderRadius: '14px',
+                                border: '1px solid #f3f4f6',
+                                backgroundColor: '#f9fafb',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center'
+                              }}
+                            >
+                              <div>
+                                <div style={{ fontSize: '13.5px', fontWeight: '600', color: '#111827' }}>{s.nom_salon}</div>
+                                <div style={{ fontSize: '12px', color: '#6b7280' }}>{s.ville} • {s.distance_km} km</div>
+                              </div>
+                              <span style={{
+                                width: '10px', height: '10px', borderRadius: '50%', flexShrink: 0,
+                                backgroundColor: s.statut_carte === 'LIBRE' ? '#10b981' : s.statut_carte === 'PROSPECTE_MOI' ? '#2563eb' : s.statut_carte === 'PROSPECTE_AUTRE' ? '#f59e0b' : '#111827'
+                              }} />
+                            </div>
+                          ))
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+
             </div>
           </>
         )}
