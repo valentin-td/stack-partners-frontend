@@ -307,9 +307,8 @@ export default function Dashboard() {
       notify("Fichier trop volumineux (max 2,5 Mo).", true);
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => setProfilData(prev => ({ ...prev, [fieldName]: reader.result }));
-    reader.readAsDataURL(file);
+    // Phase 2 : Stockage R2 - On conserve directement l'objet File pour l'envoi multipart, fin du Base64
+    setProfilData(prev => ({ ...prev, [fieldName]: file }));
   };
 
   const handleYousignSignature = async () => {
@@ -333,10 +332,25 @@ export default function Dashboard() {
   };
 
   const submitEtapeConformite = async (etape, customPayload = null) => {
+    const dataToSend = customPayload || profilData;
+    const formData = new FormData();
+    formData.append('etape', etape);
+    
+    // Séparation des fichiers pour l'upload Cloudflare R2
+    const jsonPayload = {};
+    Object.keys(dataToSend).forEach(key => {
+      if (dataToSend[key] instanceof File) {
+        formData.append(key, dataToSend[key]);
+      } else {
+        jsonPayload[key] = dataToSend[key];
+      }
+    });
+    formData.append('payload', JSON.stringify(jsonPayload));
+
     const res = await fetch(`${API_URL}/profil/etape`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify({ etape, payload: customPayload || profilData })
+      headers: { 'Authorization': `Bearer ${token}` }, // FormData génère automatiquement le boundary multipart
+      body: formData
     });
     const data = await res.json();
     if (res.ok) {
@@ -1556,8 +1570,8 @@ export default function Dashboard() {
                       </div>
                       <div style={{ color: '#6b7280', fontSize: '11.5px', marginBottom: '8px' }}>{item.info}</div>
                       <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                        {item.file && item.file.startsWith('data:') && (
-                          <a href={item.file} download={`${a.nom}_${item.field}`} style={{ padding: '4px 8px', backgroundColor: '#ffffff', border: '1px solid #d1d5db', borderRadius: '6px', textDecoration: 'none', color: '#111827', fontWeight: '600' }}>Voir pièce</a>
+                        {item.file && typeof item.file === 'string' && (
+                          <a href={item.file} target="_blank" rel="noopener noreferrer" style={{ padding: '4px 8px', backgroundColor: '#ffffff', border: '1px solid #d1d5db', borderRadius: '6px', textDecoration: 'none', color: '#111827', fontWeight: '600' }}>Voir pièce</a>
                         )}
                         <button onClick={() => handleVerifyPieceAdmin(a.id_agent, item.field, 'VALIDE', item.rgpd)} style={{ padding: '4px 8px', backgroundColor: '#16a34a', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600' }}>
                           {item.rgpd ? 'Valider + Purger RGPD' : 'Valider'}
