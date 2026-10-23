@@ -57,7 +57,8 @@ export default function Dashboard() {
   const [leafletReady, setLeafletReady] = useState(!!window.L);
 
   // États God Mode (Super-Admin)
-  const isSuperAdmin = agent?.email?.toLowerCase?.().trim() === 'tardy.valentin04@gmail.com';
+  // États God Mode (Super-Admin) basé sur l'ID (1) ou le nom
+  const isSuperAdmin = agent?.id === 1 || agent?.nom?.toLowerCase() === 'tardy';
   const [adminAgents, setAdminAgents] = useState([]);
   const [adminCommissions, setAdminCommissions] = useState([]);
   const [selectedAgentAdmin, setSelectedAgentAdmin] = useState(null);
