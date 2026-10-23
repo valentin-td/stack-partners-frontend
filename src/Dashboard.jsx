@@ -321,11 +321,16 @@ export default function Dashboard() {
       
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error || `Erreur ${res.status}: Route API introuvable sur le backend.`);
+        throw new Error(errorData.error || `Erreur ${res.status}: Route API introuvable.`);
       }
       
       const data = await res.json();
-      if (data.signatureLink) {
+      
+      // Gestion du mode simulation ou du vrai lien Yousign
+      if (data.simulation) {
+        notify(data.message);
+        fetchProfil(); // Recharge le statut pour afficher la coche verte
+      } else if (data.signatureLink) {
         window.location.href = data.signatureLink;
       } else {
         throw new Error("Lien de signature manquant dans la réponse du serveur.");
