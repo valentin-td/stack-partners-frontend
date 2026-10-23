@@ -56,11 +56,38 @@ export default function Dashboard() {
   const [quickLockForm, setQuickLockForm] = useState({ email_gerant: '', telephone_salon: '' });
   const [leafletReady, setLeafletReady] = useState(!!window.L);
 
-  // États God Mode (Super-Admin)
+  // États God Mode (Super-Admin) — corrigé insensible à la casse
   const isSuperAdmin = agent?.email?.toLowerCase().trim() === 'tardy.valentin04@gmail.com';
   const [adminAgents, setAdminAgents] = useState([]);
   const [adminCommissions, setAdminCommissions] = useState([]);
   const [selectedAgentAdmin, setSelectedAgentAdmin] = useState(null);
+
+  // États Académie, Objections & Simulateurs (Phases 3 & 4)
+  const [openObjectionIdx, setOpenObjectionIdx] = useState(0);
+  const [sandboxLoading, setSandboxLoading] = useState(null);
+  const [activeSandboxInfo, setActiveSandboxInfo] = useState(null);
+
+  const handleLaunchSandbox = async (type) => {
+    setSandboxLoading(type);
+    try {
+      const res = await fetch(`${API_URL}/sandbox/launch`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ type })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Erreur de création du simulateur");
+      setActiveSandboxInfo(data);
+      window.open(data.url_directe, '_blank', 'noopener,noreferrer');
+      notify(`Environnement "${data.nom_salon}" lancé dans un nouvel onglet !`);
+    } catch (err) {
+      notify(err.message, true);
+    } finally {
+      setSandboxLoading(null);
+    }
+  };
+
+  
 
   // Chargement dynamique de Leaflet (CSS + JS) sans dépendance npm supplémentaire
   useEffect(() => {
@@ -544,6 +571,11 @@ export default function Dashboard() {
         <circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>
       </svg>
     ),
+    Academie: () => (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>
+      </svg>
+    ),
     Search: () => (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
@@ -666,6 +698,9 @@ export default function Dashboard() {
           </button>
           <button onClick={() => setActiveTab('factures')} style={navBtnStyle(activeTab === 'factures')}>
             <Icon.Factures /> Factures Onboarding
+          </button>
+          <button onClick={() => setActiveTab('academie')} style={navBtnStyle(activeTab === 'academie')}>
+            <Icon.Academie /> Académie & Tutos
           </button>
 
           {isSuperAdmin && (
@@ -1186,6 +1221,177 @@ export default function Dashboard() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          </>
+        )}
+        {/* ONGLET ACADÉMIE, OBJECTIONS, TUTOS & 3 SIMULATEURS BACS À SABLE */}
+        {activeTab === 'academie' && (
+          <>
+            <div style={{ marginBottom: '32px' }}>
+              <h1 style={{ fontSize: '26px', fontWeight: '700', margin: '0 0 6px 0', letterSpacing: '-0.02em' }}>Académie STACK & Simulateurs Live</h1>
+              <span style={{ fontSize: '14px', color: '#6b7280' }}>
+                Entraînez-vous dans des salons de test isolés, maîtrisez les objections clients et formez-vous aux fonctionnalités du logiciel.
+              </span>
+            </div>
+
+            {/* SECTION 1 : LES 3 ENVIRONNEMENTS BACS À SABLE (PHASE 4) */}
+            <div style={{ fontSize: '13px', fontWeight: '700', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '12px' }}>
+              1. Vos 3 Salons de Test (Environnements Bacs à Sable isolés)
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '18px', marginBottom: '28px' }}>
+              {/* Simulateur 1 : Salon Vide */}
+              <div style={{ ...cardStyle, marginBottom: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div>
+                  <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '11.5px', fontWeight: '700', backgroundColor: '#f3f4f6', color: '#374151' }}>
+                    Auto-destruction 24h
+                  </span>
+                  <h3 style={{ fontSize: '17px', fontWeight: '700', margin: '12px 0 8px 0' }}>Créer un Salon Vide</h3>
+                  <p style={{ fontSize: '13.5px', color: '#6b7280', lineHeight: 1.5, margin: '0 0 20px 0' }}>
+                    Génère un salon 100% vierge. Idéal pour vous exercer à créer des collaborateurs, paramétrer des stocks et importer un catalogue de A à Z.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  disabled={sandboxLoading === 'VIDE'}
+                  onClick={() => handleLaunchSandbox('VIDE')}
+                  style={{ ...primaryBtn, width: '100%', justifyContent: 'center' }}
+                >
+                  <Icon.ArrowUpRight /> {sandboxLoading === 'VIDE' ? 'Création en cours...' : 'Lancer un salon vide'}
+                </button>
+              </div>
+
+              {/* Simulateur 2 : Démonstrateur Pré-rempli */}
+              <div style={{ ...cardStyle, marginBottom: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', border: '1.5px solid #111827' }}>
+                <div>
+                  <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '11.5px', fontWeight: '700', backgroundColor: '#dcfce7', color: '#166534' }}>
+                    Prêt pour RDV Client
+                  </span>
+                  <h3 style={{ fontSize: '17px', fontWeight: '700', margin: '12px 0 8px 0' }}>Salon Démo Pré-rempli</h3>
+                  <p style={{ fontSize: '13.5px', color: '#6b7280', lineHeight: 1.5, margin: '0 0 20px 0' }}>
+                    Salon complet avec équipe, prestations, stocks et caisse déverrouillée. Modifiez-le en direct devant votre prospect pour une démonstration fluide.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  disabled={sandboxLoading === 'DEMO'}
+                  onClick={() => handleLaunchSandbox('DEMO')}
+                  style={{ ...primaryBtn, width: '100%', justifyContent: 'center', background: 'linear-gradient(135deg, #111827 0%, #374151 100%)' }}
+                >
+                  <Icon.ArrowUpRight /> {sandboxLoading === 'DEMO' ? 'Préparation...' : 'Ouvrir le démonstrateur'}
+                </button>
+              </div>
+
+              {/* Simulateur 3 : Entraînement Onboarding */}
+              <div style={{ ...cardStyle, marginBottom: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div>
+                  <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '11.5px', fontWeight: '700', backgroundColor: '#dbeafe', color: '#1e40af' }}>
+                    Tunnel Légal + Checklist
+                  </span>
+                  <h3 style={{ fontSize: '17px', fontWeight: '700', margin: '12px 0 8px 0' }}>Simulateur d'Onboarding</h3>
+                  <p style={{ fontSize: '13.5px', color: '#6b7280', lineHeight: 1.5, margin: '0 0 20px 0' }}>
+                    Réplique exacte de la 1ère connexion d'un gérant : signature des CGV, saisie du code partenaire ({agent.code}) et déblocage de la checklist Go-Live.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  disabled={sandboxLoading === 'ONBOARDING'}
+                  onClick={() => handleLaunchSandbox('ONBOARDING')}
+                  style={{ ...primaryBtn, width: '100%', justifyContent: 'center' }}
+                >
+                  <Icon.ArrowUpRight /> {sandboxLoading === 'ONBOARDING' ? 'Initialisation...' : "S'exercer à l'onboarding"}
+                </button>
+              </div>
+            </div>
+
+            {/* Encart récapitulatif des identifiants si le bloqueur de pop-up a bloqué l'onglet */}
+            {activeSandboxInfo && (
+              <div style={{ ...cardStyle, backgroundColor: '#f9fafb', border: '1px solid #d1d5db', padding: '18px 22px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                  <div>
+                    <div style={{ fontSize: '14px', fontWeight: '700' }}>Dernier simulateur généré : {activeSandboxInfo.nom_salon}</div>
+                    <div style={{ fontSize: '12.5px', color: '#4b5563', marginTop: '4px', fontFamily: 'monospace' }}>
+                      Email : {activeSandboxInfo.email_test} | Mot de passe : {activeSandboxInfo.mot_de_passe_test} | Code PIN : 0000
+                    </div>
+                  </div>
+                  <a href={activeSandboxInfo.url_directe} target="_blank" rel="noopener noreferrer" style={{ ...primaryBtn, textDecoration: 'none' }}>
+                    <Icon.ArrowUpRight /> Ouvrir le salon test
+                  </a>
+                </div>
+              </div>
+            )}
+
+            {/* SECTION 2 : TRAITEMENT DES OBJECTIONS CLIENTS (ACCORDÉON) */}
+            <div style={{ fontSize: '13px', fontWeight: '700', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '12px', marginTop: '12px' }}>
+              2. Réponses aux Objections Clients (Scripts de vente terrain)
+            </div>
+            <div style={{ ...cardStyle, padding: '12px 20px' }}>
+              {[
+                {
+                  q: "« C'est trop cher, je paie déjà moins cher ailleurs (ou j'ai un cahier papier). »",
+                  a: "STACK n'est pas un coût, c'est un centre de profit. Entre la récupération automatique des clients inactifs (Winback), la pointeuse qui évite les erreurs d'heures, et le scan IA des factures fournisseurs qui fait gagner 4h de comptabilité par mois, le logiciel est rentabilisé dès la première semaine. De plus, un cahier papier vous expose à 7 500 € d'amende en cas de contrôle fiscal NF525."
+                },
+                {
+                  q: "« Je suis déjà engagé chez Planity / Treatwell / Wavy, c'est trop compliqué de changer. »",
+                  a: "Vous n'avez rien à saisir vous-même : mes 99 € HT de mise en service incluent justement l'importation intégrale de votre catalogue de prestations, la création de votre équipe et votre formation sur place. En 45 minutes ensemble, votre caisse est prête et vous bénéficiez de 30 jours d'essai gratuit pour comparer sans risque."
+                },
+                {
+                  q: "« Pourquoi dois-je payer 99 € HT de frais d'installation aujourd'hui ? »",
+                  a: "Ces 99 € HT rémunèrent mon intervention physique dans votre salon en tant qu'agent commercial indépendant : je paramètre vos taux de TVA, vos collaborateurs, vos protocoles, je vérifie votre matériel et je forme votre équipe à la clôture journalière certifiée NF525. C'est la garantie de ne jamais être livré à vous-même face à un écran."
+                },
+                {
+                  q: "« Je n'y connais rien en informatique, mon équipe va avoir du mal. »",
+                  a: "STACK a été conçu comme une application iPhone : un encaissement se fait en 3 clics montre en main, et le pointage des employés ne demande qu'un code PIN à 4 chiffres. Regardez sur ma tablette de démonstration : essayez d'encaisser une coupe, vous allez voir à quel point c'est intuitif."
+                },
+                {
+                  q: "« Et si internet coupe en plein samedi après-midi au salon ? »",
+                  a: "C'est la force de l'architecture STACK : la caisse dispose d'un moteur Hors-Ligne natif. Même si votre box internet tombe en panne, vous continuez d'encaisser vos clients normalement. Dès que la connexion revient, les tickets sont synchronisés et scellés automatiquement sur le serveur."
+                }
+              ].map((item, idx) => {
+                const isOpen = openObjectionIdx === idx;
+                return (
+                  <div key={idx} style={{ borderBottom: idx < 4 ? '1px solid #f3f4f6' : 'none', padding: '14px 4px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setOpenObjectionIdx(isOpen ? null : idx)}
+                      style={{ width: '100%', background: 'none', border: 'none', padding: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', textAlign: 'left' }}
+                    >
+                      <span style={{ fontSize: '14.5px', fontWeight: '700', color: '#111827' }}>{item.q}</span>
+                      <span style={{ fontSize: '18px', fontWeight: '700', color: '#6b7280', transform: isOpen ? 'rotate(45deg)' : 'rotate(0deg)', transition: 'transform 0.15s ease' }}>+</span>
+                    </button>
+                    {isOpen && (
+                      <div style={{ marginTop: '10px', padding: '14px 16px', backgroundColor: '#f9fafb', borderRadius: '12px', fontSize: '13.5px', color: '#374151', lineHeight: 1.6, borderLeft: '3px solid #111827' }}>
+                        <strong>Réponse recommandée :</strong> {item.a}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* SECTION 3 : GALERIE VIDÉOS DE FORMATION */}
+            <div style={{ fontSize: '13px', fontWeight: '700', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '12px' }}>
+              3. Tutoriels Vidéos & Prise en main de STACK
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '18px' }}>
+              {[
+                { duree: '4 min', cat: 'Démonstration Terrain', titre: 'Réussir sa démo Caisse & Pointeuse en 5 minutes chrono', desc: 'Le parcours exact à montrer au gérant pour déclencher le coup de cœur immédiat.' },
+                { duree: '6 min', cat: 'Procédure Go-Live', titre: 'Réaliser un Onboarding parfait & débloquer la Checklist', desc: 'Comment accompagner le client sur le Popup Légal, saisir votre code partenaire et valider les 5 étapes.' },
+                { duree: '5 min', cat: 'Argumentaire Financier', titre: 'Présenter l’IA Comptable & la conformité NF525', desc: 'Les arguments clés pour convaincre un gérant qui hésite sur le prix de l’abonnement.' }
+              ].map((vid, i) => (
+                <div key={i} style={{ ...cardStyle, marginBottom: 0, padding: '18px' }}>
+                  <div style={{ height: '140px', borderRadius: '14px', background: 'linear-gradient(135deg, #111827 0%, #1f2937 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', marginBottom: '14px' }}>
+                    <div style={{ width: '44px', height: '44px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff', backdropFilter: 'blur(4px)' }}>
+                      ▶
+                    </div>
+                    <span style={{ position: 'absolute', bottom: '10px', right: '10px', backgroundColor: 'rgba(0,0,0,0.65)', color: '#fff', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: '600' }}>
+                      {vid.duree}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '11.5px', fontWeight: '700', color: '#863bff', textTransform: 'uppercase', marginBottom: '4px' }}>{vid.cat}</div>
+                  <div style={{ fontSize: '15px', fontWeight: '700', color: '#111827', marginBottom: '6px' }}>{vid.titre}</div>
+                  <div style={{ fontSize: '13px', color: '#6b7280', lineHeight: 1.45 }}>{vid.desc}</div>
+                </div>
+              ))}
             </div>
           </>
         )}
