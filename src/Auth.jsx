@@ -1,7 +1,10 @@
 import { useState } from 'react';
 
 export default function Auth() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const resetToken = urlParams.get('reset_token');
   const [isLogin, setIsLogin] = useState(true);
+  const [showForgot, setShowForgot] = useState(false);
   const [formData, setFormData] = useState({ nom: '', prenom: '', email: '', telephone: '', mot_de_passe: '', siret_agent: '', numero_rsac: '', iban: '' });
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
@@ -14,21 +17,34 @@ export default function Auth() {
     e.preventDefault();
     setError('');
     setMessage('');
-    
-    const endpoint = isLogin ? '/auth/login' : '/auth/register';
-    
+
+    let endpoint = isLogin ? '/auth/login' : '/auth/register';
+    let payload = formData;
+
+    if (resetToken) {
+      endpoint = '/auth/reset-password';
+      payload = { token: resetToken, new_password: formData.mot_de_passe };
+    } else if (showForgot) {
+      endpoint = '/auth/forgot-password';
+      payload = { email: formData.email };
+    }
+
     try {
       const res = await fetch(`${API_URL}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       });
-      
       const data = await res.json();
-      
       if (!res.ok) throw new Error(data.error || 'Erreur serveur');
       
-      if (isLogin) {
+      if (resetToken) {
+        setMessage('Mot de passe réinitialisé. Vous allez être redirigé.');
+        setTimeout(() => window.location.href = '/login', 2500);
+      } else if (showForgot) {
+        setMessage('Un lien de réinitialisation a été envoyé à cette adresse.');
+        setShowForgot(false);
+      } else if (isLogin) {
         localStorage.setItem('partner_token', data.token);
         localStorage.setItem('partner_data', JSON.stringify(data.agent));
         window.location.href = '/dashboard';
@@ -67,20 +83,24 @@ export default function Auth() {
         </div>
 
         {/* Sélecteur Connexion / Inscription façon pilule */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '24px' }}>
-          <button type="button" onClick={() => setIsLogin(true)} style={{ padding: '10px', borderRadius: '10px', border: isLogin ? 'none' : '1px solid #e5e7eb', backgroundColor: isLogin ? '#111827' : '#f3f4f6', color: isLogin ? '#ffffff' : '#6b7280', fontWeight: '600', fontSize: '13px', cursor: 'pointer' }}>
-            Connexion
-          </button>
-          <button type="button" onClick={() => setIsLogin(false)} style={{ padding: '10px', borderRadius: '10px', border: !isLogin ? 'none' : '1px solid #e5e7eb', backgroundColor: !isLogin ? '#111827' : '#f3f4f6', color: !isLogin ? '#ffffff' : '#6b7280', fontWeight: '600', fontSize: '13px', cursor: 'pointer' }}>
-            Devenir Agent
-          </button>
-        </div>
-
+        {!resetToken && !showForgot && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '24px' }}>
+            <button type="button" onClick={() => setIsLogin(true)} style={{ padding: '10px', borderRadius: '10px', border: isLogin ? 'none' : '1px solid #e5e7eb', backgroundColor: isLogin ? '#111827' : '#f3f4f6', color: isLogin ? '#ffffff' : '#6b7280', fontWeight: '600', fontSize: '13px', cursor: 'pointer' }}>
+              Connexion
+            </button>
+            <button type="button" onClick={() => setIsLogin(false)} style={{ padding: '10px', borderRadius: '10px', border: !isLogin ? 'none' : '1px solid #e5e7eb', backgroundColor: !isLogin ? '#111827' : '#f3f4f6', color: !isLogin ? '#ffffff' : '#6b7280', fontWeight: '600', fontSize: '13px', cursor: 'pointer' }}>
+              Devenir Agent
+            </button>
+          </div>
+        )}
+        {showForgot && <div style={{ fontSize: '15px', fontWeight: '700', marginBottom: '16px', textAlign: 'center', color: '#111827' }}>Réinitialiser le mot de passe</div>}
+        {resetToken && <div style={{ fontSize: '15px', fontWeight: '700', marginBottom: '16px', textAlign: 'center', color: '#111827' }}>Nouveau mot de passe</div>}
+        
         {error && <div style={{ backgroundColor: '#fef2f2', color: '#dc2626', padding: '10px 14px', borderRadius: '10px', fontSize: '13px', marginBottom: '16px', fontWeight: '500' }}>{error}</div>}
         {message && <div style={{ backgroundColor: '#f0fdf4', color: '#16a34a', padding: '10px 14px', borderRadius: '10px', fontSize: '13px', marginBottom: '16px', fontWeight: '500' }}>{message}</div>}
         
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {!isLogin && (
+          {!isLogin && !showForgot && !resetToken && (
             <>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                 <input type="text" name="nom" placeholder="Nom" required onChange={handleChange} style={inputStyle} />
@@ -92,13 +112,21 @@ export default function Auth() {
               <input type="text" name="iban" placeholder="IBAN (Pour vos virements)" required onChange={handleChange} style={inputStyle} />
             </>
           )}
-          <input type="email" name="email" placeholder="Adresse e-mail" required onChange={handleChange} style={inputStyle} />
-          <input type="password" name="mot_de_passe" placeholder="Mot de passe" required onChange={handleChange} style={inputStyle} />
-          
+          {!resetToken && (
+            <input type="email" name="email" placeholder="Adresse e-mail" required onChange={handleChange} style={inputStyle} />
+          )}
+          {(!showForgot || resetToken) && (
+            <input type="password" name="mot_de_passe" placeholder={resetToken ? "Nouveau mot de passe" : "Mot de passe"} required onChange={handleChange} style={inputStyle} />
+          )}
           <button type="submit" style={{ marginTop: '8px', padding: '14px', backgroundColor: '#111827', color: '#ffffff', border: 'none', borderRadius: '12px', fontWeight: '600', fontSize: '14px', cursor: 'pointer' }}>
-            {isLogin ? 'Se connecter' : "Créer mon compte partenaire"}
+            {resetToken ? 'Enregistrer' : showForgot ? 'Envoyer le lien' : isLogin ? 'Se connecter' : "Créer mon compte partenaire"}
           </button>
         </form>
+        {isLogin && !resetToken && (
+          <button type="button" onClick={() => setShowForgot(!showForgot)} style={{ marginTop: '16px', width: '100%', background: 'none', border: 'none', color: '#6b7280', fontSize: '13px', fontWeight: '500', cursor: 'pointer', textDecoration: 'underline' }}>
+            {showForgot ? "Retour à la connexion" : "Mot de passe oublié ?"}
+          </button>
+        )}
       </div>
     </div>
   );
