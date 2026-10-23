@@ -56,8 +56,8 @@ export default function Dashboard() {
   const [quickLockForm, setQuickLockForm] = useState({ email_gerant: '', telephone_salon: '' });
   const [leafletReady, setLeafletReady] = useState(!!window.L);
 
-  // États God Mode (Super-Admin) — corrigé insensible à la casse
-  const isSuperAdmin = agent?.email?.toLowerCase().trim() === 'tardy.valentin04@gmail.com';
+  // États God Mode (Super-Admin)
+  const isSuperAdmin = agent?.email?.toLowerCase?.().trim() === 'tardy.valentin04@gmail.com';
   const [adminAgents, setAdminAgents] = useState([]);
   const [adminCommissions, setAdminCommissions] = useState([]);
   const [selectedAgentAdmin, setSelectedAgentAdmin] = useState(null);
