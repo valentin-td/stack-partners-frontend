@@ -66,13 +66,15 @@ export default function Dashboard() {
   const [quickLockForm, setQuickLockForm] = useState({ email_gerant: '', telephone_salon: '' });
   const [leafletReady, setLeafletReady] = useState(!!window.L);
 
-  // États God Mode (Super-Admin)
+  // États God Mode (Super-Admin) — Détection élargie sur ID, code partenaire, nom ou email
   const isSuperAdmin =
     Number(agent?.id) === 1 ||
     Number(agent?.id_agent) === 1 ||
-    agent?.nom?.toLowerCase?.().trim() === 'tardy' ||
-    agent?.email?.toLowerCase?.().trim() === 'tardy.valentin04@gmail.com' ||
-    profilData?.email?.toLowerCase?.().trim() === 'tardy.valentin04@gmail.com';
+    String(agent?.code || '').includes('TAR') ||
+    String(agent?.nom || '').toLowerCase().includes('tardy') ||
+    String(agent?.email || '').toLowerCase().includes('tardy') ||
+    String(profilData?.email || '').toLowerCase().includes('tardy') ||
+    String(profilData?.nom || '').toLowerCase().includes('tardy');
 
   const [adminAgents, setAdminAgents] = useState([]);
   const [adminCommissions, setAdminCommissions] = useState([]);
@@ -334,17 +336,24 @@ export default function Dashboard() {
   }, [activeTab, leafletReady, mapCenter, mapRadius, mapSalons, mapFilter, selectedSalonMap]);
 
   const fetchAdminData = async () => {
-    const resAgents = await fetch(`${API_URL}/admin/agents`, { headers: { 'Authorization': `Bearer ${token}` } });
-    if (resAgents.ok) {
-      const list = await resAgents.json();
-      setAdminAgents(list);
-      // Ouvre par défaut le premier agent ayant des pièces à vérifier
-      if (list.length > 0 && Object.keys(expandedAgentIds).length === 0) {
-        setExpandedAgentIds({ [list[0].id_agent]: true });
+    try {
+      const resAgents = await fetch(`${API_URL}/admin/agents`, { headers: { 'Authorization': `Bearer ${token}` } });
+      if (resAgents.ok) {
+        const dataAgents = await resAgents.json();
+        const list = Array.isArray(dataAgents) ? dataAgents : (dataAgents.agents || []);
+        setAdminAgents(list);
+        if (list.length > 0) {
+          setExpandedAgentIds(prev => Object.keys(prev).length === 0 ? { [list[0].id_agent]: true } : prev);
+        }
       }
+      const resCom = await fetch(`${API_URL}/admin/commissions`, { headers: { 'Authorization': `Bearer ${token}` } });
+      if (resCom.ok) {
+        const dataCom = await resCom.json();
+        setAdminCommissions(Array.isArray(dataCom) ? dataCom : (dataCom.commissions || []));
+      }
+    } catch (err) {
+      console.error("Erreur chargement God Mode:", err);
     }
-    const resCom = await fetch(`${API_URL}/admin/commissions`, { headers: { 'Authorization': `Bearer ${token}` } });
-    if (resCom.ok) setAdminCommissions(await resCom.json());
   };
 
   const handleVerifyPieceAdmin = async (idAgent, champ_statut, decision, purge_identite_rgpd = false) => {
