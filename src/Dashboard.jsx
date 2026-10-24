@@ -61,6 +61,7 @@ export default function Dashboard() {
   const [mapAddressQuery, setMapAddressQuery] = useState('');
   const [mapSalons, setMapSalons] = useState([]);
   const [mapLoading, setMapLoading] = useState(false);
+  const [mapProgress, setMapProgress] = useState(null); // Gère la barre de chargement en arrière-plan
   const [mapFilter, setMapFilter] = useState('TOUS');
   const [mapSortBy, setMapSortBy] = useState('DISTANCE_ASC'); // 'DISTANCE_ASC' | 'STARS_DESC' | 'STARS_ASC'
   const [selectedSalonMap, setSelectedSalonMap] = useState(null);
@@ -186,32 +187,52 @@ export default function Dashboard() {
     if (activeTab === 'godmode' && isSuperAdmin) fetchAdminData();
   }, [activeTab, isSuperAdmin]);
 
-  // isNewCenter=true vide la carte (changement de ville), isNewCenter=false fusionne intelligemment
+  // Chargement par paquets (Chunks) : Affiche la carte instantanément, puis charge le reste en arrière-plan
   const fetchMapSalons = async (lat = mapCenter.lat, lng = mapCenter.lng, radius = mapRadius, isNewCenter = false) => {
+    if (window.__mapAbortController) window.__mapAbortController.abort();
+    const ac = new AbortController();
+    window.__mapAbortController = ac;
+
     setMapLoading(true);
+    setMapProgress(0);
     if (isNewCenter) setMapSalons([]);
     
+    let currentStep = 0;
+    let keepFetching = true;
+
     try {
-      const res = await fetch(`${API_URL}/map-salons?lat=${lat}&lng=${lng}&radius=${radius}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (res.ok) {
+      while (keepFetching && !ac.signal.aborted) {
+        const res = await fetch(`${API_URL}/map-salons?lat=${lat}&lng=${lng}&radius=${radius}&step=${currentStep}`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+          signal: ac.signal
+        });
+        if (!res.ok) throw new Error("Erreur");
         const data = await res.json();
+        
         setMapSalons(prev => {
-          if (isNewCenter) return data.salons || [];
-          // On fusionne les résultats précédents et les nouveaux
-          const merged = new Map(prev.map(s => [s.siret, s]));
+          const prevSalons = (isNewCenter && currentStep === 0) ? [] : prev;
+          const merged = new Map(prevSalons.map(s => [s.siret, s]));
           (data.salons || []).forEach(s => merged.set(s.siret, s));
-          // On filtre STRICTEMENT pour effacer de l'écran les salons qui sont hors du nouveau rayon
           return Array.from(merged.values())
             .filter(s => parseFloat(s.distance_km) <= radius)
             .sort((a, b) => parseFloat(a.distance_km) - parseFloat(b.distance_km));
         });
+
+        if (currentStep === 0) setMapLoading(false); // Affiche la carte dès que l'étape 0 (la plus grosse) est prête
+        
+        if (data.nextStep !== null && data.nextStep !== undefined) {
+          currentStep = data.nextStep;
+          setMapProgress(currentStep); // Barre de progression : 1, 2, 3, 4...
+        } else {
+          keepFetching = false;
+          setMapProgress(5); // Fin du scan à 100%
+          setTimeout(() => setMapProgress(null), 2500);
+        }
       }
     } catch (e) {
-      notify("Impossible de charger les salons du secteur.", true);
-    } finally {
+      if (e.name !== 'AbortError') notify("Erreur réseau (carte).", true);
       setMapLoading(false);
+      setMapProgress(null);
     }
   };
 
@@ -1243,26 +1264,38 @@ export default function Dashboard() {
               <div style={{ ...cardStyle, padding: 0, overflow: 'hidden', height: isMobile ? '360px' : '540px', position: 'relative', marginBottom: 0 }}>
                 <div id="stack-partners-map" style={{ width: '100%', height: '100%' }} />
 
+                {/* CHARGEMENT ÉTAPE 0 : Overlay Plein Écran */}
                 {mapLoading && (
                   <div style={{
-                    position: 'absolute', inset: 0,
-                    backgroundColor: 'rgba(255, 255, 255, 0.45)', backdropFilter: 'blur(3px)',
+                    position: 'absolute', inset: 0, backgroundColor: 'rgba(255, 255, 255, 0.45)', backdropFilter: 'blur(3px)',
                     zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center'
                   }}>
                     <div style={{
-                      backgroundColor: '#111827', color: '#ffffff',
-                      padding: '12px 22px', borderRadius: '999px', fontSize: '13px', fontWeight: '700',
+                      backgroundColor: '#111827', color: '#ffffff', padding: '12px 22px', borderRadius: '999px', fontSize: '13px', fontWeight: '700',
                       display: 'flex', alignItems: 'center', gap: '12px', boxShadow: '0 10px 30px rgba(0,0,0,0.15)'
                     }}>
-                      <div style={{
-                        width: '16px', height: '16px', borderRadius: '50%',
-                        border: '3px solid rgba(255,255,255,0.2)', borderTopColor: '#ffffff',
-                        animation: 'spin 0.8s linear infinite'
-                      }} />
-                      Scan rapide du secteur...
+                      <div style={{ width: '16px', height: '16px', borderRadius: '50%', border: '3px solid rgba(255,255,255,0.2)', borderTopColor: '#ffffff', animation: 'spin 0.8s linear infinite' }} />
+                      Scan initial...
                     </div>
                     <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
                   </div>
+                )}
+
+                {/* CHARGEMENT PROGRESSIF ÉTAPES 1 à 4 : Badge discret en arrière-plan */}
+                {mapProgress !== null && mapProgress > 0 && mapProgress < 5 && (
+                  <>
+                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', backgroundColor: 'rgba(255,255,255,0.3)', zIndex: 1000 }}>
+                      <div style={{ width: `${(mapProgress / 4) * 100}%`, height: '100%', backgroundColor: '#8b5cf6', transition: 'width 0.5s ease' }} />
+                    </div>
+                    <div style={{
+                      position: 'absolute', top: '12px', left: '50%', transform: 'translateX(-50%)',
+                      backgroundColor: '#111827', color: '#ffffff', padding: '6px 14px', borderRadius: '999px', fontSize: '11.5px', fontWeight: '700',
+                      zIndex: 1000, boxShadow: '0 6px 20px rgba(0,0,0,0.15)', display: 'flex', alignItems: 'center', gap: '8px'
+                    }}>
+                      <div style={{ width: '12px', height: '12px', borderRadius: '50%', border: '2px solid rgba(255,255,255,0.2)', borderTopColor: '#ffffff', animation: 'spin 0.8s linear infinite' }} />
+                      Recherche approfondie... ({mapSalons.length})
+                    </div>
+                  </>
                 )}
               </div>
 
