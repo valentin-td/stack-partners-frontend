@@ -62,6 +62,7 @@ export default function Dashboard() {
   const [mapSalons, setMapSalons] = useState([]);
   const [mapLoading, setMapLoading] = useState(false);
   const [mapFilter, setMapFilter] = useState('TOUS');
+  const [mapSortBy, setMapSortBy] = useState('DISTANCE_ASC'); // 'DISTANCE_ASC' | 'STARS_DESC' | 'STARS_ASC'
   const [selectedSalonMap, setSelectedSalonMap] = useState(null);
   const [quickLockForm, setQuickLockForm] = useState({ email_gerant: '', telephone_salon: '' });
   const [leafletReady, setLeafletReady] = useState(!!window.L);
@@ -289,7 +290,7 @@ export default function Dashboard() {
     if (!container) return;
 
     if (!window.__stackMap) {
-      const map = L.map(container, { zoomControl: false }).setView([mapCenter.lat, mapCenter.lng], 13);
+      const map = L.map(container, { zoomControl: false, preferCanvas: true }).setView([mapCenter.lat, mapCenter.lng], 13);
       L.control.zoom({ position: 'bottomright' }).addTo(map);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap', maxZoom: 19
@@ -300,44 +301,120 @@ export default function Dashboard() {
 
     const map = window.__stackMap;
     const layerGroup = window.__stackLayerGroup;
-    layerGroup.clearLayers();
 
-    const zoomByRadius = mapRadius <= 2 ? 14 : mapRadius <= 5 ? 13 : mapRadius <= 15 ? 11 : 10;
-    map.setView([mapCenter.lat, mapCenter.lng], zoomByRadius);
-    setTimeout(() => map.invalidateSize(), 150);
-
-    L.circle([mapCenter.lat, mapCenter.lng], {
-      radius: mapRadius * 1000, color: '#111827', weight: 1.5, dashArray: '6, 6', fillColor: '#111827', fillOpacity: 0.04
-    }).addTo(layerGroup);
-
-    const agentIcon = L.divIcon({
-      className: '',
-      html: `<div style="width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,#863bff 0%,#47bfff 100%);border:3px solid #fff;box-shadow:0 0 0 4px rgba(134,59,255,0.22);"></div>`,
-      iconSize: [24, 24], iconAnchor: [12, 12]
-    });
-    L.marker([mapCenter.lat, mapCenter.lng], { icon: agentIcon }).addTo(layerGroup);
+    // Recentre uniquement quand le centre ou le rayon change (pas quand on clique sur un salon)
+    const centerKey = `${mapCenter.lat}_${mapCenter.lng}_${mapRadius}`;
+    if (window.__lastCenterKey !== centerKey) {
+      const zoomByRadius = mapRadius <= 2 ? 14 : mapRadius <= 5 ? 13 : mapRadius <= 15 ? 11 : 10;
+      map.setView([mapCenter.lat, mapCenter.lng], zoomByRadius);
+      window.__lastCenterKey = centerKey;
+      setTimeout(() => map.invalidateSize(), 120);
+    }
 
     const colorMap = { LIBRE: '#10b981', PROSPECTE_MOI: '#2563eb', PROSPECTE_AUTRE: '#f59e0b', CLIENT_STACK: '#111827' };
     const filtered = mapSalons.filter(s => mapFilter === 'TOUS' || s.statut_carte === mapFilter);
 
-    filtered.forEach(salon => {
-      const bg = colorMap[salon.statut_carte] || '#10b981';
-      const isSelected = selectedSalonMap?.siret === salon.siret;
-      const size = isSelected ? 22 : 16;
-      const markerIcon = L.divIcon({
+    // Fonction de rendu ultra-rapide avec regroupement automatique (Clustering) selon l'échelle de zoom
+    const renderMarkersAndClusters = () => {
+      layerGroup.clearLayers();
+
+      L.circle([mapCenter.lat, mapCenter.lng], {
+        radius: mapRadius * 1000, color: '#111827', weight: 1.5, dashArray: '6, 6', fillColor: '#111827', fillOpacity: 0.03
+      }).addTo(layerGroup);
+
+      const agentIcon = L.divIcon({
         className: '',
-        html: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${bg};border:2.5px solid #fff;box-shadow:0 3px 10px rgba(0,0,0,0.22);cursor:pointer;"></div>`,
-        iconSize: [size + 4, size + 4], iconAnchor: [(size + 4) / 2, (size + 4) / 2]
+        html: `<div style="width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,#863bff 0%,#47bfff 100%);border:3px solid #fff;box-shadow:0 0 0 4px rgba(134,59,255,0.22);"></div>`,
+        iconSize: [24, 24], iconAnchor: [12, 12]
       });
-      const marker = L.marker([salon.lat, salon.lng], { icon: markerIcon }).addTo(layerGroup);
-      marker.on('click', () => setSelectedSalonMap(salon));
-    });
+      L.marker([mapCenter.lat, mapCenter.lng], { icon: agentIcon }).addTo(layerGroup);
+
+      const currentZoom = map.getZoom();
+      const bounds = map.getBounds().pad(0.15);
+      const visibleSalons = filtered.filter(s => bounds.contains([s.lat, s.lng]));
+
+      // À partir du zoom 16 (échelle rue) ou s'il y a moins de 90 points visibles, on dissocie tous les points
+      if (currentZoom >= 16 || visibleSalons.length <= 90) {
+        visibleSalons.forEach(salon => {
+          const isSelected = selectedSalonMap?.siret === salon.siret;
+          const marker = L.circleMarker([salon.lat, salon.lng], {
+            radius: isSelected ? 10 : 7,
+            fillColor: colorMap[salon.statut_carte] || '#10b981',
+            color: '#ffffff',
+            weight: isSelected ? 3 : 2,
+            fillOpacity: 0.95
+          }).addTo(layerGroup);
+
+          const starsLabel = salon.etoiles ? `★ ${salon.etoiles}` : '★ N/A';
+          marker.bindTooltip(`<strong>${salon.nom_salon}</strong><br/>${starsLabel} • ${salon.distance_km} km`, { direction: 'top', offset: [0, -6] });
+          marker.on('click', () => setSelectedSalonMap(salon));
+        });
+        return;
+      }
+
+      // Sinon : Regroupement spatial (Grid Clustering) en bulles de comptage
+      const cellSizePx = currentZoom <= 11 ? 75 : currentZoom <= 13 ? 60 : 46;
+      const clusters = new Map();
+
+      visibleSalons.forEach(salon => {
+        const pt = map.latLngToContainerPoint([salon.lat, salon.lng]);
+        const key = `${Math.floor(pt.x / cellSizePx)}_${Math.floor(pt.y / cellSizePx)}`;
+        if (!clusters.has(key)) {
+          clusters.set(key, { salons: [], sumLat: 0, sumLng: 0 });
+        }
+        const c = clusters.get(key);
+        c.salons.push(salon);
+        c.sumLat += salon.lat;
+        c.sumLng += salon.lng;
+      });
+
+      clusters.forEach(group => {
+        const count = group.salons.length;
+        if (count === 1) {
+          const salon = group.salons[0];
+          const isSelected = selectedSalonMap?.siret === salon.siret;
+          const marker = L.circleMarker([salon.lat, salon.lng], {
+            radius: isSelected ? 10 : 7,
+            fillColor: colorMap[salon.statut_carte] || '#10b981',
+            color: '#ffffff',
+            weight: isSelected ? 3 : 2,
+            fillOpacity: 0.95
+          }).addTo(layerGroup);
+          const starsLabel = salon.etoiles ? `★ ${salon.etoiles}` : '★ N/A';
+          marker.bindTooltip(`<strong>${salon.nom_salon}</strong><br/>${starsLabel} • ${salon.distance_km} km`, { direction: 'top', offset: [0, -6] });
+          marker.on('click', () => setSelectedSalonMap(salon));
+        } else {
+          const avgLat = group.sumLat / count;
+          const avgLng = group.sumLng / count;
+          const size = count >= 100 ? 44 : count >= 25 ? 38 : 32;
+          const bgCluster = count >= 100 ? '#111827' : count >= 25 ? '#059669' : '#10b981';
+
+          const clusterIcon = L.divIcon({
+            className: '',
+            html: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${bgCluster};color:#ffffff;border:3px solid rgba(255,255,255,0.92);box-shadow:0 6px 16px rgba(0,0,0,0.22);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:${count >= 100 ? 12 : 13}px;cursor:pointer;">${count}</div>`,
+            iconSize: [size, size],
+            iconAnchor: [size / 2, size / 2]
+          });
+
+          const cMarker = L.marker([avgLat, avgLng], { icon: clusterIcon }).addTo(layerGroup);
+          cMarker.bindTooltip(`${count} salons dans cette zone — Cliquez pour zoomer`, { direction: 'top' });
+          cMarker.on('click', () => {
+            map.setView([avgLat, avgLng], Math.min(18, currentZoom + 2));
+          });
+        }
+      });
+    };
+
+    renderMarkersAndClusters();
+    map.on('zoomend moveend', renderMarkersAndClusters);
 
     return () => {
+      map.off('zoomend moveend', renderMarkersAndClusters);
       if (activeTab !== 'carte' && window.__stackMap) {
         window.__stackMap.remove();
         window.__stackMap = null;
         window.__stackLayerGroup = null;
+        window.__lastCenterKey = null;
       }
     };
   }, [activeTab, leafletReady, mapCenter, mapRadius, mapSalons, mapFilter, selectedSalonMap]);
@@ -1116,59 +1193,77 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '14px', paddingTop: '12px', borderTop: '1px solid #f3f4f6' }}>
-                {[
-                  { key: 'TOUS', label: `Tous (${mapSalons.length})`, dot: null },
-                  { key: 'LIBRE', label: `Libres (${mapSalons.filter(s => s.statut_carte === 'LIBRE').length})`, dot: '#10b981' },
-                  { key: 'PROSPECTE_MOI', label: `Mes leads (${mapSalons.filter(s => s.statut_carte === 'PROSPECTE_MOI').length})`, dot: '#2563eb' },
-                  { key: 'PROSPECTE_AUTRE', label: `Réservés (${mapSalons.filter(s => s.statut_carte === 'PROSPECTE_AUTRE').length})`, dot: '#f59e0b' },
-                  { key: 'CLIENT_STACK', label: `Clients (${mapSalons.filter(s => s.statut_carte === 'CLIENT_STACK').length})`, dot: '#111827' }
-                ].map(tab => (
-                  <button
-                    key={tab.key} type="button" onClick={() => setMapFilter(tab.key)}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginTop: '14px', paddingTop: '12px', borderTop: '1px solid #f3f4f6' }}>
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                  {[
+                    { key: 'TOUS', label: `Tous (${mapSalons.length})`, dot: null },
+                    { key: 'LIBRE', label: `Libres (${mapSalons.filter(s => s.statut_carte === 'LIBRE').length})`, dot: '#10b981' },
+                    { key: 'PROSPECTE_MOI', label: `Mes leads (${mapSalons.filter(s => s.statut_carte === 'PROSPECTE_MOI').length})`, dot: '#2563eb' },
+                    { key: 'PROSPECTE_AUTRE', label: `Réservés (${mapSalons.filter(s => s.statut_carte === 'PROSPECTE_AUTRE').length})`, dot: '#f59e0b' },
+                    { key: 'CLIENT_STACK', label: `Clients (${mapSalons.filter(s => s.statut_carte === 'CLIENT_STACK').length})`, dot: '#111827' }
+                  ].map(tab => (
+                    <button
+                      key={tab.key} type="button" onClick={() => setMapFilter(tab.key)}
+                      style={{
+                        display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 10px', borderRadius: '9px',
+                        border: mapFilter === tab.key ? '1px solid #111827' : '1px solid #e5e7eb',
+                        backgroundColor: mapFilter === tab.key ? '#111827' : '#ffffff',
+                        color: mapFilter === tab.key ? '#ffffff' : '#374151', fontSize: '12px', fontWeight: '600', cursor: 'pointer'
+                      }}
+                    >
+                      {tab.dot && <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: tab.dot }} />}
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Sélecteur de Tri : Distance ou Nombre d'étoiles */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '12px', fontWeight: '600', color: '#6b7280' }}>Trier par :</span>
+                  <select
+                    value={mapSortBy}
+                    onChange={e => setMapSortBy(e.target.value)}
                     style={{
-                      display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 10px', borderRadius: '9px',
-                      border: mapFilter === tab.key ? '1px solid #111827' : '1px solid #e5e7eb',
-                      backgroundColor: mapFilter === tab.key ? '#111827' : '#ffffff',
-                      color: mapFilter === tab.key ? '#ffffff' : '#374151', fontSize: '12px', fontWeight: '600', cursor: 'pointer'
+                      padding: '6px 12px', borderRadius: '9px', border: '1px solid #e5e7eb',
+                      backgroundColor: '#f9fafb', fontSize: '12px', fontWeight: '600', color: '#111827', cursor: 'pointer', outline: 'none'
                     }}
                   >
-                    {tab.dot && <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: tab.dot }} />}
-                    {tab.label}
-                  </button>
-                ))}
+                    <option value="DISTANCE_ASC">Distance (Plus proche au plus loin)</option>
+                    <option value="STARS_DESC">Étoiles ★ (Meilleure à la pire note)</option>
+                    <option value="STARS_ASC">Étoiles ★ (Pire à la meilleure note)</option>
+                  </select>
+                </div>
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 360px', gap: '16px', alignItems: 'stretch' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 370px', gap: '16px', alignItems: 'stretch' }}>
               <div style={{ ...cardStyle, padding: 0, overflow: 'hidden', height: isMobile ? '360px' : '540px', position: 'relative', marginBottom: 0 }}>
                 <div id="stack-partners-map" style={{ width: '100%', height: '100%' }} />
-                
-                {/* OVERLAY DE CHARGEMENT PENDANT LE SCAN */}
+
                 {mapLoading && (
-                  <div style={{ 
-                    position: 'absolute', inset: 0, 
-                    backgroundColor: 'rgba(255, 255, 255, 0.45)', backdropFilter: 'blur(3px)', 
-                    zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' 
+                  <div style={{
+                    position: 'absolute', inset: 0,
+                    backgroundColor: 'rgba(255, 255, 255, 0.45)', backdropFilter: 'blur(3px)',
+                    zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center'
                   }}>
-                    <div style={{ 
-                      backgroundColor: '#111827', color: '#ffffff', 
-                      padding: '12px 22px', borderRadius: '999px', fontSize: '13px', fontWeight: '700', 
-                      display: 'flex', alignItems: 'center', gap: '12px', boxShadow: '0 10px 30px rgba(0,0,0,0.15)' 
+                    <div style={{
+                      backgroundColor: '#111827', color: '#ffffff',
+                      padding: '12px 22px', borderRadius: '999px', fontSize: '13px', fontWeight: '700',
+                      display: 'flex', alignItems: 'center', gap: '12px', boxShadow: '0 10px 30px rgba(0,0,0,0.15)'
                     }}>
-                      <div style={{ 
-                        width: '16px', height: '16px', borderRadius: '50%', 
-                        border: '3px solid rgba(255,255,255,0.2)', borderTopColor: '#ffffff', 
-                        animation: 'spin 0.8s linear infinite' 
+                      <div style={{
+                        width: '16px', height: '16px', borderRadius: '50%',
+                        border: '3px solid rgba(255,255,255,0.2)', borderTopColor: '#ffffff',
+                        animation: 'spin 0.8s linear infinite'
                       }} />
-                      Scan en cours... ({mapSalons.length} résultats consolidés)
+                      Scan rapide du secteur...
                     </div>
                     <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
                   </div>
                 )}
               </div>
 
-              <div style={{ ...cardStyle, height: isMobile ? 'auto' : '540px', maxHeight: isMobile ? '440px' : '540px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', marginBottom: 0, overflowY: 'auto' }}>
+              <div style={{ ...cardStyle, height: isMobile ? 'auto' : '540px', maxHeight: isMobile ? '460px' : '540px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', marginBottom: 0, overflowY: 'auto' }}>
                 {selectedSalonMap ? (
                   <>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
@@ -1182,19 +1277,62 @@ export default function Dashboard() {
                         {selectedSalonMap.statut_carte === 'PROSPECTE_AUTRE' && `Déjà prospecté`}
                         {selectedSalonMap.statut_carte === 'CLIENT_STACK' && 'Déjà équipé STACK'}
                       </span>
-                      <button type="button" onClick={() => setSelectedSalonMap(null)} style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>Fermer</button>
+                      <button type="button" onClick={() => setSelectedSalonMap(null)} style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>Fermer ✕</button>
                     </div>
 
-                    <h3 style={{ fontSize: '17px', fontWeight: '700', margin: '0 0 6px 0' }}>{selectedSalonMap.nom_salon}</h3>
-                    <div style={{ fontSize: '13px', color: '#4b5563', marginBottom: '4px' }}>{selectedSalonMap.adresse}</div>
-                    <div style={{ fontSize: '12.5px', color: '#6b7280', marginBottom: '12px' }}>{selectedSalonMap.code_postal} {selectedSalonMap.ville} • À {selectedSalonMap.distance_km} km</div>
-                    <div style={{ fontSize: '12px', fontFamily: 'monospace', backgroundColor: '#f6f6f7', padding: '8px 12px', borderRadius: '10px', marginBottom: '16px' }}>SIRET : {selectedSalonMap.siret}</div>
+                    <h3 style={{ fontSize: '18px', fontWeight: '700', margin: '0 0 8px 0' }}>{selectedSalonMap.nom_salon}</h3>
+
+                    {/* Badge Étoiles & Distance */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px', flexWrap: 'wrap' }}>
+                      <span style={{
+                        display: 'inline-flex', alignItems: 'center', gap: '5px',
+                        padding: '5px 10px', borderRadius: '8px', fontSize: '12.5px', fontWeight: '700',
+                        backgroundColor: selectedSalonMap.etoiles ? '#fffbeb' : '#f3f4f6',
+                        color: selectedSalonMap.etoiles ? '#b45309' : '#6b7280',
+                        border: selectedSalonMap.etoiles ? '1px solid #fde68a' : '1px solid #e5e7eb'
+                      }}>
+                        <span style={{ color: selectedSalonMap.etoiles ? '#f59e0b' : '#9ca3af' }}>★</span>
+                        {selectedSalonMap.etoiles ? `${selectedSalonMap.etoiles} / 5` : 'Note : N/A'}
+                      </span>
+                      <span style={{ padding: '5px 10px', borderRadius: '8px', fontSize: '12px', fontWeight: '600', backgroundColor: '#f3f4f6', color: '#374151' }}>
+                        À {selectedSalonMap.distance_km} km
+                      </span>
+                    </div>
+
+                    {/* Bloc d'informations détaillées du salon */}
+                    <div style={{ backgroundColor: '#f9fafb', border: '1px solid #f3f4f6', borderRadius: '14px', padding: '12px 14px', marginBottom: '14px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12.5px' }}>
+                      <div>
+                        <span style={{ color: '#6b7280', fontWeight: '600' }}>Adresse : </span>
+                        <span style={{ color: '#111827', fontWeight: '500' }}>{selectedSalonMap.adresse || 'Non renseignée'}, {selectedSalonMap.code_postal} {selectedSalonMap.ville}</span>
+                      </div>
+                      <div>
+                        <span style={{ color: '#6b7280', fontWeight: '600' }}>Téléphone : </span>
+                        <span style={{ color: '#111827', fontWeight: '600' }}>{selectedSalonMap.telephone || 'N/A'}</span>
+                      </div>
+                      <div>
+                        <span style={{ color: '#6b7280', fontWeight: '600' }}>SIRET / Réf : </span>
+                        <span style={{ fontFamily: 'monospace', color: '#374151' }}>{selectedSalonMap.siret}</span>
+                      </div>
+                      {selectedSalonMap.horaires && (
+                        <div>
+                          <span style={{ color: '#6b7280', fontWeight: '600' }}>Horaires : </span>
+                          <span style={{ color: '#374151' }}>{selectedSalonMap.horaires}</span>
+                        </div>
+                      )}
+                      {selectedSalonMap.site_web && (
+                        <div>
+                          <a href={selectedSalonMap.site_web} target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb', fontWeight: '600', textDecoration: 'none' }}>
+                            Visiter le site web ↗
+                          </a>
+                        </div>
+                      )}
+                    </div>
 
                     {selectedSalonMap.statut_carte === 'LIBRE' && (
                       <form onSubmit={handleQuickLockFromMap} style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: 'auto', paddingTop: '14px', borderTop: '1px solid #f3f4f6' }}>
                         <input type="email" required placeholder="E-mail du gérant (Obligatoire)" value={quickLockForm.email_gerant} onChange={e => setQuickLockForm({ ...quickLockForm, email_gerant: e.target.value })} style={inputStyle} />
-                        <input type="text" placeholder="Téléphone du salon" value={quickLockForm.telephone_salon} onChange={e => setQuickLockForm({ ...quickLockForm, telephone_salon: e.target.value })} style={inputStyle} />
-                        <button type="submit" style={{ ...primaryBtn, width: '100%' }}><Icon.Check /> Verrouiller ce prospect</button>
+                        <input type="text" placeholder="Téléphone du salon" value={quickLockForm.telephone_salon || selectedSalonMap.telephone || ''} onChange={e => setQuickLockForm({ ...quickLockForm, telephone_salon: e.target.value })} style={inputStyle} />
+                        <button type="submit" style={{ ...primaryBtn, width: '100%' }}><Icon.Check /> Verrouiller ce prospect (45j)</button>
                       </form>
                     )}
 
@@ -1214,30 +1352,68 @@ export default function Dashboard() {
                   </>
                 ) : (
                   <>
-                    <div style={{ fontSize: '12px', fontWeight: '700', color: '#6b7280', textTransform: 'uppercase', marginBottom: '10px' }}>
-                      Salons dans le rayon ({mapSalons.filter(s => mapFilter === 'TOUS' || s.statut_carte === mapFilter).length})
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', overflowY: 'auto' }}>
-                      {mapSalons.filter(s => mapFilter === 'TOUS' || s.statut_carte === mapFilter).map(s => (
-                        <div
-                          key={s.siret} onClick={() => setSelectedSalonMap(s)}
-                          style={{ padding: '11px 13px', borderRadius: '12px', border: '1px solid #f3f4f6', backgroundColor: '#f9fafb', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                        >
-                          <div>
-                            <div style={{ fontSize: '13px', fontWeight: '600' }}>{s.nom_salon}</div>
-                            <div style={{ fontSize: '11.5px', color: '#6b7280' }}>{s.ville} • {s.distance_km} km</div>
+                    {(() => {
+                      const filteredList = mapSalons
+                        .filter(s => mapFilter === 'TOUS' || s.statut_carte === mapFilter)
+                        .slice()
+                        .sort((a, b) => {
+                          if (mapSortBy === 'STARS_DESC') {
+                            const rA = a.etoiles !== null && a.etoiles !== undefined ? Number(a.etoiles) : -1;
+                            const rB = b.etoiles !== null && b.etoiles !== undefined ? Number(b.etoiles) : -1;
+                            if (rB !== rA) return rB - rA;
+                          } else if (mapSortBy === 'STARS_ASC') {
+                            // Les salons ayant une note vont du pire au meilleur, et les N/A restent en fin de liste
+                            const rA = a.etoiles !== null && a.etoiles !== undefined ? Number(a.etoiles) : 99;
+                            const rB = b.etoiles !== null && b.etoiles !== undefined ? Number(b.etoiles) : 99;
+                            if (rA !== rB) return rA - rB;
+                          }
+                          return parseFloat(a.distance_km) - parseFloat(b.distance_km);
+                        });
+
+                      return (
+                        <>
+                          <div style={{ fontSize: '12px', fontWeight: '700', color: '#6b7280', textTransform: 'uppercase', marginBottom: '10px', display: 'flex', justifyContent: 'space-between' }}>
+                            <span>Salons dans le rayon ({filteredList.length})</span>
+                            {filteredList.length > 120 && <span style={{ fontSize: '11px', color: '#9ca3af' }}>Top 120 affichés</span>}
                           </div>
-                          <span style={{ width: '9px', height: '9px', borderRadius: '50%', flexShrink: 0, backgroundColor: s.statut_carte === 'LIBRE' ? '#10b981' : s.statut_carte === 'PROSPECTE_MOI' ? '#2563eb' : s.statut_carte === 'PROSPECTE_AUTRE' ? '#f59e0b' : '#111827' }} />
-                        </div>
-                      ))}
-                    </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', overflowY: 'auto' }}>
+                            {filteredList.slice(0, 120).map(s => (
+                              <div
+                                key={s.siret}
+                                onClick={() => {
+                                  setSelectedSalonMap(s);
+                                  if (window.__stackMap) {
+                                    window.__stackMap.setView([s.lat, s.lng], Math.max(window.__stackMap.getZoom(), 16));
+                                  }
+                                }}
+                                style={{ padding: '11px 13px', borderRadius: '12px', border: '1px solid #f3f4f6', backgroundColor: '#f9fafb', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}
+                              >
+                                <div style={{ minWidth: 0 }}>
+                                  <div style={{ fontSize: '13px', fontWeight: '600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.nom_salon}</div>
+                                  <div style={{ fontSize: '11.5px', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
+                                    <span>{s.ville || 'France'} • {s.distance_km} km</span>
+                                    <span style={{
+                                      padding: '1px 6px', borderRadius: '5px', fontSize: '10.5px', fontWeight: '700',
+                                      backgroundColor: s.etoiles ? '#fffbeb' : '#f3f4f6',
+                                      color: s.etoiles ? '#b45309' : '#6b7280'
+                                    }}>
+                                      ★ {s.etoiles ? s.etoiles : 'N/A'}
+                                    </span>
+                                  </div>
+                                </div>
+                                <span style={{ width: '9px', height: '9px', borderRadius: '50%', flexShrink: 0, backgroundColor: s.statut_carte === 'LIBRE' ? '#10b981' : s.statut_carte === 'PROSPECTE_MOI' ? '#2563eb' : s.statut_carte === 'PROSPECTE_AUTRE' ? '#f59e0b' : '#111827' }} />
+                              </div>
+                            ))}
+                          </div>
+                        </>
+                      );
+                    })()}
                   </>
                 )}
               </div>
             </div>
           </>
         )}
-
         {/* ONGLET 4 : FACTURES D'INSTALLATION */}
         {activeTab === 'factures' && (
           <>
