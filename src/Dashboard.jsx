@@ -903,11 +903,15 @@ export default function Dashboard() {
     Logout: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>,
     User: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
     Shield: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
-    MapPin: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>,
+    MapPin: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>,
     Compass: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>,
     Academie: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>,
     Search: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
-    Lock: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    Lock: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>,
+    Zap: () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>,
+    Map: () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>,
+    Car: () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="8" rx="3"/><path d="M4 11V7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4"/><circle cx="7" cy="19" r="2"/><circle cx="17" cy="19" r="2"/></svg>,
+    Crosshair: () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/></svg>
   };
 
   const cardStyle = {
@@ -1490,15 +1494,16 @@ export default function Dashboard() {
             {showRoutePlanner && (
               <div style={{
                 ...cardStyle,
-                background: 'linear-gradient(180deg, #ffffff 0%, #f9fafb 100%)',
-                border: '1.5px solid #111827',
+                backgroundColor: '#ffffff',
+                border: '1px solid #111827',
                 padding: isMobile ? '16px' : '20px 24px',
-                marginBottom: '18px'
+                marginBottom: '18px',
+                boxShadow: '0 10px 25px rgba(17,24,39,0.05)'
               }}>
                 <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', gap: '10px', marginBottom: '16px' }}>
                   <div>
-                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: '800', color: '#863bff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                      Algorithme OSRM • Optimisation de Tournée Terrain
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: '800', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      <Icon.Map /> Algorithme OSRM • Optimisation Terrain
                     </div>
                     <h3 style={{ fontSize: '17px', fontWeight: '800', margin: '2px 0 0 0', color: '#111827' }}>
                       Construisez votre feuille de route optimale
@@ -1506,11 +1511,11 @@ export default function Dashboard() {
                   </div>
                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                     {routeSalons.length > 0 && (
-                      <button type="button" onClick={() => { setRouteSalons([]); setOptimizedRoute(null); }} style={{ ...secondaryBtn, color: '#dc2626' }}>
+                      <button type="button" onClick={() => { setRouteSalons([]); setOptimizedRoute(null); }} style={{ ...secondaryBtn, color: '#dc2626', borderColor: '#fecaca', backgroundColor: '#fef2f2' }}>
                         Vider la liste
                       </button>
                     )}
-                    <button type="button" onClick={() => setShowRoutePlanner(false)} style={secondaryBtn}>Fermer ✕</button>
+                    <button type="button" onClick={() => setShowRoutePlanner(false)} style={secondaryBtn}>Fermer <Icon.Check style={{width: 14, height: 14}}/></button>
                   </div>
                 </div>
 
@@ -1519,19 +1524,21 @@ export default function Dashboard() {
                     <label style={{ display: 'block', fontSize: '11.5px', fontWeight: '700', color: '#4b5563', marginBottom: '5px' }}>
                       1. Point de départ verrouillé
                     </label>
-                    <div style={{ ...inputStyle, backgroundColor: '#ffffff', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>📍 {mapCenter.label || 'Ma position GPS'}</span>
-                      <button type="button" onClick={handleGeolocateAgent} style={{ background: 'none', border: 'none', color: '#2563eb', fontWeight: '700', fontSize: '11.5px', cursor: 'pointer' }}>GPS</button>
+                    <div style={{ ...inputStyle, backgroundColor: '#f9fafb', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <Icon.MapPin /> {mapCenter.label || 'Ma position GPS'}
+                      </span>
+                      <button type="button" onClick={handleGeolocateAgent} style={{ background: 'none', border: 'none', color: '#111827', fontWeight: '700', fontSize: '11.5px', cursor: 'pointer', padding: 0 }}>Actualiser</button>
                     </div>
                   </div>
 
                   <div>
                     <label style={{ display: 'block', fontSize: '11.5px', fontWeight: '700', color: '#4b5563', marginBottom: '5px' }}>
-                      2. Point d'arrivée (Domicile / Bureau pour retour optimisé)
+                      2. Point d'arrivée (Domicile / Bureau)
                     </label>
                     <input
                       type="text"
-                      placeholder="Ex: 12 rue de la Paix, Strasbourg (ou laisser vide = boucle)"
+                      placeholder="Laisser vide pour une boucle au point de départ"
                       value={routeEndQuery}
                       onChange={e => { setRouteEndQuery(e.target.value); setRouteEndPoint(null); }}
                       style={{ ...inputStyle, backgroundColor: '#ffffff' }}
@@ -1556,28 +1563,27 @@ export default function Dashboard() {
                     type="button"
                     disabled={isOptimizingRoute}
                     onClick={handleOptimizeTournee}
-                    style={{ ...primaryBtn, height: '42px', padding: '0 20px' }}
+                    style={{ ...primaryBtn, height: '42px', padding: '0 20px', backgroundColor: '#111827', border: '1px solid #111827' }}
                   >
-                    {isOptimizingRoute ? 'Calcul OSRM...' : '⚡ Optimiser la route'}
+                    {isOptimizingRoute ? 'Calcul OSRM...' : <><Icon.Zap /> Optimiser la route</>}
                   </button>
                 </div>
 
                 {/* Liste ordonnée des étapes + Export Waze & Google Maps */}
                 {routeSalons.length > 0 && (
-                  <div style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '14px', padding: '14px' }}>
+                  <div style={{ backgroundColor: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '14px', padding: '14px' }}>
                     <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', gap: '10px', marginBottom: '12px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                         <span style={{ fontSize: '13px', fontWeight: '800', color: '#111827' }}>
                           Étapes de votre tournée ({routeSalons.length} salons)
                         </span>
                         {optimizedRoute && (
-                          <span style={{ padding: '4px 10px', borderRadius: '999px', backgroundColor: '#dcfce7', color: '#166534', fontSize: '12px', fontWeight: '700' }}>
+                          <span style={{ padding: '4px 10px', borderRadius: '8px', backgroundColor: '#e5e7eb', color: '#111827', fontSize: '12px', fontWeight: '700' }}>
                             Trajet total : {optimizedRoute.total_distance_km} km • ~{optimizedRoute.estimated_minutes} min (visites incluses)
                           </span>
                         )}
                       </div>
 
-                      {/* Boutons d'export GPS vers le téléphone */}
                       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                         <a
                           href={(() => {
@@ -1588,17 +1594,17 @@ export default function Dashboard() {
                           })()}
                           target="_blank"
                           rel="noopener noreferrer"
-                          style={{ ...primaryBtn, padding: '8px 14px', fontSize: '12px', textDecoration: 'none', backgroundColor: '#2563eb' }}
+                          style={{ ...primaryBtn, padding: '8px 14px', fontSize: '12px', textDecoration: 'none', backgroundColor: '#111827' }}
                         >
-                          🗺️ Ouvrir l'itinéraire complet Google Maps
+                          <Icon.Map /> Itinéraire complet (Google Maps)
                         </a>
                         <a
                           href={`https://waze.com/ul?ll=${routeSalons[0].lat},${routeSalons[0].lng}&navigate=yes`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          style={{ ...secondaryBtn, padding: '8px 14px', fontSize: '12px', textDecoration: 'none', color: '#111827', borderColor: '#d1d5db' }}
+                          style={{ ...secondaryBtn, padding: '8px 14px', fontSize: '12px', textDecoration: 'none', backgroundColor: '#ffffff', color: '#111827', borderColor: '#d1d5db' }}
                         >
-                          🚗 Waze (Étape #1)
+                          <Icon.Car /> Waze (Étape #1)
                         </a>
                       </div>
                     </div>
@@ -1610,13 +1616,13 @@ export default function Dashboard() {
                           onClick={() => setSelectedSalonMap(s)}
                           style={{
                             minWidth: '185px', padding: '10px 12px', borderRadius: '11px',
-                            border: '1px solid #e5e7eb', backgroundColor: '#f9fafb', cursor: 'pointer',
+                            border: '1px solid #e5e7eb', backgroundColor: '#ffffff', cursor: 'pointer',
                             display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px'
                           }}
                         >
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
                             <span style={{
-                              width: '22px', height: '22px', borderRadius: '50%', flexShrink: 0,
+                              width: '22px', height: '22px', borderRadius: '5px', flexShrink: 0,
                               backgroundColor: '#111827', color: '#ffffff', fontSize: '11px', fontWeight: '800',
                               display: 'flex', alignItems: 'center', justifyContent: 'center'
                             }}>
@@ -1630,9 +1636,9 @@ export default function Dashboard() {
                           <button
                             type="button"
                             onClick={(e) => { e.stopPropagation(); toggleSalonInRoute(s); }}
-                            style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: '13px', fontWeight: '700' }}
+                            style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', display: 'flex', padding: 0 }}
                           >
-                            ✕
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                           </button>
                         </div>
                       ))}
@@ -1742,34 +1748,38 @@ export default function Dashboard() {
                     {/* Encart Traçabilité Réseau si déjà visité */}
                     {selectedSalonMap.visite_info && (
                       <div style={{
-                        backgroundColor: '#f3f4f6', border: '1px solid #e5e7eb', borderRadius: '12px',
+                        backgroundColor: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '12px',
                         padding: '10px 12px', marginBottom: '12px', fontSize: '12px'
                       }}>
-                        <div style={{ fontWeight: '700', color: '#111827', display: 'flex', justifyContent: 'space-between' }}>
-                          <span>👤 {selectedSalonMap.visite_info.agent_nom_complet}</span>
+                        <div style={{ fontWeight: '700', color: '#111827', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <Icon.User /> {selectedSalonMap.visite_info.agent_nom_complet}
+                          </span>
                           <span style={{ color: '#6b7280', fontWeight: '600' }}>
                             {new Date(selectedSalonMap.visite_info.date_visite).toLocaleDateString('fr-FR')}
                           </span>
                         </div>
-                        <div style={{ color: '#4b5563', marginTop: '4px', fontSize: '11.5px' }}>
-                          Concurrent : <strong>{selectedSalonMap.visite_info.tag_concurrent}</strong> • Remise à zéro : {new Date(selectedSalonMap.visite_info.date_expiration).toLocaleDateString('fr-FR')}
+                        <div style={{ color: '#4b5563', marginTop: '6px', fontSize: '11.5px' }}>
+                          Concurrent identifié : <strong style={{ color: '#111827' }}>{selectedSalonMap.visite_info.tag_concurrent}</strong><br/>
+                          Remise à zéro automatique le {new Date(selectedSalonMap.visite_info.date_expiration).toLocaleDateString('fr-FR')}
                         </div>
                       </div>
                     )}
 
                     {/* BLOC CRM TERRAIN : TAGS RAPIDES + NOTE TEXTUELLE + VALIDATION GPS 100M */}
                     <div style={{
-                      backgroundColor: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '14px',
-                      padding: '12px', marginBottom: '12px', display: 'flex', flexDirection: 'column', gap: '10px'
+                      backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '14px',
+                      padding: '12px', marginBottom: '12px', display: 'flex', flexDirection: 'column', gap: '10px',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
                     }}>
                       <div>
                         <div style={{ fontSize: '11px', fontWeight: '700', color: '#6b7280', textTransform: 'uppercase', marginBottom: '6px' }}>
-                          Équipement actuel / Qualification rapide
+                          Équipement actuel / Qualification
                         </div>
                         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                           {[
-                            { id: 'PLANITY', label: 'Chez Planity' },
-                            { id: 'TREATWELL', label: 'Chez Treatwell' },
+                            { id: 'PLANITY', label: 'Planity' },
+                            { id: 'TREATWELL', label: 'Treatwell' },
                             { id: 'CAHIER_PAPIER', label: 'Cahier papier' },
                             { id: 'A_RAPPELER', label: 'À rappeler' }
                           ].map(tg => {
@@ -1780,10 +1790,10 @@ export default function Dashboard() {
                                 type="button"
                                 onClick={() => setVisiteForm({ ...visiteForm, tag_concurrent: tg.id })}
                                 style={{
-                                  padding: '5px 9px', borderRadius: '8px', fontSize: '11.5px', fontWeight: '700', cursor: 'pointer',
+                                  padding: '5px 10px', borderRadius: '8px', fontSize: '11.5px', fontWeight: '700', cursor: 'pointer',
                                   border: active ? '1px solid #111827' : '1px solid #e5e7eb',
-                                  backgroundColor: active ? '#111827' : '#ffffff',
-                                  color: active ? '#ffffff' : '#374151'
+                                  backgroundColor: active ? '#111827' : '#f9fafb',
+                                  color: active ? '#ffffff' : '#4b5563'
                                 }}
                               >
                                 {tg.label}
@@ -1800,7 +1810,7 @@ export default function Dashboard() {
                         <select
                           value={visiteForm.statut_visite}
                           onChange={e => setVisiteForm({ ...visiteForm, statut_visite: e.target.value })}
-                          style={{ ...inputStyle, padding: '8px 10px', fontSize: '12px', backgroundColor: '#ffffff' }}
+                          style={{ ...inputStyle, padding: '8px 10px', fontSize: '12px', backgroundColor: '#f9fafb' }}
                         >
                           <option value="ABSENT_3MOIS">Gérant absent / Plaquette déposée (Re-libre dans 3 mois)</option>
                           <option value="A_RAPPELER_3MOIS">Intéressé / À rappeler (Re-libre dans 3 mois)</option>
@@ -1811,19 +1821,19 @@ export default function Dashboard() {
                       <div>
                         <textarea
                           rows={2}
-                          placeholder="Note personnelle sur ce salon (prénom du gérant, horaires creux, matériel...)"
+                          placeholder="Note personnelle (prénom du gérant, horaires creux, matériel...)"
                           value={visiteForm.note_texte}
                           onChange={e => setVisiteForm({ ...visiteForm, note_texte: e.target.value })}
-                          style={{ ...inputStyle, backgroundColor: '#ffffff', fontSize: '12.5px', resize: 'vertical' }}
+                          style={{ ...inputStyle, backgroundColor: '#f9fafb', fontSize: '12.5px', resize: 'vertical' }}
                         />
                       </div>
 
-                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '4px' }}>
                         <button
                           type="button"
                           disabled={isSavingVisite}
                           onClick={() => handleSaveVisiteOrNote(false)}
-                          style={{ ...secondaryBtn, flex: 1, padding: '8px 10px', fontSize: '12px' }}
+                          style={{ ...secondaryBtn, flex: 1, padding: '9px 10px', fontSize: '12px', backgroundColor: '#ffffff' }}
                         >
                           Sauvegarder la note
                         </button>
@@ -1831,9 +1841,9 @@ export default function Dashboard() {
                           type="button"
                           disabled={isSavingVisite}
                           onClick={() => handleSaveVisiteOrNote(true, false)}
-                          style={{ ...primaryBtn, flex: 1.4, padding: '8px 12px', fontSize: '12px', backgroundColor: '#16a34a' }}
+                          style={{ ...primaryBtn, flex: 1.4, padding: '9px 12px', fontSize: '12px', backgroundColor: '#111827' }}
                         >
-                          📍 Valider ma visite (&lt; 100m)
+                          <Icon.Crosshair /> Valider visite (GPS)
                         </button>
                       </div>
 
@@ -1841,9 +1851,9 @@ export default function Dashboard() {
                         <button
                           type="button"
                           onClick={() => handleSaveVisiteOrNote(true, true)}
-                          style={{ background: 'none', border: 'none', color: '#6b7280', fontSize: '11px', textDecoration: 'underline', cursor: 'pointer', textAlign: 'right' }}
+                          style={{ background: 'none', border: 'none', color: '#9ca3af', fontSize: '11px', textDecoration: 'underline', cursor: 'pointer', textAlign: 'right', marginTop: '2px' }}
                         >
-                          Forcer validation sans limite 100m (Super-Admin)
+                          Validation forcée Super-Admin (sans GPS)
                         </button>
                       )}
                     </div>
