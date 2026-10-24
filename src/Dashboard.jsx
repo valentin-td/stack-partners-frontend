@@ -326,17 +326,25 @@ export default function Dashboard() {
     const map = window.__stackMap;
     const layerGroup = window.__stackLayerGroup;
 
-    // Recentre uniquement quand le centre ou le rayon change (pas quand on clique sur un salon)
+    // BUG CARTE BLANCHE RÉSOLU : Force le moteur Leaflet à recalculer sa taille exacte à l'ouverture de l'onglet
+    setTimeout(() => map.invalidateSize(), 100);
+    setTimeout(() => map.invalidateSize(), 400);
+
+    // Recentre uniquement quand le centre ou le rayon change
     const centerKey = `${mapCenter.lat}_${mapCenter.lng}_${mapRadius}`;
     if (window.__lastCenterKey !== centerKey) {
       const zoomByRadius = mapRadius <= 2 ? 14 : mapRadius <= 5 ? 13 : mapRadius <= 15 ? 11 : 10;
       map.setView([mapCenter.lat, mapCenter.lng], zoomByRadius);
       window.__lastCenterKey = centerKey;
-      setTimeout(() => map.invalidateSize(), 120);
     }
 
     const colorMap = { LIBRE: '#10b981', PROSPECTE_MOI: '#2563eb', PROSPECTE_AUTRE: '#f59e0b', CLIENT_STACK: '#111827' };
-    const filtered = mapSalons.filter(s => mapFilter === 'TOUS' || s.statut_carte === mapFilter);
+    
+    // C'est ICI qu'on masque visuellement les salons en dehors du rayon sans les supprimer de la mémoire
+    const filtered = mapSalons.filter(s => 
+      parseFloat(s.distance_km) <= mapRadius && 
+      (mapFilter === 'TOUS' || s.statut_carte === mapFilter)
+    );
 
     // Fonction de rendu ultra-rapide avec regroupement automatique (Clustering) selon l'échelle de zoom
     const renderMarkersAndClusters = () => {
@@ -1390,7 +1398,7 @@ export default function Dashboard() {
                   <>
                     {(() => {
                       const filteredList = mapSalons
-                        .filter(s => mapFilter === 'TOUS' || s.statut_carte === mapFilter)
+                        .filter(s => parseFloat(s.distance_km) <= mapRadius && (mapFilter === 'TOUS' || s.statut_carte === mapFilter))
                         .slice()
                         .sort((a, b) => {
                           if (mapSortBy === 'STARS_DESC') {
