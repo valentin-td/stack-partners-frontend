@@ -731,20 +731,20 @@ export default function Dashboard() {
       const res = await fetch(`${API_URL}/profil/yousign/initiate`, {
         method: 'POST', headers: { 'Authorization': `Bearer ${token}` }
       });
+      const data = await res.json();
       if (res.ok) {
-        const data = await res.json();
         if (data.simulation) {
-          notify(data.message || "Contrat signé électroniquement.");
-          fetchProfil();
-          return;
-        } else if (data.signatureLink) {
-          window.location.href = data.signatureLink;
-          return;
+          notify(data.message || "Contrat signé (Simulation).");
+        } else if (data.require_redirect && data.redirect_url) {
+          window.open(data.redirect_url, '_blank');
+          notify(data.message || "Ouverture du contrat Yousign...");
         }
+        fetchProfil();
+      } else {
+        notify(data.error || "Erreur lors de la génération du contrat.", true);
       }
-      await submitEtapeConformite(1);
     } catch (e) {
-      await submitEtapeConformite(1);
+      notify("Erreur réseau.", true);
     } finally {
       setIsYousignLoading(false);
     }
