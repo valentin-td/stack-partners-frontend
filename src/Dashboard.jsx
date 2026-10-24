@@ -186,10 +186,10 @@ export default function Dashboard() {
     if (activeTab === 'godmode' && isSuperAdmin) fetchAdminData();
   }, [activeTab, isSuperAdmin]);
 
-  // isNewCenter=true vide la carte (changement de ville), isNewCenter=false fusionne (agrandissement du rayon)
+  // isNewCenter=true vide la carte (changement de ville), isNewCenter=false fusionne intelligemment
   const fetchMapSalons = async (lat = mapCenter.lat, lng = mapCenter.lng, radius = mapRadius, isNewCenter = false) => {
     setMapLoading(true);
-    if (isNewCenter) setMapSalons([]); // On efface seulement si on change totalement de ville
+    if (isNewCenter) setMapSalons([]);
     
     try {
       const res = await fetch(`${API_URL}/map-salons?lat=${lat}&lng=${lng}&radius=${radius}`, {
@@ -199,10 +199,13 @@ export default function Dashboard() {
         const data = await res.json();
         setMapSalons(prev => {
           if (isNewCenter) return data.salons || [];
-          // Si on agrandit juste le rayon, on fusionne pour ne pas faire clignoter les anciens points
+          // On fusionne les résultats précédents et les nouveaux
           const merged = new Map(prev.map(s => [s.siret, s]));
           (data.salons || []).forEach(s => merged.set(s.siret, s));
-          return Array.from(merged.values()).sort((a, b) => parseFloat(a.distance_km) - parseFloat(b.distance_km));
+          // On filtre STRICTEMENT pour effacer de l'écran les salons qui sont hors du nouveau rayon
+          return Array.from(merged.values())
+            .filter(s => parseFloat(s.distance_km) <= radius)
+            .sort((a, b) => parseFloat(a.distance_km) - parseFloat(b.distance_km));
         });
       }
     } catch (e) {
