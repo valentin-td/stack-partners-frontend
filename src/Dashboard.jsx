@@ -222,10 +222,10 @@ export default function Dashboard() {
         
         if (data.nextStep !== null && data.nextStep !== undefined) {
           currentStep = data.nextStep;
-          setMapProgress(currentStep); // Barre de progression : 1, 2, 3, 4...
+          setMapProgress(currentStep); // Barre de progression : 1, 2, 3, 4, 5...
         } else {
           keepFetching = false;
-          setMapProgress(5); // Fin du scan à 100%
+          setMapProgress(6); // Fin du scan à 100%
           setTimeout(() => setMapProgress(null), 2500);
         }
       }
@@ -1281,11 +1281,11 @@ export default function Dashboard() {
                   </div>
                 )}
 
-                {/* CHARGEMENT PROGRESSIF ÉTAPES 1 à 4 : Badge discret en arrière-plan */}
-                {mapProgress !== null && mapProgress > 0 && mapProgress < 5 && (
+                {/* CHARGEMENT PROGRESSIF ÉTAPES 1 à 5 : Badge discret en arrière-plan */}
+                {mapProgress !== null && mapProgress > 0 && mapProgress < 6 && (
                   <>
                     <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', backgroundColor: 'rgba(255,255,255,0.3)', zIndex: 1000 }}>
-                      <div style={{ width: `${(mapProgress / 4) * 100}%`, height: '100%', backgroundColor: '#8b5cf6', transition: 'width 0.5s ease' }} />
+                      <div style={{ width: `${(mapProgress / 5) * 100}%`, height: '100%', backgroundColor: '#8b5cf6', transition: 'width 0.5s ease' }} />
                     </div>
                     <div style={{
                       position: 'absolute', top: '12px', left: '50%', transform: 'translateX(-50%)',
