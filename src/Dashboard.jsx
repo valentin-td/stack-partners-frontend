@@ -8,6 +8,17 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('bord');
   const [toastMsg, setToastMsg] = useState(null);
 
+  // Détection responsive temps réel (Mobile / Tablette / Desktop)
+  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
+  const isMobile = windowWidth < 860;
+  const isSmall = windowWidth < 520;
+
+  useEffect(() => {
+    const onResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
   // États Dashboard & Commissions
   const [stats, setStats] = useState({
     kpis: { nb_salons_actifs: 0, nb_salons_essai: 0, seuil_deblocage: 3, commissions_en_attente: '0.00', commissions_acquises: '0.00', commissions_payees: '0.00' },
@@ -15,18 +26,17 @@ export default function Dashboard() {
     commissions: []
   });
 
-  // États Factures
+  // États Factures & Prospects
   const [factures, setFactures] = useState([]);
   const [showFactureForm, setShowFactureForm] = useState(false);
   const [factureData, setFactureData] = useState({ nom_salon: '', adresse_salon: '', siret_salon: '' });
 
-  // États Prospects
   const [prospects, setProspects] = useState([]);
   const [showProspectForm, setShowProspectForm] = useState(false);
   const [prospectData, setProspectData] = useState({ nom_salon: '', ville: '', code_postal: '', siret_prospect: '', telephone_salon: '', email_gerant: '' });
   const [prospectError, setProspectError] = useState('');
 
-  // États Paramètres & Conformité (Ordre de déblocage 1 à 6)
+  // États Paramètres & Conformité (Étapes 1 à 6)
   const [profilData, setProfilData] = useState({
     nom: '', prenom: '', email: '', telephone: '', siret_agent: '', numero_rsac: '', iban: '', statut_compte: 'EN_ATTENTE_VALIDATION',
     contrat_signe: false, statut_contrat: 'MANQUANT',
@@ -56,7 +66,7 @@ export default function Dashboard() {
   const [quickLockForm, setQuickLockForm] = useState({ email_gerant: '', telephone_salon: '' });
   const [leafletReady, setLeafletReady] = useState(!!window.L);
 
-  // États God Mode (Super-Admin) — Basé sur ID 1, nom 'tardy' ou email
+  // États God Mode (Super-Admin)
   const isSuperAdmin =
     Number(agent?.id) === 1 ||
     Number(agent?.id_agent) === 1 ||
@@ -66,8 +76,11 @@ export default function Dashboard() {
 
   const [adminAgents, setAdminAgents] = useState([]);
   const [adminCommissions, setAdminCommissions] = useState([]);
+  const [adminSearch, setAdminSearch] = useState('');
+  const [adminStatusFilter, setAdminStatusFilter] = useState('TOUS');
+  const [expandedAgentIds, setExpandedAgentIds] = useState({});
 
-  // États Académie, Objections, Vidéos & Simulateurs (Phases 3 & 4)
+  // États Académie, Objections, Vidéos & Simulateurs
   const [openObjectionIdx, setOpenObjectionIdx] = useState(0);
   const [sandboxLoading, setSandboxLoading] = useState(null);
   const [activeSandboxInfo, setActiveSandboxInfo] = useState(null);
@@ -80,38 +93,32 @@ export default function Dashboard() {
     }
     return [
       {
-        id: 'vid-1',
-        duree: '4 min',
-        cat: 'Démonstration Terrain',
+        id: 'vid-1', duree: '4 min', cat: 'Démonstration Terrain',
         titre: 'Réussir sa démo Caisse & Pointeuse en 5 minutes chrono',
-        desc: 'Le parcours exact à montrer au gérant pour déclencher le coup de cœur immédiat : encaissement 3 clics, pointage PIN et reçu NF525.',
+        desc: 'Le parcours exact à montrer au gérant : encaissement 3 clics, pointage PIN et reçu NF525.',
         embedUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-        pointsCles: ['Ouverture de la pointeuse PIN (0000)', 'Création d’un ticket mixte Prestation + Produit', 'Affichage de la remise fidélité & Winback automatique']
+        pointsCles: ['Pointeuse PIN (0000)', 'Ticket mixte Prestation + Produit', 'Remise fidélité & Winback']
       },
       {
-        id: 'vid-2',
-        duree: '6 min',
-        cat: 'Procédure Go-Live',
+        id: 'vid-2', duree: '6 min', cat: 'Procédure Go-Live',
         titre: 'Réaliser un Onboarding parfait & débloquer la Checklist',
-        desc: 'Comment accompagner le client sur le Popup Légal, saisir votre code partenaire et valider les 5 étapes obligatoires de la caisse.',
+        desc: 'Accompagner le client sur le Popup Légal, saisir votre code partenaire et valider les 5 étapes.',
         embedUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-        pointsCles: ['Vérification du SIRET et signature CGV / NF525', 'Saisie du code partenaire dans le Popup Légal', 'Déblocage des 5 verrous Go-Live sur la caisse']
+        pointsCles: ['Signature CGV / NF525', 'Saisie code partenaire', 'Déblocage des 5 verrous Go-Live']
       },
       {
-        id: 'vid-3',
-        duree: '5 min',
-        cat: 'Argumentaire Financier',
+        id: 'vid-3', duree: '5 min', cat: 'Argumentaire Financier',
         titre: 'Présenter l’IA Comptable & la conformité fiscale NF525',
-        desc: 'Les arguments clés pour convaincre un gérant qui hésite sur le prix de l’abonnement après ses 30 jours d’essai gratuit.',
+        desc: 'Les arguments clés pour convaincre un gérant après ses 30 jours d’essai gratuit.',
         embedUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-        pointsCles: ['Scan IA de factures fournisseurs en 10 secondes', 'Clôture journalière Blind Close (Z de caisse)', 'Export FEC et liasse comptable mensuelle en 1 clic']
+        pointsCles: ['Scan IA de factures en 10s', 'Clôture Blind Close (Z de caisse)', 'Export FEC mensuel en 1 clic']
       }
     ];
   });
 
   const handleUpdateVideoUrl = (id) => {
     const current = tutorialsList.find(v => v.id === id);
-    const nextUrl = prompt("Collez l'URL d'intégration de votre vidéo (YouTube Embed, Loom Embed ou lien MP4 direct) :", current?.embedUrl || '');
+    const nextUrl = prompt("Collez l'URL de la vidéo (YouTube, Loom ou lien MP4) :", current?.embedUrl || '');
     if (nextUrl && nextUrl.trim()) {
       let formatted = nextUrl.trim();
       if (formatted.includes('youtube.com/watch?v=')) {
@@ -123,11 +130,10 @@ export default function Dashboard() {
       const updated = tutorialsList.map(v => v.id === id ? { ...v, embedUrl: formatted } : v);
       setTutorialsList(updated);
       localStorage.setItem('stack_partner_videos_v1', JSON.stringify(updated));
-      notify("Lien de la vidéo mis à jour avec succès.");
+      notify("Lien vidéo mis à jour.");
     }
   };
 
-  // Gestion des 3 Simulateurs Bacs à Sable + Sauvegarde / Réinitialisation / Défaut
   const handleLaunchSandbox = async (type, action = 'LAUNCH') => {
     const loaderKey = `${type}_${action}`;
     setSandboxLoading(loaderKey);
@@ -135,22 +141,20 @@ export default function Dashboard() {
       const res = await fetch(`${API_URL}/sandbox/launch`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ type, action }) // action: 'LAUNCH' | 'SAVE_CUSTOM' | 'RESET_CUSTOM' | 'RESET_DEFAULT'
+        body: JSON.stringify({ type, action })
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Erreur lors de l'opération sur le simulateur");
+      if (!res.ok) throw new Error(data.error || "Erreur sur le simulateur");
 
       if (action === 'SAVE_CUSTOM') {
-        notify("Votre configuration actuelle du salon de démo a été sauvegardée comme modèle personnel !");
+        notify("Configuration du salon de démo sauvegardée !");
       } else {
         setActiveSandboxInfo(data);
-        if (action === 'RESET_CUSTOM') {
-          notify("Salon de démo restauré selon votre dernière sauvegarde personnalisée !");
-        } else if (action === 'RESET_DEFAULT') {
-          notify("Salon de démo remis à l'état d'usine STACK (avec données complètes) !");
-        } else {
-          notify(`Environnement "${data.nom_salon}" ouvert dans un nouvel onglet !`);
-        }
+        notify(
+          action === 'RESET_CUSTOM' ? "Salon restauré selon votre sauvegarde !" :
+          action === 'RESET_DEFAULT' ? "Salon remis à l'état d'usine STACK !" :
+          `Environnement "${data.nom_salon}" ouvert !`
+        );
         window.open(data.url_directe, '_blank', 'noopener,noreferrer');
       }
     } catch (err) {
@@ -160,17 +164,13 @@ export default function Dashboard() {
     }
   };
 
-  // Chargement dynamique de Leaflet (CSS + JS)
+  // Chargement Leaflet
   useEffect(() => {
-    if (window.L) {
-      setLeafletReady(true);
-      return;
-    }
+    if (window.L) { setLeafletReady(true); return; }
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
     document.head.appendChild(link);
-
     const script = document.createElement('script');
     script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
     script.onload = () => setLeafletReady(true);
@@ -204,20 +204,17 @@ export default function Dashboard() {
   };
 
   const handleGeolocateAgent = () => {
-    if (!navigator.geolocation) {
-      notify("La géolocalisation n'est pas supportée par votre navigateur.", true);
-      return;
-    }
+    if (!navigator.geolocation) return notify("Géolocalisation non supportée.", true);
     setMapLoading(true);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        const nextCenter = { lat: pos.coords.latitude, lng: pos.coords.longitude, label: 'Ma position actuelle' };
+        const nextCenter = { lat: pos.coords.latitude, lng: pos.coords.longitude, label: 'Ma position GPS' };
         setMapCenter(nextCenter);
         fetchMapSalons(nextCenter.lat, nextCenter.lng, mapRadius);
       },
       () => {
         setMapLoading(false);
-        notify("Autorisez la localisation dans votre navigateur ou saisissez une adresse.", true);
+        notify("Autorisez la localisation ou saisissez une adresse.", true);
       },
       { enableHighAccuracy: true }
     );
@@ -230,7 +227,7 @@ export default function Dashboard() {
     try {
       const res = await fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(mapAddressQuery)}&limit=1`);
       const data = await res.json();
-      if (data.features && data.features.length > 0) {
+      if (data.features?.length > 0) {
         const [lng, lat] = data.features[0].geometry.coordinates;
         const label = data.features[0].properties.label;
         setMapCenter({ lat, lng, label });
@@ -276,7 +273,6 @@ export default function Dashboard() {
     }
   };
 
-  // Rendu et mise à jour évolutive de la carte Leaflet
   useEffect(() => {
     if (activeTab !== 'carte' || !leafletReady || !window.L) return;
     const L = window.L;
@@ -287,8 +283,7 @@ export default function Dashboard() {
       const map = L.map(container, { zoomControl: false }).setView([mapCenter.lat, mapCenter.lng], 13);
       L.control.zoom({ position: 'bottomright' }).addTo(map);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors',
-        maxZoom: 19
+        attribution: '© OpenStreetMap', maxZoom: 19
       }).addTo(map);
       window.__stackMap = map;
       window.__stackLayerGroup = L.layerGroup().addTo(map);
@@ -300,47 +295,31 @@ export default function Dashboard() {
 
     const zoomByRadius = mapRadius <= 2 ? 14 : mapRadius <= 5 ? 13 : mapRadius <= 15 ? 11 : 10;
     map.setView([mapCenter.lat, mapCenter.lng], zoomByRadius);
+    setTimeout(() => map.invalidateSize(), 150);
 
     L.circle([mapCenter.lat, mapCenter.lng], {
-      radius: mapRadius * 1000,
-      color: '#111827',
-      weight: 1.5,
-      dashArray: '6, 6',
-      fillColor: '#111827',
-      fillOpacity: 0.04
+      radius: mapRadius * 1000, color: '#111827', weight: 1.5, dashArray: '6, 6', fillColor: '#111827', fillOpacity: 0.04
     }).addTo(layerGroup);
 
     const agentIcon = L.divIcon({
       className: '',
-      html: `<div style="width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,#863bff 0%,#47bfff 100%);border:3px solid #ffffff;box-shadow:0 0 0 4px rgba(134,59,255,0.22),0 4px 10px rgba(0,0,0,0.25);"></div>`,
-      iconSize: [24, 24],
-      iconAnchor: [12, 12]
+      html: `<div style="width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,#863bff 0%,#47bfff 100%);border:3px solid #fff;box-shadow:0 0 0 4px rgba(134,59,255,0.22);"></div>`,
+      iconSize: [24, 24], iconAnchor: [12, 12]
     });
-    L.marker([mapCenter.lat, mapCenter.lng], { icon: agentIcon })
-      .bindTooltip(`Centre : ${mapCenter.label} (Rayon ${mapRadius} km)`, { direction: 'top' })
-      .addTo(layerGroup);
+    L.marker([mapCenter.lat, mapCenter.lng], { icon: agentIcon }).addTo(layerGroup);
 
-    const colorMap = {
-      LIBRE: '#10b981',
-      PROSPECTE_MOI: '#2563eb',
-      PROSPECTE_AUTRE: '#f59e0b',
-      CLIENT_STACK: '#111827'
-    };
-
+    const colorMap = { LIBRE: '#10b981', PROSPECTE_MOI: '#2563eb', PROSPECTE_AUTRE: '#f59e0b', CLIENT_STACK: '#111827' };
     const filtered = mapSalons.filter(s => mapFilter === 'TOUS' || s.statut_carte === mapFilter);
 
     filtered.forEach(salon => {
       const bg = colorMap[salon.statut_carte] || '#10b981';
       const isSelected = selectedSalonMap?.siret === salon.siret;
       const size = isSelected ? 22 : 16;
-
       const markerIcon = L.divIcon({
         className: '',
-        html: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${bg};border:2.5px solid #ffffff;box-shadow:0 3px 10px rgba(0,0,0,0.22);cursor:pointer;transition:transform 0.15s ease;"></div>`,
-        iconSize: [size + 4, size + 4],
-        iconAnchor: [(size + 4) / 2, (size + 4) / 2]
+        html: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${bg};border:2.5px solid #fff;box-shadow:0 3px 10px rgba(0,0,0,0.22);cursor:pointer;"></div>`,
+        iconSize: [size + 4, size + 4], iconAnchor: [(size + 4) / 2, (size + 4) / 2]
       });
-
       const marker = L.marker([salon.lat, salon.lng], { icon: markerIcon }).addTo(layerGroup);
       marker.on('click', () => setSelectedSalonMap(salon));
     });
@@ -356,14 +335,20 @@ export default function Dashboard() {
 
   const fetchAdminData = async () => {
     const resAgents = await fetch(`${API_URL}/admin/agents`, { headers: { 'Authorization': `Bearer ${token}` } });
-    if (resAgents.ok) setAdminAgents(await resAgents.json());
-    
+    if (resAgents.ok) {
+      const list = await resAgents.json();
+      setAdminAgents(list);
+      // Ouvre par défaut le premier agent ayant des pièces à vérifier
+      if (list.length > 0 && Object.keys(expandedAgentIds).length === 0) {
+        setExpandedAgentIds({ [list[0].id_agent]: true });
+      }
+    }
     const resCom = await fetch(`${API_URL}/admin/commissions`, { headers: { 'Authorization': `Bearer ${token}` } });
     if (resCom.ok) setAdminCommissions(await resCom.json());
   };
 
   const handleVerifyPieceAdmin = async (idAgent, champ_statut, decision, purge_identite_rgpd = false) => {
-    const commentaire = decision === 'REFUSE' ? prompt("Motif du refus (affiché à l'agent) :") || 'Pièce non conforme' : 'Vérifié et validé par le fondateur';
+    const commentaire = decision === 'REFUSE' ? prompt("Motif du refus (affiché à l'agent) :") || 'Pièce non conforme' : 'Vérifié et validé par la direction STACK';
     const res = await fetch(`${API_URL}/admin/agents/${idAgent}/verifier-piece`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
@@ -383,7 +368,7 @@ export default function Dashboard() {
     const data = await res.json();
     if (res.ok) {
       fetchAdminData();
-      notify("Commission marquée comme payée (virement effectué).");
+      notify("Commission marquée comme payée.");
     } else {
       notify(data.error || "Paiement bloqué", true);
     }
@@ -394,29 +379,20 @@ export default function Dashboard() {
     if (res.ok) setProfilData(await res.json());
   };
 
-  // CORRECTION UPLOAD : Conversion Base64 universelle compatible avec la BDD PostgreSQL
   const handleFileUpload = (e, fieldName) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 4 * 1024 * 1024) {
-      notify("Fichier trop volumineux (max 4 Mo).", true);
-      return;
-    }
+    if (file.size > 4 * 1024 * 1024) return notify("Fichier trop volumineux (max 4 Mo).", true);
     const reader = new FileReader();
     reader.onload = () => {
       setProfilData(prev => ({ ...prev, [fieldName]: reader.result }));
-      notify(`Pièce "${file.name}" chargée. Cliquez sur le bouton de soumission de l'étape pour l'enregistrer.`);
+      notify(`Pièce "${file.name}" prête. Cliquez sur Soumettre l'étape pour l'enregistrer.`);
     };
-    reader.onerror = () => notify("Impossible de lire ce fichier.", true);
     reader.readAsDataURL(file);
   };
 
-  // Fonction universelle pour ouvrir et visualiser une pièce (Base64 ou URL) dans un nouvel onglet
-  const openUploadedDocument = (fileData, label = 'Document') => {
-    if (!fileData || typeof fileData !== 'string') {
-      notify("Aucun document disponible à afficher.", true);
-      return;
-    }
+  const openUploadedDocument = (fileData) => {
+    if (!fileData || typeof fileData !== 'string') return notify("Aucun document disponible.", true);
     if (fileData.startsWith('http://') || fileData.startsWith('https://')) {
       window.open(fileData, '_blank', 'noopener,noreferrer');
       return;
@@ -424,36 +400,29 @@ export default function Dashboard() {
     if (fileData.startsWith('data:')) {
       try {
         const arr = fileData.split(',');
-        const mimeMatch = arr[0].match(/:(.*?);/);
-        const mime = mimeMatch ? mimeMatch[1] : 'application/pdf';
+        const mime = arr[0].match(/:(.*?);/)?.[1] || 'application/pdf';
         const bstr = atob(arr[1]);
         let n = bstr.length;
         const u8arr = new Uint8Array(n);
-        while (n--) {
-          u8arr[n] = bstr.charCodeAt(n);
-        }
-        const blob = new Blob([u8arr], { type: mime });
-        const blobUrl = URL.createObjectURL(blob);
+        while (n--) u8arr[n] = bstr.charCodeAt(n);
+        const blobUrl = URL.createObjectURL(new Blob([u8arr], { type: mime }));
         window.open(blobUrl, '_blank', 'noopener,noreferrer');
       } catch (e) {
-        notify("Erreur lors de l'ouverture du document.", true);
+        notify("Impossible d'ouvrir la pièce.", true);
       }
     }
   };
 
-  // CORRECTION YOUSIGN + FALLBACK SIGNATURE ÉLECTRONIQUE DIRECTE
   const handleYousignSignature = async () => {
     setIsYousignLoading(true);
     try {
       const res = await fetch(`${API_URL}/profil/yousign/initiate`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
+        method: 'POST', headers: { 'Authorization': `Bearer ${token}` }
       });
-
       if (res.ok) {
         const data = await res.json();
         if (data.simulation) {
-          notify(data.message || "Contrat signé électroniquement avec succès.");
+          notify(data.message || "Contrat signé électroniquement.");
           fetchProfil();
           return;
         } else if (data.signatureLink) {
@@ -461,7 +430,6 @@ export default function Dashboard() {
           return;
         }
       }
-      // Si la route Yousign renvoie une erreur ou n'est pas configurée en prod, on bascule sur l'étape 1 directe
       await submitEtapeConformite(1);
     } catch (e) {
       await submitEtapeConformite(1);
@@ -470,37 +438,29 @@ export default function Dashboard() {
     }
   };
 
-  // CORRECTION ENVOI ÉTAPES : JSON propre (avec support complet des chaînes Base64)
   const submitEtapeConformite = async (etape, customPayload = null) => {
     try {
-      const payloadToSend = customPayload || profilData;
       const res = await fetch(`${API_URL}/profil/etape`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ etape, payload: payloadToSend })
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ etape, payload: customPayload || profilData })
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
-        notify(data.message || `Étape ${etape} enregistrée avec succès.`);
+        notify(data.message || `Étape ${etape} enregistrée.`);
         fetchProfil();
       } else {
-        notify(data.error || "Erreur lors de l'enregistrement.", true);
+        notify(data.error || "Erreur d'enregistrement.", true);
       }
     } catch (err) {
-      notify("Erreur réseau lors de l'envoi de votre dossier.", true);
+      notify("Erreur réseau.", true);
     }
   };
 
   const handleQuizSubmit = (e) => {
     e.preventDefault();
     const score = (quizAnswers.q1 === 'nf525' ? 25 : 0) + (quizAnswers.q2 === 'interdit' ? 25 : 0) + (quizAnswers.q3 === 'mandataire' ? 25 : 0) + (quizAnswers.q4 === '99' ? 25 : 0);
-    if (score < 100) {
-      notify(`Score insuffisant (${score}/100). Un score de 100% est exigé sur les règles NF525 et le mandat.`, true);
-      return;
-    }
+    if (score < 100) return notify(`Score insuffisant (${score}/100). 100% exigé.`, true);
     submitEtapeConformite(5, { telephone: profilData.telephone, quiz_score: 100, telephone_confirme: profilData.telephone_confirme });
   };
 
@@ -509,12 +469,10 @@ export default function Dashboard() {
     setTimeout(() => setToastMsg(null), 5000);
   };
 
-  // API Dashboard & Commissions (Avec filtre strict anti-sandbox & anti-essai gratuit)
   const fetchStats = async () => {
     const res = await fetch(`${API_URL}/dashboard-stats`, { headers: { 'Authorization': `Bearer ${token}` } });
     if (res.ok) {
       const raw = await res.json();
-      // Double sécurité Frontend : on exclut tout salon de simulation (@stack-sim.fr ou est_bac_a_sable)
       const vraisSalons = (raw.salons || []).filter(s =>
         !s.est_bac_a_sable &&
         !(s.email_gerant || '').includes('@stack-sim.fr') &&
@@ -522,30 +480,21 @@ export default function Dashboard() {
         !(s.nom_salon || '').includes('Maison Éclat — Démo') &&
         !(s.nom_salon || '').includes('Salon Test Onboarding')
       );
-
-      // Un salon n'est "Actif payant" QUE si statut_abonnement === 'actif' ET que son plan n'est PAS 'PREMIUM_TRIAL'
-      const salonsVraimentPayants = vraisSalons.filter(s => s.statut_abonnement === 'actif' && s.plan_actuel !== 'PREMIUM_TRIAL');
-      const salonsEnEssaiGratuit = vraisSalons.filter(s => s.plan_actuel === 'PREMIUM_TRIAL' || s.statut_abonnement !== 'actif');
-
-      const vraiesCommissions = (raw.commissions || []).filter(c =>
+      const salonsPayants = vraisSalons.filter(s => s.statut_abonnement === 'actif' && s.plan_actuel !== 'PREMIUM_TRIAL');
+      const salonsEssai = vraisSalons.filter(s => s.plan_actuel === 'PREMIUM_TRIAL' || s.statut_abonnement !== 'actif');
+      const vraiesCom = (raw.commissions || []).filter(c =>
         !(c.nom_salon || '').includes('Salon Vierge d\'Entraînement') &&
         !(c.nom_salon || '').includes('Maison Éclat — Démo') &&
         !(c.nom_salon || '').includes('Salon Test Onboarding')
       );
-
       setStats({
-        kpis: {
-          ...raw.kpis,
-          nb_salons_actifs: salonsVraimentPayants.length,
-          nb_salons_essai: salonsEnEssaiGratuit.length
-        },
+        kpis: { ...raw.kpis, nb_salons_actifs: salonsPayants.length, nb_salons_essai: salonsEssai.length },
         salons: vraisSalons,
-        commissions: vraiesCommissions
+        commissions: vraiesCom
       });
     }
   };
 
-  // API Factures
   const fetchFactures = async () => {
     const res = await fetch(`${API_URL}/factures`, { headers: { 'Authorization': `Bearer ${token}` } });
     if (res.ok) setFactures(await res.json());
@@ -562,10 +511,10 @@ export default function Dashboard() {
       setShowFactureForm(false);
       setFactureData({ nom_salon: '', adresse_salon: '', siret_salon: '' });
       fetchFactures();
-      notify("Facture générée avec succès.");
+      notify("Facture générée.");
     } else {
       const data = await res.json().catch(() => ({}));
-      notify(data.error || "Action non autorisée. Votre dossier de conformité n'est pas complètement validé.", true);
+      notify(data.error || "Dossier de conformité incomplet.", true);
     }
   };
 
@@ -575,19 +524,16 @@ export default function Dashboard() {
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url;
-      a.download = `${numero}.pdf`;
-      a.click();
+      a.href = url; a.download = `${numero}.pdf`; a.click();
     }
   };
 
   const handlePay = async (id) => {
     await fetch(`${API_URL}/factures/${id}/payee`, { method: 'PATCH', headers: { 'Authorization': `Bearer ${token}` } });
     fetchFactures();
-    notify("Virement validé. L'onboarding est débloqué.");
+    notify("Virement validé.");
   };
 
-  // API Prospects
   const fetchProspects = async () => {
     const res = await fetch(`${API_URL}/prospects`, { headers: { 'Authorization': `Bearer ${token}` } });
     if (res.ok) setProspects(await res.json());
@@ -596,13 +542,12 @@ export default function Dashboard() {
   const handleOnboarding = async (id_prospect) => {
     try {
       const res = await fetch(`${API_URL}/prospects/${id_prospect}/onboarding`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
+        method: 'POST', headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       navigator.clipboard?.writeText(data.lien);
-      notify(`Lien copié dans le presse-papier : ${data.lien}`);
+      notify(`Lien copié : ${data.lien}`);
       fetchProspects();
     } catch (err) {
       notify(err.message, true);
@@ -635,100 +580,38 @@ export default function Dashboard() {
   };
 
   const Icon = {
-    Bord: () => (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
-      </svg>
-    ),
-    Prospects: () => (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>
-      </svg>
-    ),
-    Factures: () => (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
-      </svg>
-    ),
-    FileDownload: () => (
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-      </svg>
-    ),
-    Eye: () => (
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
-      </svg>
-    ),
-    Check: () => (
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <polyline points="20 6 9 17 4 12"/>
-      </svg>
-    ),
-    ArrowUpRight: () => (
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/>
-      </svg>
-    ),
-    Plus: () => (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-      </svg>
-    ),
-    Logout: () => (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
-      </svg>
-    ),
-    User: () => (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-      </svg>
-    ),
-    Shield: () => (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-      </svg>
-    ),
-    MapPin: () => (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
-      </svg>
-    ),
-    Compass: () => (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>
-      </svg>
-    ),
-    Academie: () => (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>
-      </svg>
-    ),
-    Search: () => (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-      </svg>
-    ),
-    Lock: () => (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-      </svg>
-    )
+    Bord: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
+    Prospects: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>,
+    Factures: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>,
+    FileDownload: () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
+    Eye: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>,
+    Check: () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
+    ArrowUpRight: () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>,
+    Plus: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+    Logout: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>,
+    User: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
+    Shield: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
+    MapPin: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>,
+    Compass: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>,
+    Academie: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>,
+    Search: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
+    Lock: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
   };
 
   const cardStyle = {
     backgroundColor: '#ffffff',
-    borderRadius: '22px',
+    borderRadius: isMobile ? '18px' : '22px',
     border: '1px solid #e5e7eb',
-    padding: '24px',
+    padding: isMobile ? '16px' : '24px',
     boxShadow: '0 4px 20px rgba(0, 0, 0, 0.02)',
-    marginBottom: '24px'
+    marginBottom: isMobile ? '16px' : '24px'
   };
 
   const inputStyle = {
     flex: 1,
-    padding: '12px 16px',
+    width: '100%',
+    boxSizing: 'border-box',
+    padding: '12px 14px',
     backgroundColor: '#f3f4f6',
     border: '1px solid #e5e7eb',
     borderRadius: '12px',
@@ -740,13 +623,14 @@ export default function Dashboard() {
   const primaryBtn = {
     display: 'inline-flex',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: '8px',
-    padding: '12px 20px',
+    padding: '12px 18px',
     backgroundColor: '#111827',
     color: '#ffffff',
     border: 'none',
     borderRadius: '12px',
-    fontSize: '14px',
+    fontSize: '13.5px',
     fontWeight: '600',
     cursor: 'pointer'
   };
@@ -754,6 +638,7 @@ export default function Dashboard() {
   const secondaryBtn = {
     display: 'inline-flex',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: '6px',
     padding: '9px 14px',
     backgroundColor: '#f9fafb',
@@ -778,153 +663,223 @@ export default function Dashboard() {
     border: 'none',
     borderRadius: '12px',
     cursor: 'pointer',
-    textAlign: 'left',
-    transition: 'all 0.15s ease'
+    textAlign: 'left'
   });
 
-  // Bouton réutilisable pour prévisualiser un fichier chargé côté Agent
   const renderFilePreviewBadge = (fileValue, label) => {
     if (!fileValue || typeof fileValue !== 'string') return null;
     return (
       <button
         type="button"
-        onClick={() => openUploadedDocument(fileValue, label)}
+        onClick={() => openUploadedDocument(fileValue)}
         style={{
-          marginTop: '6px',
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '6px',
-          padding: '5px 10px',
-          borderRadius: '8px',
-          backgroundColor: '#f0fdf4',
-          border: '1px solid #bbf7d0',
-          color: '#166534',
-          fontSize: '11.5px',
-          fontWeight: '600',
-          cursor: 'pointer'
+          marginTop: '6px', display: 'inline-flex', alignItems: 'center', gap: '6px',
+          padding: '5px 10px', borderRadius: '8px', backgroundColor: '#f0fdf4',
+          border: '1px solid #bbf7d0', color: '#166534', fontSize: '11.5px', fontWeight: '600', cursor: 'pointer'
         }}
       >
-        <Icon.Eye /> Voir la pièce enregistrée ({label})
+        <Icon.Eye /> Voir ({label})
       </button>
     );
   };
 
   const progressionPourcent = Math.min(100, Math.round((stats.kpis.nb_salons_actifs / stats.kpis.seuil_deblocage) * 100));
 
+  // Calculs God Mode
+  const getAgentPiecesList = (a) => [
+    { label: 'Contrat de Mandat', step: 'Étape 1', field: 'statut_contrat', val: a.statut_contrat, info: a.contrat_signe ? 'Signé électroniquement' : 'Non signé' },
+    { label: 'Pièce d’Identité', step: 'Étape 2a', field: 'statut_identite', val: a.statut_identite, file: a.fichier_identite, info: `Né(e): ${a.date_naissance ? a.date_naissance.slice(0,10) : '—'} • Exp: ${a.date_expiration_identite ? a.date_expiration_identite.slice(0,10) : '—'}`, rgpd: true },
+    { label: 'SIREN / SIRET (INSEE)', step: 'Étape 2b', field: 'statut_siret', val: a.statut_siret, info: `SIRET : ${a.siret_agent || '—'} (${a.forme_juridique || 'EI'})` },
+    { label: 'Extrait RSAC (< 3 mois)', step: 'Étape 2c', field: 'statut_rsac', val: a.statut_rsac, file: a.fichier_rsac, info: `RSAC : ${a.numero_rsac || '—'} (${a.greffe_rsac || 'Greffe N/A'})` },
+    { label: 'Extrait Kbis (Société)', step: 'Étape 2d', field: 'statut_kbis', val: a.forme_juridique === 'SOCIETE' ? a.statut_kbis : 'VALIDE', file: a.fichier_kbis, info: a.forme_juridique === 'SOCIETE' ? `Émis: ${a.date_emission_kbis ? a.date_emission_kbis.slice(0,10) : '—'}` : 'Non requis (Entrepreneur Individuel)' },
+    { label: 'Vigilance URSSAF', step: 'Étape 3', field: 'statut_urssaf', val: a.statut_urssaf, file: a.fichier_urssaf, info: `Code : ${a.code_verif_urssaf || '—'} • Exp: ${a.date_expiration_urssaf ? a.date_expiration_urssaf.slice(0,10) : '—'}` },
+    { label: 'Assurance RC Pro', step: 'Étape 4a', field: 'statut_rc_pro', val: a.statut_rc_pro, file: a.fichier_rc_pro, info: `${a.assureur_nom || 'Assureur N/A'} (${a.assureur_plafond || '—'})` },
+    { label: 'IBAN & Titulaire', step: 'Étape 4b', field: 'statut_iban', val: a.statut_iban, info: `${a.titulaire_iban || 'Titulaire N/A'} • ${a.iban || 'IBAN manquant'}` },
+    { label: 'TVA, Charte & Quiz NF525', step: 'Étape 5', field: 'statut_tva', val: a.statut_tva, info: `${a.regime_tva || '293B'} • Quiz NF525 : ${a.quiz_score || 0}%` }
+  ];
+
+  const filteredAdminAgents = adminAgents.filter(a => {
+    const q = adminSearch.toLowerCase().trim();
+    const matchSearch = !q ||
+      (a.nom || '').toLowerCase().includes(q) ||
+      (a.prenom || '').toLowerCase().includes(q) ||
+      (a.email || '').toLowerCase().includes(q) ||
+      (a.code_partenaire || '').toLowerCase().includes(q) ||
+      (a.siret_agent || '').includes(q);
+    if (!matchSearch) return false;
+    if (adminStatusFilter === 'ACTIFS') return a.statut_compte === 'ACTIF';
+    if (adminStatusFilter === 'BLOQUES') return a.statut_compte === 'BLOQUE_CONFORMITE';
+    if (adminStatusFilter === 'A_VERIFIER') return a.statut_compte !== 'ACTIF';
+    return true;
+  });
+
+  const totalPendingPieces = adminAgents.reduce((acc, a) => {
+    const pieces = getAgentPiecesList(a);
+    return acc + pieces.filter(p => p.val !== 'VALIDE' && p.val !== 'NON_REQUIS').length;
+  }, 0);
+
+  const totalCommissionsToPay = adminCommissions.reduce((acc, c) => acc + parseFloat(c.montant_commission || 0), 0).toFixed(2);
+
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', backgroundColor: '#f6f6f7', color: '#111827' }}>
-      
-      {/* BANDEAU LATÉRAL GAUCHE */}
-      <div style={{ width: '260px', backgroundColor: '#ffffff', borderRight: '1px solid #e5e7eb', padding: '28px 20px', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
-        
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '24px', paddingLeft: '6px' }}>
-          <div style={{ width: '32px', height: '32px', borderRadius: '9px', background: 'linear-gradient(135deg, #863bff 0%, #47bfff 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: '800', fontSize: '16px' }}>
-            S
-          </div>
-          <div>
-            <div style={{ fontSize: '17px', fontWeight: '800', letterSpacing: '0.03em', color: '#111827', lineHeight: 1.1 }}>STACK</div>
-            <div style={{ fontSize: '11px', fontWeight: '600', color: '#6b7280' }}>Portail Partenaires</div>
-          </div>
-        </div>
+    <div style={{
+      display: 'flex',
+      flexDirection: isMobile ? 'column' : 'row',
+      minHeight: '100vh',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      backgroundColor: '#f6f6f7',
+      color: '#111827',
+      paddingBottom: isMobile ? '84px' : '0'
+    }}>
 
-        {/* CARTE AGENT CLIQUABLE */}
-        <button
-          onClick={() => setActiveTab('profil')}
-          style={{
-            width: '100%',
-            textAlign: 'left',
-            backgroundColor: activeTab === 'profil' ? '#111827' : '#f6f6f7',
-            border: activeTab === 'profil' ? '1px solid #111827' : '1px solid #e5e7eb',
-            borderRadius: '14px',
-            padding: '12px 14px',
-            marginBottom: '28px',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            transition: 'all 0.15s ease'
-          }}
-        >
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: profilData.autorise_a_vendre ? '#22c55e' : '#f59e0b' }} />
-              <span style={{ fontSize: '13px', fontWeight: '700', color: activeTab === 'profil' ? '#ffffff' : '#111827', textTransform: 'capitalize' }}>
-                {agent.prenom} {agent.nom}
-              </span>
+      {/* EN-TÊTE MOBILE STICKY */}
+      {isMobile && (
+        <div style={{
+          position: 'sticky', top: 0, zIndex: 900,
+          backgroundColor: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(12px)',
+          borderBottom: '1px solid #e5e7eb', padding: '12px 16px',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ width: '30px', height: '30px', borderRadius: '8px', background: 'linear-gradient(135deg, #863bff 0%, #47bfff 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: '800', fontSize: '15px' }}>
+              S
             </div>
-            <div style={{ fontSize: '11.5px', color: activeTab === 'profil' ? '#9ca3af' : '#6b7280', marginTop: '4px', fontFamily: 'monospace' }}>
-              {agent.code}
+            <div>
+              <div style={{ fontSize: '15px', fontWeight: '800', lineHeight: 1 }}>STACK</div>
+              <div style={{ fontSize: '10px', fontWeight: '600', color: '#6b7280' }}>Partners</div>
             </div>
           </div>
-          <div style={{ color: activeTab === 'profil' ? '#ffffff' : '#6b7280', display: 'flex', alignItems: 'center' }}>
-            <Icon.User />
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button
+              onClick={() => setActiveTab('profil')}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '6px',
+                padding: '7px 11px', borderRadius: '999px',
+                backgroundColor: activeTab === 'profil' ? '#111827' : '#f3f4f6',
+                color: activeTab === 'profil' ? '#ffffff' : '#111827',
+                border: '1px solid #e5e7eb', fontSize: '12px', fontWeight: '700', cursor: 'pointer'
+              }}
+            >
+              <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: profilData.autorise_a_vendre ? '#22c55e' : '#f59e0b' }} />
+              <span style={{ textTransform: 'capitalize' }}>{agent.prenom || agent.nom || 'Mon Profil'}</span>
+            </button>
+            <button
+              onClick={logout}
+              title="Déconnexion"
+              style={{
+                padding: '7px 9px', borderRadius: '10px', backgroundColor: '#fef2f2',
+                color: '#dc2626', border: '1px solid #fecaca', cursor: 'pointer', display: 'flex', alignItems: 'center'
+              }}
+            >
+              <Icon.Logout />
+            </button>
           </div>
-        </button>
-        
-        <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <button onClick={() => setActiveTab('bord')} style={navBtnStyle(activeTab === 'bord')}>
-            <Icon.Bord /> Tableau de Bord
-          </button>
-          <button onClick={() => setActiveTab('prospects')} style={navBtnStyle(activeTab === 'prospects')}>
-            <Icon.Prospects /> Mes Prospects
-          </button>
-          <button onClick={() => setActiveTab('carte')} style={navBtnStyle(activeTab === 'carte')}>
-            <Icon.MapPin /> Carte Prospection
-          </button>
-          <button onClick={() => setActiveTab('factures')} style={navBtnStyle(activeTab === 'factures')}>
-            <Icon.Factures /> Factures Onboarding
-          </button>
-          <button onClick={() => setActiveTab('academie')} style={navBtnStyle(activeTab === 'academie')}>
-            <Icon.Academie /> Académie & Tutos
-          </button>
-
-          {isSuperAdmin && (
-            <>
-              <div style={{ margin: '12px 0', borderTop: '1px solid #e5e7eb' }} />
-              <button onClick={() => setActiveTab('godmode')} style={{ ...navBtnStyle(activeTab === 'godmode'), color: activeTab === 'godmode' ? '#8b5cf6' : '#6b7280', backgroundColor: activeTab === 'godmode' ? '#f5f3ff' : 'transparent' }}>
-                <Icon.Shield /> God Mode
-              </button>
-            </>
-          )}
         </div>
-        
-        <button onClick={logout} style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'transparent', color: '#dc2626', border: '1px solid #fecaca', padding: '11px 14px', cursor: 'pointer', borderRadius: '12px', fontSize: '13.5px', fontWeight: '600' }}>
-          <Icon.Logout /> Quitter
-        </button>
-      </div>
+      )}
 
-      {/* ZONE DE CONTENU À DROITE */}
-      <div style={{ flex: 1, padding: '40px 48px', maxWidth: '1150px', overflowY: 'auto' }}>
+      {/* BANDEAU LATÉRAL GAUCHE (DESKTOP UNIQUEMENT) */}
+      {!isMobile && (
+        <div style={{ width: '260px', backgroundColor: '#ffffff', borderRight: '1px solid #e5e7eb', padding: '28px 20px', display: 'flex', flexDirection: 'column', flexShrink: 0, position: 'sticky', top: 0, height: '100vh', boxSizing: 'border-box' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '24px', paddingLeft: '6px' }}>
+            <div style={{ width: '32px', height: '32px', borderRadius: '9px', background: 'linear-gradient(135deg, #863bff 0%, #47bfff 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: '800', fontSize: '16px' }}>
+              S
+            </div>
+            <div>
+              <div style={{ fontSize: '17px', fontWeight: '800', letterSpacing: '0.03em', color: '#111827', lineHeight: 1.1 }}>STACK</div>
+              <div style={{ fontSize: '11px', fontWeight: '600', color: '#6b7280' }}>Portail Partenaires</div>
+            </div>
+          </div>
+
+          <button
+            onClick={() => setActiveTab('profil')}
+            style={{
+              width: '100%', textAlign: 'left',
+              backgroundColor: activeTab === 'profil' ? '#111827' : '#f6f6f7',
+              border: activeTab === 'profil' ? '1px solid #111827' : '1px solid #e5e7eb',
+              borderRadius: '14px', padding: '12px 14px', marginBottom: '28px',
+              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+            }}
+          >
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: profilData.autorise_a_vendre ? '#22c55e' : '#f59e0b' }} />
+                <span style={{ fontSize: '13px', fontWeight: '700', color: activeTab === 'profil' ? '#ffffff' : '#111827', textTransform: 'capitalize' }}>
+                  {agent.prenom} {agent.nom}
+                </span>
+              </div>
+              <div style={{ fontSize: '11.5px', color: activeTab === 'profil' ? '#9ca3af' : '#6b7280', marginTop: '4px', fontFamily: 'monospace' }}>
+                {agent.code}
+              </div>
+            </div>
+            <div style={{ color: activeTab === 'profil' ? '#ffffff' : '#6b7280' }}><Icon.User /></div>
+          </button>
+
+          <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <button onClick={() => setActiveTab('bord')} style={navBtnStyle(activeTab === 'bord')}><Icon.Bord /> Tableau de Bord</button>
+            <button onClick={() => setActiveTab('prospects')} style={navBtnStyle(activeTab === 'prospects')}><Icon.Prospects /> Mes Prospects</button>
+            <button onClick={() => setActiveTab('carte')} style={navBtnStyle(activeTab === 'carte')}><Icon.MapPin /> Carte Prospection</button>
+            <button onClick={() => setActiveTab('factures')} style={navBtnStyle(activeTab === 'factures')}><Icon.Factures /> Factures Onboarding</button>
+            <button onClick={() => setActiveTab('academie')} style={navBtnStyle(activeTab === 'academie')}><Icon.Academie /> Académie & Tutos</button>
+
+            {isSuperAdmin && (
+              <>
+                <div style={{ margin: '12px 0', borderTop: '1px solid #e5e7eb' }} />
+                <button
+                  onClick={() => setActiveTab('godmode')}
+                  style={{
+                    ...navBtnStyle(activeTab === 'godmode'),
+                    backgroundColor: activeTab === 'godmode' ? '#111827' : '#f9fafb',
+                    color: activeTab === 'godmode' ? '#ffffff' : '#111827',
+                    border: '1px solid #e5e7eb',
+                    justifyContent: 'space-between'
+                  }}
+                >
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}><Icon.Shield /> God Mode</span>
+                  <span style={{ fontSize: '10px', fontWeight: '800', padding: '2px 6px', borderRadius: '6px', backgroundColor: activeTab === 'godmode' ? 'rgba(255,255,255,0.2)' : '#e5e7eb', color: activeTab === 'godmode' ? '#fff' : '#374151' }}>
+                    ADMIN
+                  </span>
+                </button>
+              </>
+            )}
+          </div>
+
+          <button onClick={logout} style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'transparent', color: '#dc2626', border: '1px solid #fecaca', padding: '11px 14px', cursor: 'pointer', borderRadius: '12px', fontSize: '13.5px', fontWeight: '600' }}>
+            <Icon.Logout /> Quitter
+          </button>
+        </div>
+      )}
+
+      {/* ZONE DE CONTENU PRINCIPALE */}
+      <div style={{ flex: 1, padding: isMobile ? '18px 14px' : '40px 48px', maxWidth: '1180px', width: '100%', boxSizing: 'border-box', overflowX: 'hidden' }}>
 
         {toastMsg && (
-          <div style={{ backgroundColor: toastMsg.isError ? '#fef2f2' : '#111827', color: toastMsg.isError ? '#dc2626' : '#ffffff', border: toastMsg.isError ? '1px solid #fecaca' : 'none', padding: '14px 20px', borderRadius: '14px', marginBottom: '24px', fontSize: '13.5px', fontWeight: '500', boxShadow: '0 8px 20px rgba(0,0,0,0.08)' }}>
+          <div style={{ backgroundColor: toastMsg.isError ? '#fef2f2' : '#111827', color: toastMsg.isError ? '#dc2626' : '#ffffff', border: toastMsg.isError ? '1px solid #fecaca' : 'none', padding: '14px 18px', borderRadius: '14px', marginBottom: '20px', fontSize: '13.5px', fontWeight: '500', boxShadow: '0 8px 20px rgba(0,0,0,0.08)' }}>
             {toastMsg.text}
           </div>
         )}
 
-        {/* ONGLET 1 : TABLEAU DE BORD & COMMISSIONS */}
+        {/* ONGLET 1 : TABLEAU DE BORD */}
         {activeTab === 'bord' && (
           <>
-            <div style={{ marginBottom: '32px' }}>
-              <h1 style={{ fontSize: '26px', fontWeight: '700', margin: '0 0 6px 0', letterSpacing: '-0.02em' }}>Tableau de Bord</h1>
-              <span style={{ fontSize: '14px', color: '#6b7280' }}>
-                Suivi en temps réel de vos vrais salons affiliés (hors salons de simulation et hors période d'essai gratuit de 30 jours)
+            <div style={{ marginBottom: isMobile ? '20px' : '32px' }}>
+              <h1 style={{ fontSize: isMobile ? '22px' : '26px', fontWeight: '700', margin: '0 0 6px 0', letterSpacing: '-0.02em' }}>Tableau de Bord</h1>
+              <span style={{ fontSize: '13.5px', color: '#6b7280' }}>
+                Suivi en temps réel de vos vrais salons affiliés (hors salons de simulation et hors essai gratuit de 30 jours)
               </span>
             </div>
 
-            {/* Jauge de déblocage des commissions (Seuil 3 salons payants post-essai) */}
             <div style={cardStyle}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '12px' }}>
+              <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'baseline', gap: '8px', marginBottom: '12px' }}>
                 <div>
                   <div style={{ fontSize: '15px', fontWeight: '600', color: '#111827' }}>Palier de déblocage des commissions récurrentes</div>
-                  <div style={{ fontSize: '13px', color: '#6b7280', marginTop: '2px' }}>
+                  <div style={{ fontSize: '12.5px', color: '#6b7280', marginTop: '2px' }}>
                     {stats.kpis.nb_salons_actifs >= stats.kpis.seuil_deblocage
                       ? "Palier atteint : toutes vos commissions présentes et passées sont débloquées et payables."
-                      : `Les salons bénéficient d'un 1er mois d'essai gratuit (Premium Trial). Ils comptent dans ce palier dès leur 1er abonnement payant choisi à l'issue des 30 jours.`}
+                      : "Les salons bénéficient d'un 1er mois gratuit. Ils comptent dans ce palier dès leur 1er abonnement payant."}
                   </div>
                 </div>
-                <span style={{ fontSize: '16px', fontWeight: '700', color: '#111827' }}>
-                  {stats.kpis.nb_salons_actifs} / {stats.kpis.seuil_deblocage} salons actifs payants
+                <span style={{ fontSize: '15px', fontWeight: '700', color: '#111827', whiteSpace: 'nowrap' }}>
+                  {stats.kpis.nb_salons_actifs} / {stats.kpis.seuil_deblocage} salons actifs
                 </span>
               </div>
               <div style={{ height: '8px', backgroundColor: '#f3f4f6', borderRadius: '999px', overflow: 'hidden' }}>
@@ -932,64 +887,58 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Cartes KPIs Financiers */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '28px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isSmall ? '1fr' : isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: '12px', marginBottom: '24px' }}>
               <div style={{ ...cardStyle, marginBottom: 0 }}>
-                <div style={{ fontSize: '11.5px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Salons en Essai (30j)</div>
-                <div style={{ fontSize: '28px', fontWeight: '700', marginTop: '10px' }}>{stats.kpis.nb_salons_essai}</div>
+                <div style={{ fontSize: '11px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase' }}>Salons en Essai (30j)</div>
+                <div style={{ fontSize: isMobile ? '24px' : '28px', fontWeight: '700', marginTop: '8px' }}>{stats.kpis.nb_salons_essai}</div>
               </div>
               <div style={{ ...cardStyle, marginBottom: 0 }}>
-                <div style={{ fontSize: '11.5px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Salons Actifs Payants</div>
-                <div style={{ fontSize: '28px', fontWeight: '700', marginTop: '10px', color: '#16a34a' }}>{stats.kpis.nb_salons_actifs}</div>
+                <div style={{ fontSize: '11px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase' }}>Salons Actifs Payants</div>
+                <div style={{ fontSize: isMobile ? '24px' : '28px', fontWeight: '700', marginTop: '8px', color: '#16a34a' }}>{stats.kpis.nb_salons_actifs}</div>
               </div>
               <div style={{ ...cardStyle, marginBottom: 0 }}>
-                <div style={{ fontSize: '11.5px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>En attente de seuil</div>
-                <div style={{ fontSize: '28px', fontWeight: '700', marginTop: '10px', color: '#d97706' }}>{stats.kpis.commissions_en_attente} <span style={{ fontSize: '15px', color: '#9ca3af' }}>€ HT</span></div>
+                <div style={{ fontSize: '11px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase' }}>En attente de seuil</div>
+                <div style={{ fontSize: isMobile ? '24px' : '28px', fontWeight: '700', marginTop: '8px', color: '#d97706' }}>{stats.kpis.commissions_en_attente} <span style={{ fontSize: '14px', color: '#9ca3af' }}>€ HT</span></div>
               </div>
               <div style={{ ...cardStyle, marginBottom: 0 }}>
-                <div style={{ fontSize: '11.5px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Commissions Acquises</div>
-                <div style={{ fontSize: '28px', fontWeight: '700', marginTop: '10px', color: '#111827' }}>{stats.kpis.commissions_acquises} <span style={{ fontSize: '15px', color: '#9ca3af' }}>€ HT</span></div>
+                <div style={{ fontSize: '11px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase' }}>Commissions Acquises</div>
+                <div style={{ fontSize: isMobile ? '24px' : '28px', fontWeight: '700', marginTop: '8px', color: '#111827' }}>{stats.kpis.commissions_acquises} <span style={{ fontSize: '14px', color: '#9ca3af' }}>€ HT</span></div>
               </div>
             </div>
 
-            {/* Liste des Salons apportés */}
-            <div style={{ fontSize: '13px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '12px' }}>
+            <div style={{ fontSize: '12.5px', fontWeight: '700', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '10px' }}>
               Salons clients affiliés ({stats.salons.length})
             </div>
-            <div style={{ ...cardStyle, padding: 0, overflow: 'hidden' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
-                <thead style={{ backgroundColor: '#f9fafb', borderBottom: '1px solid #e5e7eb', color: '#6b7280', fontSize: '12px', textTransform: 'uppercase' }}>
+            <div style={{ ...cardStyle, padding: 0, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+              <table style={{ width: '100%', minWidth: '580px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13.5px' }}>
+                <thead style={{ backgroundColor: '#f9fafb', borderBottom: '1px solid #e5e7eb', color: '#6b7280', fontSize: '11.5px', textTransform: 'uppercase' }}>
                   <tr>
-                    <th style={{ padding: '14px 20px' }}>Salon</th>
-                    <th style={{ padding: '14px 20px' }}>Forfait</th>
-                    <th style={{ padding: '14px 20px' }}>Statut Abonnement</th>
-                    <th style={{ padding: '14px 20px' }}>Fin de commission (24 mois)</th>
+                    <th style={{ padding: '14px 18px' }}>Salon</th>
+                    <th style={{ padding: '14px 18px' }}>Forfait</th>
+                    <th style={{ padding: '14px 18px' }}>Statut</th>
+                    <th style={{ padding: '14px 18px' }}>Fin commission (24m)</th>
                   </tr>
                 </thead>
                 <tbody>
                   {stats.salons.length === 0 ? (
-                    <tr><td colSpan="4" style={{ padding: '24px', textAlign: 'center', color: '#6b7280' }}>Aucun salon client inscrit avec votre code partenaire pour le moment.</td></tr>
+                    <tr><td colSpan="4" style={{ padding: '24px', textAlign: 'center', color: '#6b7280' }}>Aucun salon client inscrit pour le moment.</td></tr>
                   ) : stats.salons.map(s => {
-                    const estEnEssaiGratuit = s.plan_actuel === 'PREMIUM_TRIAL' || s.statut_abonnement !== 'actif';
+                    const estEnEssai = s.plan_actuel === 'PREMIUM_TRIAL' || s.statut_abonnement !== 'actif';
                     return (
                       <tr key={s.id_salon} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                        <td style={{ padding: '16px 20px', fontWeight: '600' }}>{s.nom_salon}<br/><span style={{ fontWeight: '400', fontSize: '12px', color: '#6b7280' }}>{s.email_gerant}</span></td>
-                        <td style={{ padding: '16px 20px' }}>
+                        <td style={{ padding: '14px 18px', fontWeight: '600' }}>{s.nom_salon}<br/><span style={{ fontWeight: '400', fontSize: '12px', color: '#6b7280' }}>{s.email_gerant}</span></td>
+                        <td style={{ padding: '14px 18px' }}>
                           <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '12px', fontWeight: '600', backgroundColor: '#f3f4f6', color: '#374151' }}>
-                            {s.plan_actuel === 'PREMIUM_TRIAL' ? 'Essai Gratuit 30j (Premium)' : s.plan_actuel}
+                            {s.plan_actuel === 'PREMIUM_TRIAL' ? 'Essai Gratuit 30j' : s.plan_actuel}
                           </span>
                         </td>
-                        <td style={{ padding: '16px 20px' }}>
-                          <span style={{
-                            padding: '5px 10px', borderRadius: '8px', fontSize: '12px', fontWeight: '600',
-                            backgroundColor: !estEnEssaiGratuit ? '#dcfce7' : '#fef3c7',
-                            color: !estEnEssaiGratuit ? '#166534' : '#92400e'
-                          }}>
-                            {!estEnEssaiGratuit ? 'Actif payant (Comptabilisé)' : '1er mois gratuit (En attente choix forfait)'}
+                        <td style={{ padding: '14px 18px' }}>
+                          <span style={{ padding: '5px 10px', borderRadius: '8px', fontSize: '12px', fontWeight: '600', backgroundColor: !estEnEssai ? '#dcfce7' : '#fef3c7', color: !estEnEssai ? '#166534' : '#92400e' }}>
+                            {!estEnEssai ? 'Actif payant' : '1er mois gratuit'}
                           </span>
                         </td>
-                        <td style={{ padding: '16px 20px', color: '#6b7280' }}>
-                          {s.date_fin_commissionnement ? new Date(s.date_fin_commissionnement).toLocaleDateString('fr-FR') : 'Démarre au 1er paiement post-essai'}
+                        <td style={{ padding: '14px 18px', color: '#6b7280' }}>
+                          {s.date_fin_commissionnement ? new Date(s.date_fin_commissionnement).toLocaleDateString('fr-FR') : 'Au 1er paiement'}
                         </td>
                       </tr>
                     );
@@ -998,19 +947,18 @@ export default function Dashboard() {
               </table>
             </div>
 
-            {/* Relevé des Lignes de Commissions */}
-            <div style={{ fontSize: '13px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '12px' }}>
+            <div style={{ fontSize: '12.5px', fontWeight: '700', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '10px' }}>
               Détail des commissions mensuelles (20 % HT)
             </div>
-            <div style={{ ...cardStyle, padding: 0, overflow: 'hidden' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
-                <thead style={{ backgroundColor: '#f9fafb', borderBottom: '1px solid #e5e7eb', color: '#6b7280', fontSize: '12px', textTransform: 'uppercase' }}>
+            <div style={{ ...cardStyle, padding: 0, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+              <table style={{ width: '100%', minWidth: '580px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13.5px' }}>
+                <thead style={{ backgroundColor: '#f9fafb', borderBottom: '1px solid #e5e7eb', color: '#6b7280', fontSize: '11.5px', textTransform: 'uppercase' }}>
                   <tr>
-                    <th style={{ padding: '14px 20px' }}>Période</th>
-                    <th style={{ padding: '14px 20px' }}>Salon</th>
-                    <th style={{ padding: '14px 20px' }}>Base HT</th>
-                    <th style={{ padding: '14px 20px' }}>Commission (20 %)</th>
-                    <th style={{ padding: '14px 20px' }}>Statut</th>
+                    <th style={{ padding: '14px 18px' }}>Période</th>
+                    <th style={{ padding: '14px 18px' }}>Salon</th>
+                    <th style={{ padding: '14px 18px' }}>Base HT</th>
+                    <th style={{ padding: '14px 18px' }}>Commission</th>
+                    <th style={{ padding: '14px 18px' }}>Statut</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1018,17 +966,17 @@ export default function Dashboard() {
                     <tr><td colSpan="5" style={{ padding: '24px', textAlign: 'center', color: '#6b7280' }}>Aucune commission générée pour le moment.</td></tr>
                   ) : stats.commissions.map(c => (
                     <tr key={c.id_commission} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                      <td style={{ padding: '16px 20px', fontWeight: '600' }}>{c.periode_mois}</td>
-                      <td style={{ padding: '16px 20px' }}>{c.nom_salon}</td>
-                      <td style={{ padding: '16px 20px', color: '#6b7280' }}>{c.montant_base_ht} € HT</td>
-                      <td style={{ padding: '16px 20px', fontWeight: '700' }}>{c.montant_commission} € HT</td>
-                      <td style={{ padding: '16px 20px' }}>
+                      <td style={{ padding: '14px 18px', fontWeight: '600' }}>{c.periode_mois}</td>
+                      <td style={{ padding: '14px 18px' }}>{c.nom_salon}</td>
+                      <td style={{ padding: '14px 18px', color: '#6b7280' }}>{c.montant_base_ht} € HT</td>
+                      <td style={{ padding: '14px 18px', fontWeight: '700' }}>{c.montant_commission} € HT</td>
+                      <td style={{ padding: '14px 18px' }}>
                         <span style={{
                           padding: '5px 10px', borderRadius: '8px', fontSize: '12px', fontWeight: '600',
                           backgroundColor: c.statut_commission === 'PAYEE' ? '#dcfce7' : (c.statut_commission === 'ACQUISE_A_PAYER' ? '#dbeafe' : '#fef3c7'),
                           color: c.statut_commission === 'PAYEE' ? '#166534' : (c.statut_commission === 'ACQUISE_A_PAYER' ? '#1e40af' : '#92400e')
                         }}>
-                          {c.statut_commission === 'PAYEE' ? 'Payée' : (c.statut_commission === 'ACQUISE_A_PAYER' ? 'Acquise à payer' : 'En attente seuil (3 salons)')}
+                          {c.statut_commission === 'PAYEE' ? 'Payée' : (c.statut_commission === 'ACQUISE_A_PAYER' ? 'Acquise à payer' : 'En attente seuil')}
                         </span>
                       </td>
                     </tr>
@@ -1042,10 +990,10 @@ export default function Dashboard() {
         {/* ONGLET 2 : PROSPECTS */}
         {activeTab === 'prospects' && (
           <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+            <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'stretch' : 'center', gap: '12px', marginBottom: '24px' }}>
               <div>
-                <h1 style={{ fontSize: '26px', fontWeight: '700', margin: '0 0 6px 0', letterSpacing: '-0.02em' }}>Mes Prospects</h1>
-                <span style={{ fontSize: '14px', color: '#6b7280' }}>Réservez vos salons pour bénéficier d'une exclusivité de prospection de 45 jours</span>
+                <h1 style={{ fontSize: isMobile ? '22px' : '26px', fontWeight: '700', margin: '0 0 4px 0' }}>Mes Prospects</h1>
+                <span style={{ fontSize: '13.5px', color: '#6b7280' }}>Exclusivité de prospection de 45 jours par salon réservé</span>
               </div>
               <button onClick={() => setShowProspectForm(!showProspectForm)} style={primaryBtn}>
                 <Icon.Plus /> Réserver un Lead
@@ -1055,54 +1003,48 @@ export default function Dashboard() {
             {showProspectForm && (
               <form onSubmit={handleCreateProspect} style={{ ...cardStyle, display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {prospectError && <div style={{ backgroundColor: '#fef2f2', color: '#dc2626', padding: '10px 14px', borderRadius: '10px', fontSize: '13px', fontWeight: '600' }}>{prospectError}</div>}
-                <div style={{ display: 'flex', gap: '12px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '12px' }}>
                   <input type="text" placeholder="Nom du Salon" required value={prospectData.nom_salon} onChange={e => setProspectData({...prospectData, nom_salon: e.target.value})} style={inputStyle}/>
                   <input type="text" placeholder="Numéro SIRET" required value={prospectData.siret_prospect} onChange={e => setProspectData({...prospectData, siret_prospect: e.target.value})} style={inputStyle}/>
-                </div>
-                <div style={{ display: 'flex', gap: '12px' }}>
-                  <input type="email" placeholder="Adresse e-mail du gérant" required value={prospectData.email_gerant} onChange={e => setProspectData({...prospectData, email_gerant: e.target.value})} style={inputStyle}/>
+                  <input type="email" placeholder="E-mail du gérant" required value={prospectData.email_gerant} onChange={e => setProspectData({...prospectData, email_gerant: e.target.value})} style={inputStyle}/>
                   <input type="text" placeholder="Téléphone du salon" value={prospectData.telephone_salon} onChange={e => setProspectData({...prospectData, telephone_salon: e.target.value})} style={inputStyle}/>
-                </div>
-                <div style={{ display: 'flex', gap: '12px' }}>
                   <input type="text" placeholder="Code Postal" value={prospectData.code_postal} onChange={e => setProspectData({...prospectData, code_postal: e.target.value})} style={inputStyle}/>
                   <input type="text" placeholder="Ville" value={prospectData.ville} onChange={e => setProspectData({...prospectData, ville: e.target.value})} style={inputStyle}/>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '6px' }}>
-                  <button type="submit" style={primaryBtn}>Verrouiller ce prospect (45 jours)</button>
-                </div>
+                <button type="submit" style={{ ...primaryBtn, alignSelf: isMobile ? 'stretch' : 'flex-end' }}>Verrouiller ce prospect (45 jours)</button>
               </form>
             )}
 
-            <div style={{ ...cardStyle, padding: 0, overflow: 'hidden' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
-                <thead style={{ backgroundColor: '#f9fafb', borderBottom: '1px solid #e5e7eb', color: '#6b7280', fontSize: '12px', textTransform: 'uppercase' }}>
+            <div style={{ ...cardStyle, padding: 0, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+              <table style={{ width: '100%', minWidth: '640px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13.5px' }}>
+                <thead style={{ backgroundColor: '#f9fafb', borderBottom: '1px solid #e5e7eb', color: '#6b7280', fontSize: '11.5px', textTransform: 'uppercase' }}>
                   <tr>
-                    <th style={{ padding: '14px 20px' }}>Date</th>
-                    <th style={{ padding: '14px 20px' }}>Salon</th>
-                    <th style={{ padding: '14px 20px' }}>Contact</th>
-                    <th style={{ padding: '14px 20px' }}>Statut</th>
-                    <th style={{ padding: '14px 20px' }}>Protection</th>
-                    <th style={{ padding: '14px 20px' }}>Action</th>
+                    <th style={{ padding: '14px 18px' }}>Date</th>
+                    <th style={{ padding: '14px 18px' }}>Salon</th>
+                    <th style={{ padding: '14px 18px' }}>Contact</th>
+                    <th style={{ padding: '14px 18px' }}>Statut</th>
+                    <th style={{ padding: '14px 18px' }}>Protection</th>
+                    <th style={{ padding: '14px 18px' }}>Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {prospects.length === 0 ? <tr><td colSpan="6" style={{ padding: '24px', textAlign: 'center', color: '#6b7280' }}>Aucun prospect enregistré.</td></tr> : prospects.map(p => (
                     <tr key={p.id_prospect} style={{ borderBottom: '1px solid #f3f4f6', opacity: p.est_protege ? 1 : 0.5 }}>
-                      <td style={{ padding: '16px 20px', color: '#6b7280' }}>{new Date(p.date_declaration).toLocaleDateString('fr-FR')}</td>
-                      <td style={{ padding: '16px 20px', fontWeight: '600' }}>{p.nom_salon}<br/><span style={{ fontWeight: '400', fontSize: '12px', color: '#6b7280' }}>{p.ville} ({p.siret_prospect || 'SIRET non renseigné'})</span></td>
-                      <td style={{ padding: '16px 20px' }}>{p.email_gerant}</td>
-                      <td style={{ padding: '16px 20px' }}>
+                      <td style={{ padding: '14px 18px', color: '#6b7280' }}>{new Date(p.date_declaration).toLocaleDateString('fr-FR')}</td>
+                      <td style={{ padding: '14px 18px', fontWeight: '600' }}>{p.nom_salon}<br/><span style={{ fontWeight: '400', fontSize: '12px', color: '#6b7280' }}>{p.ville} ({p.siret_prospect || 'SIRET N/A'})</span></td>
+                      <td style={{ padding: '14px 18px' }}>{p.email_gerant}</td>
+                      <td style={{ padding: '14px 18px' }}>
                         <span style={{ padding: '5px 10px', borderRadius: '8px', fontSize: '12px', fontWeight: '600', backgroundColor: p.statut_prospect === 'SIGNE' ? '#dcfce7' : (p.est_protege ? '#f3f4f6' : '#fef2f2'), color: p.statut_prospect === 'SIGNE' ? '#166534' : (p.est_protege ? '#111827' : '#dc2626') }}>
                           {p.statut_prospect === 'SIGNE' ? 'Signé' : (p.est_protege ? 'Protégé' : 'Expiré')}
                         </span>
                       </td>
-                      <td style={{ padding: '16px 20px', color: p.jours_restants <= 7 && p.est_protege ? '#dc2626' : '#6b7280', fontWeight: p.jours_restants <= 7 ? '600' : '400' }}>
-                        {p.statut_prospect === 'SIGNE' ? 'Converti' : (p.est_protege ? `${Math.max(0, p.jours_restants)} jours restants` : 'Libre')}
+                      <td style={{ padding: '14px 18px', color: p.jours_restants <= 7 && p.est_protege ? '#dc2626' : '#6b7280', fontWeight: p.jours_restants <= 7 ? '600' : '400' }}>
+                        {p.statut_prospect === 'SIGNE' ? 'Converti' : (p.est_protege ? `${Math.max(0, p.jours_restants)}j restants` : 'Libre')}
                       </td>
-                      <td style={{ padding: '16px 20px' }}>
+                      <td style={{ padding: '14px 18px' }}>
                         {p.statut_prospect !== 'SIGNE' && p.est_protege && (
-                          <button onClick={() => handleOnboarding(p.id_prospect)} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 14px', cursor: 'pointer', border: 'none', borderRadius: '10px', backgroundColor: '#111827', color: '#ffffff', fontSize: '12.5px', fontWeight: '600' }}>
-                            <Icon.ArrowUpRight /> Lancer l'Onboarding
+                          <button onClick={() => handleOnboarding(p.id_prospect)} style={{ ...primaryBtn, padding: '8px 12px', fontSize: '12px' }}>
+                            <Icon.ArrowUpRight /> Onboarding
                           </button>
                         )}
                       </td>
@@ -1114,14 +1056,14 @@ export default function Dashboard() {
           </>
         )}
 
-        {/* ONGLET CARTE INTERACTIVE DE PROSPECTION */}
+        {/* ONGLET 3 : CARTE DE PROSPECTION */}
         {activeTab === 'carte' && (
           <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+            <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'stretch' : 'flex-start', gap: '12px', marginBottom: '20px' }}>
               <div>
-                <h1 style={{ fontSize: '26px', fontWeight: '700', margin: '0 0 6px 0', letterSpacing: '-0.02em' }}>Carte de Prospection Exhaustive</h1>
-                <span style={{ fontSize: '14px', color: '#6b7280' }}>
-                  Couverture maximale via fusion multi-sources (Codes NAF 96.02A / 96.02B + Annuaire Entreprises + OpenStreetMap).
+                <h1 style={{ fontSize: isMobile ? '22px' : '26px', fontWeight: '700', margin: '0 0 4px 0' }}>Carte de Prospection</h1>
+                <span style={{ fontSize: '13.5px', color: '#6b7280' }}>
+                  Couverture multi-sources (INSEE 96.02A/B + OpenStreetMap). Verrouillez vos prospects en un clic.
                 </span>
               </div>
               <button type="button" onClick={handleGeolocateAgent} style={{ ...primaryBtn, backgroundColor: '#ffffff', color: '#111827', border: '1px solid #e5e7eb' }}>
@@ -1129,210 +1071,126 @@ export default function Dashboard() {
               </button>
             </div>
 
-            <div style={{ ...cardStyle, padding: '18px 22px', marginBottom: '20px' }}>
-              <div style={{ display: 'flex', gap: '14px', alignItems: 'center', flexWrap: 'wrap' }}>
-                <form onSubmit={handleSearchAddressMap} style={{ display: 'flex', flex: 1, gap: '10px', minWidth: '280px' }}>
+            <div style={{ ...cardStyle, padding: isMobile ? '14px' : '18px 22px', marginBottom: '18px' }}>
+              <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '12px', alignItems: 'stretch' }}>
+                <form onSubmit={handleSearchAddressMap} style={{ display: 'flex', flexDirection: isSmall ? 'column' : 'row', flex: 1, gap: '8px' }}>
                   <input
                     type="text"
-                    placeholder="Saisir une adresse, un code postal ou une ville (ex: 15 rue des Francs-Bourgeois, Strasbourg)..."
+                    placeholder="Adresse, code postal ou ville..."
                     value={mapAddressQuery}
                     onChange={e => setMapAddressQuery(e.target.value)}
                     style={inputStyle}
                   />
-                  <button type="submit" style={primaryBtn}>
-                    <Icon.Search /> Centrer ici
-                  </button>
+                  <button type="submit" style={primaryBtn}><Icon.Search /> Centrer</button>
                 </form>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: '#f6f6f7', padding: '6px 10px', borderRadius: '12px', border: '1px solid #e5e7eb' }}>
-                  <span style={{ fontSize: '12.5px', fontWeight: '600', color: '#6b7280', paddingLeft: '4px' }}>Rayon :</span>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px', backgroundColor: '#f6f6f7', padding: '6px 10px', borderRadius: '12px', border: '1px solid #e5e7eb', overflowX: 'auto' }}>
+                  <span style={{ fontSize: '12px', fontWeight: '600', color: '#6b7280' }}>Rayon:</span>
                   {[1, 3, 5, 10, 25, 50].map(km => (
                     <button
-                      key={km}
-                      type="button"
-                      onClick={() => handleRadiusChange(km)}
+                      key={km} type="button" onClick={() => handleRadiusChange(km)}
                       style={{
-                        padding: '6px 10px',
-                        borderRadius: '8px',
-                        border: 'none',
-                        fontSize: '12.5px',
-                        fontWeight: '600',
-                        cursor: 'pointer',
-                        backgroundColor: mapRadius === km ? '#111827' : 'transparent',
-                        color: mapRadius === km ? '#ffffff' : '#4b5563'
+                        padding: '6px 9px', borderRadius: '8px', border: 'none', fontSize: '12px', fontWeight: '600', cursor: 'pointer',
+                        backgroundColor: mapRadius === km ? '#111827' : 'transparent', color: mapRadius === km ? '#ffffff' : '#4b5563'
                       }}
                     >
-                      {km} km
+                      {km}km
                     </button>
                   ))}
                 </div>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px', paddingTop: '14px', borderTop: '1px solid #f3f4f6', flexWrap: 'wrap', gap: '10px' }}>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  {[
-                    { key: 'TOUS', label: `Tous (${mapSalons.length})`, dot: null },
-                    { key: 'LIBRE', label: `Jamais prospectés (${mapSalons.filter(s => s.statut_carte === 'LIBRE').length})`, dot: '#10b981' },
-                    { key: 'PROSPECTE_MOI', label: `Mes prospects (${mapSalons.filter(s => s.statut_carte === 'PROSPECTE_MOI').length})`, dot: '#2563eb' },
-                    { key: 'PROSPECTE_AUTRE', label: `Déjà prospectés (${mapSalons.filter(s => s.statut_carte === 'PROSPECTE_AUTRE').length})`, dot: '#f59e0b' },
-                    { key: 'CLIENT_STACK', label: `Équipés STACK (${mapSalons.filter(s => s.statut_carte === 'CLIENT_STACK').length})`, dot: '#111827' }
-                  ].map(tab => (
-                    <button
-                      key={tab.key}
-                      type="button"
-                      onClick={() => setMapFilter(tab.key)}
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '7px',
-                        padding: '7px 12px',
-                        borderRadius: '10px',
-                        border: mapFilter === tab.key ? '1px solid #111827' : '1px solid #e5e7eb',
-                        backgroundColor: mapFilter === tab.key ? '#111827' : '#ffffff',
-                        color: mapFilter === tab.key ? '#ffffff' : '#374151',
-                        fontSize: '12.5px',
-                        fontWeight: '600',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      {tab.dot && <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: tab.dot }} />}
-                      {tab.label}
-                    </button>
-                  ))}
-                </div>
-                <div style={{ fontSize: '12.5px', color: '#6b7280', fontWeight: '500' }}>
-                  {mapLoading ? 'Scan exhaustif du secteur en cours...' : `Centre : ${mapCenter.label} (${mapRadius} km)`}
-                </div>
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '14px', paddingTop: '12px', borderTop: '1px solid #f3f4f6' }}>
+                {[
+                  { key: 'TOUS', label: `Tous (${mapSalons.length})`, dot: null },
+                  { key: 'LIBRE', label: `Libres (${mapSalons.filter(s => s.statut_carte === 'LIBRE').length})`, dot: '#10b981' },
+                  { key: 'PROSPECTE_MOI', label: `Mes leads (${mapSalons.filter(s => s.statut_carte === 'PROSPECTE_MOI').length})`, dot: '#2563eb' },
+                  { key: 'PROSPECTE_AUTRE', label: `Réservés (${mapSalons.filter(s => s.statut_carte === 'PROSPECTE_AUTRE').length})`, dot: '#f59e0b' },
+                  { key: 'CLIENT_STACK', label: `Clients (${mapSalons.filter(s => s.statut_carte === 'CLIENT_STACK').length})`, dot: '#111827' }
+                ].map(tab => (
+                  <button
+                    key={tab.key} type="button" onClick={() => setMapFilter(tab.key)}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 10px', borderRadius: '9px',
+                      border: mapFilter === tab.key ? '1px solid #111827' : '1px solid #e5e7eb',
+                      backgroundColor: mapFilter === tab.key ? '#111827' : '#ffffff',
+                      color: mapFilter === tab.key ? '#ffffff' : '#374151', fontSize: '12px', fontWeight: '600', cursor: 'pointer'
+                    }}
+                  >
+                    {tab.dot && <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: tab.dot }} />}
+                    {tab.label}
+                  </button>
+                ))}
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: '20px', alignItems: 'stretch' }}>
-              <div style={{ ...cardStyle, padding: '0', overflow: 'hidden', height: '560px', position: 'relative', marginBottom: 0 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 360px', gap: '16px', alignItems: 'stretch' }}>
+              <div style={{ ...cardStyle, padding: 0, overflow: 'hidden', height: isMobile ? '360px' : '540px', marginBottom: 0 }}>
                 <div id="stack-partners-map" style={{ width: '100%', height: '100%' }} />
               </div>
 
-              <div style={{ ...cardStyle, height: '560px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', marginBottom: 0, overflowY: 'auto' }}>
+              <div style={{ ...cardStyle, height: isMobile ? 'auto' : '540px', maxHeight: isMobile ? '440px' : '540px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', marginBottom: 0, overflowY: 'auto' }}>
                 {selectedSalonMap ? (
                   <>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
                       <span style={{
                         padding: '5px 10px', borderRadius: '8px', fontSize: '11.5px', fontWeight: '700',
-                        backgroundColor: selectedSalonMap.statut_carte === 'LIBRE' ? '#dcfce7' : selectedSalonMap.statut_carte === 'PROSPECTE_MOI' ? '#dbeafe' : selectedSalonMap.statut_carte === 'PROSPECTE_AUTRE' ? '#fef3c7' : '#f3f4f6',
-                        color: selectedSalonMap.statut_carte === 'LIBRE' ? '#166534' : selectedSalonMap.statut_carte === 'PROSPECTE_MOI' ? '#1e40af' : selectedSalonMap.statut_carte === 'PROSPECTE_AUTRE' ? '#92400e' : '#111827'
+                        backgroundColor: selectedSalonMap.statut_carte === 'LIBRE' ? '#dcfce7' : selectedSalonMap.statut_carte === 'PROSPECTE_MOI' ? '#dbeafe' : '#fef3c7',
+                        color: selectedSalonMap.statut_carte === 'LIBRE' ? '#166534' : selectedSalonMap.statut_carte === 'PROSPECTE_MOI' ? '#1e40af' : '#92400e'
                       }}>
                         {selectedSalonMap.statut_carte === 'LIBRE' && 'Jamais prospecté — Libre'}
-                        {selectedSalonMap.statut_carte === 'PROSPECTE_MOI' && `Mon prospect (${selectedSalonMap.jours_restants}j restants)`}
-                        {selectedSalonMap.statut_carte === 'PROSPECTE_AUTRE' && `Déjà prospecté (${selectedSalonMap.jours_restants}j restants)`}
-                        {selectedSalonMap.statut_carte === 'CLIENT_STACK' && 'Déjà équipé par STACK'}
+                        {selectedSalonMap.statut_carte === 'PROSPECTE_MOI' && `Mon prospect (${selectedSalonMap.jours_restants}j)`}
+                        {selectedSalonMap.statut_carte === 'PROSPECTE_AUTRE' && `Déjà prospecté`}
+                        {selectedSalonMap.statut_carte === 'CLIENT_STACK' && 'Déjà équipé STACK'}
                       </span>
-                      <button type="button" onClick={() => setSelectedSalonMap(null)} style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>
-                        Fermer
-                      </button>
+                      <button type="button" onClick={() => setSelectedSalonMap(null)} style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>Fermer</button>
                     </div>
 
-                    <h3 style={{ fontSize: '18px', fontWeight: '700', margin: '0 0 6px 0' }}>{selectedSalonMap.nom_salon}</h3>
-                    <div style={{ fontSize: '13.5px', color: '#4b5563', marginBottom: '4px' }}>{selectedSalonMap.adresse}</div>
-                    <div style={{ fontSize: '13px', color: '#6b7280', marginBottom: '12px' }}>
-                      {selectedSalonMap.code_postal} {selectedSalonMap.ville} • À {selectedSalonMap.distance_km} km
-                    </div>
-                    <div style={{ fontSize: '12px', fontFamily: 'monospace', backgroundColor: '#f6f6f7', padding: '8px 12px', borderRadius: '10px', color: '#374151', marginBottom: '20px' }}>
-                      SIRET : {selectedSalonMap.siret}
-                    </div>
+                    <h3 style={{ fontSize: '17px', fontWeight: '700', margin: '0 0 6px 0' }}>{selectedSalonMap.nom_salon}</h3>
+                    <div style={{ fontSize: '13px', color: '#4b5563', marginBottom: '4px' }}>{selectedSalonMap.adresse}</div>
+                    <div style={{ fontSize: '12.5px', color: '#6b7280', marginBottom: '12px' }}>{selectedSalonMap.code_postal} {selectedSalonMap.ville} • À {selectedSalonMap.distance_km} km</div>
+                    <div style={{ fontSize: '12px', fontFamily: 'monospace', backgroundColor: '#f6f6f7', padding: '8px 12px', borderRadius: '10px', marginBottom: '16px' }}>SIRET : {selectedSalonMap.siret}</div>
 
                     {selectedSalonMap.statut_carte === 'LIBRE' && (
-                      <form onSubmit={handleQuickLockFromMap} style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: 'auto', paddingTop: '16px', borderTop: '1px solid #f3f4f6' }}>
-                        <div style={{ fontSize: '13px', fontWeight: '700', color: '#111827' }}>Réserver ce salon (Protection 45 jours)</div>
-                        <input
-                          type="email"
-                          required
-                          placeholder="E-mail du gérant (Obligatoire)"
-                          value={quickLockForm.email_gerant}
-                          onChange={e => setQuickLockForm({ ...quickLockForm, email_gerant: e.target.value })}
-                          style={{ ...inputStyle, width: '100%', boxSizing: 'border-box', flex: 'none' }}
-                        />
-                        <input
-                          type="text"
-                          placeholder="Téléphone du salon (Optionnel)"
-                          value={quickLockForm.telephone_salon}
-                          onChange={e => setQuickLockForm({ ...quickLockForm, telephone_salon: e.target.value })}
-                          style={{ ...inputStyle, width: '100%', boxSizing: 'border-box', flex: 'none' }}
-                        />
-                        <button type="submit" style={{ ...primaryBtn, width: '100%', justifyContent: 'center' }}>
-                          <Icon.Check /> Verrouiller ce prospect
-                        </button>
+                      <form onSubmit={handleQuickLockFromMap} style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: 'auto', paddingTop: '14px', borderTop: '1px solid #f3f4f6' }}>
+                        <input type="email" required placeholder="E-mail du gérant (Obligatoire)" value={quickLockForm.email_gerant} onChange={e => setQuickLockForm({ ...quickLockForm, email_gerant: e.target.value })} style={inputStyle} />
+                        <input type="text" placeholder="Téléphone du salon" value={quickLockForm.telephone_salon} onChange={e => setQuickLockForm({ ...quickLockForm, telephone_salon: e.target.value })} style={inputStyle} />
+                        <button type="submit" style={{ ...primaryBtn, width: '100%' }}><Icon.Check /> Verrouiller ce prospect</button>
                       </form>
                     )}
 
                     {selectedSalonMap.statut_carte === 'PROSPECTE_MOI' && (
-                      <div style={{ marginTop: 'auto', paddingTop: '16px', borderTop: '1px solid #f3f4f6', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                        <div style={{ fontSize: '13px', color: '#1e40af', fontWeight: '500' }}>
-                          Ce salon vous est réservé. Vous pouvez émettre sa facture d'installation de 99 € HT ou lancer son onboarding.
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setFactureData({ nom_salon: selectedSalonMap.nom_salon, siret_salon: selectedSalonMap.siret, adresse_salon: `${selectedSalonMap.adresse}, ${selectedSalonMap.code_postal} ${selectedSalonMap.ville}` });
-                            setShowFactureForm(true);
-                            setActiveTab('factures');
-                          }}
-                          style={{ ...primaryBtn, width: '100%', justifyContent: 'center' }}
-                        >
-                          <Icon.Factures /> Créer la facture 99 € HT
-                        </button>
-                      </div>
-                    )}
-
-                    {selectedSalonMap.statut_carte === 'PROSPECTE_AUTRE' && (
-                      <div style={{ marginTop: 'auto', padding: '14px', backgroundColor: '#fffbeb', borderRadius: '12px', color: '#92400e', fontSize: '13px' }}>
-                        Ce salon fait déjà l'objet d'une réservation active par un autre agent partenaire.
-                      </div>
-                    )}
-
-                    {selectedSalonMap.statut_carte === 'CLIENT_STACK' && (
-                      <div style={{ marginTop: 'auto', padding: '14px', backgroundColor: '#f3f4f6', borderRadius: '12px', color: '#111827', fontSize: '13px', fontWeight: '500' }}>
-                        Ce salon est déjà équipé de la caisse certifiée STACK.
-                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFactureData({ nom_salon: selectedSalonMap.nom_salon, siret_salon: selectedSalonMap.siret, adresse_salon: `${selectedSalonMap.adresse}, ${selectedSalonMap.code_postal} ${selectedSalonMap.ville}` });
+                          setShowFactureForm(true);
+                          setActiveTab('factures');
+                        }}
+                        style={{ ...primaryBtn, width: '100%', marginTop: 'auto' }}
+                      >
+                        <Icon.Factures /> Créer la facture 99 € HT
+                      </button>
                     )}
                   </>
                 ) : (
                   <>
-                    <div style={{ fontSize: '13px', fontWeight: '700', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '12px' }}>
+                    <div style={{ fontSize: '12px', fontWeight: '700', color: '#6b7280', textTransform: 'uppercase', marginBottom: '10px' }}>
                       Salons dans le rayon ({mapSalons.filter(s => mapFilter === 'TOUS' || s.statut_carte === mapFilter).length})
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', overflowY: 'auto' }}>
-                      {mapSalons.filter(s => mapFilter === 'TOUS' || s.statut_carte === mapFilter).length === 0 ? (
-                        <div style={{ fontSize: '13.5px', color: '#6b7280', textAlign: 'center', marginTop: '40px' }}>
-                          Aucun salon trouvé dans ce périmètre. Augmentez le rayon en kilomètres ou changez d'adresse.
+                      {mapSalons.filter(s => mapFilter === 'TOUS' || s.statut_carte === mapFilter).map(s => (
+                        <div
+                          key={s.siret} onClick={() => setSelectedSalonMap(s)}
+                          style={{ padding: '11px 13px', borderRadius: '12px', border: '1px solid #f3f4f6', backgroundColor: '#f9fafb', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                        >
+                          <div>
+                            <div style={{ fontSize: '13px', fontWeight: '600' }}>{s.nom_salon}</div>
+                            <div style={{ fontSize: '11.5px', color: '#6b7280' }}>{s.ville} • {s.distance_km} km</div>
+                          </div>
+                          <span style={{ width: '9px', height: '9px', borderRadius: '50%', flexShrink: 0, backgroundColor: s.statut_carte === 'LIBRE' ? '#10b981' : s.statut_carte === 'PROSPECTE_MOI' ? '#2563eb' : s.statut_carte === 'PROSPECTE_AUTRE' ? '#f59e0b' : '#111827' }} />
                         </div>
-                      ) : (
-                        mapSalons
-                          .filter(s => mapFilter === 'TOUS' || s.statut_carte === mapFilter)
-                          .map(s => (
-                            <div
-                              key={s.siret}
-                              onClick={() => setSelectedSalonMap(s)}
-                              style={{
-                                padding: '12px 14px',
-                                borderRadius: '14px',
-                                border: '1px solid #f3f4f6',
-                                backgroundColor: '#f9fafb',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center'
-                              }}
-                            >
-                              <div>
-                                <div style={{ fontSize: '13.5px', fontWeight: '600', color: '#111827' }}>{s.nom_salon}</div>
-                                <div style={{ fontSize: '12px', color: '#6b7280' }}>{s.ville} • {s.distance_km} km</div>
-                              </div>
-                              <span style={{
-                                width: '10px', height: '10px', borderRadius: '50%', flexShrink: 0,
-                                backgroundColor: s.statut_carte === 'LIBRE' ? '#10b981' : s.statut_carte === 'PROSPECTE_MOI' ? '#2563eb' : s.statut_carte === 'PROSPECTE_AUTRE' ? '#f59e0b' : '#111827'
-                              }} />
-                            </div>
-                          ))
-                      )}
+                      ))}
                     </div>
                   </>
                 )}
@@ -1341,13 +1199,13 @@ export default function Dashboard() {
           </>
         )}
 
-        {/* ONGLET 3 : FACTURES D'INSTALLATION */}
+        {/* ONGLET 4 : FACTURES D'INSTALLATION */}
         {activeTab === 'factures' && (
           <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+            <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'stretch' : 'center', gap: '12px', marginBottom: '24px' }}>
               <div>
-                <h1 style={{ fontSize: '26px', fontWeight: '700', margin: '0 0 6px 0', letterSpacing: '-0.02em' }}>Factures d'Installation (99 € HT)</h1>
-                <span style={{ fontSize: '14px', color: '#6b7280' }}>Émettez vos factures de mise en service et validez leur règlement pour débloquer l'onboarding</span>
+                <h1 style={{ fontSize: isMobile ? '22px' : '26px', fontWeight: '700', margin: '0 0 4px 0' }}>Factures d'Installation (99 € HT)</h1>
+                <span style={{ fontSize: '13.5px', color: '#6b7280' }}>Émettez vos factures de mise en service et validez leur règlement</span>
               </div>
               <button onClick={() => setShowFactureForm(!showFactureForm)} style={primaryBtn}>
                 <Icon.Plus /> Nouvelle Facture
@@ -1355,44 +1213,40 @@ export default function Dashboard() {
             </div>
 
             {showFactureForm && (
-              <form onSubmit={handleCreateFacture} style={{ ...cardStyle, display: 'flex', gap: '12px', alignItems: 'center' }}>
+              <form onSubmit={handleCreateFacture} style={{ ...cardStyle, display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '12px' }}>
                 <input type="text" placeholder="Nom du Salon" required value={factureData.nom_salon} onChange={e => setFactureData({...factureData, nom_salon: e.target.value})} style={inputStyle}/>
                 <input type="text" placeholder="SIRET du Salon" required value={factureData.siret_salon} onChange={e => setFactureData({...factureData, siret_salon: e.target.value})} style={inputStyle}/>
-                <input type="text" placeholder="Adresse complète" required value={factureData.adresse_salon} onChange={e => setFactureData({...factureData, adresse_salon: e.target.value})} style={{ ...inputStyle, flex: 1.5 }}/>
+                <input type="text" placeholder="Adresse complète" required value={factureData.adresse_salon} onChange={e => setFactureData({...factureData, adresse_salon: e.target.value})} style={inputStyle}/>
                 <button type="submit" style={primaryBtn}>Générer</button>
               </form>
             )}
 
-            <div style={{ ...cardStyle, padding: 0, overflow: 'hidden' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
-                <thead style={{ backgroundColor: '#f9fafb', borderBottom: '1px solid #e5e7eb', color: '#6b7280', fontSize: '12px', textTransform: 'uppercase' }}>
+            <div style={{ ...cardStyle, padding: 0, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+              <table style={{ width: '100%', minWidth: '600px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13.5px' }}>
+                <thead style={{ backgroundColor: '#f9fafb', borderBottom: '1px solid #e5e7eb', color: '#6b7280', fontSize: '11.5px', textTransform: 'uppercase' }}>
                   <tr>
-                    <th style={{ padding: '14px 20px' }}>Date</th>
-                    <th style={{ padding: '14px 20px' }}>N° Facture</th>
-                    <th style={{ padding: '14px 20px' }}>Salon & SIRET</th>
-                    <th style={{ padding: '14px 20px' }}>Statut</th>
-                    <th style={{ padding: '14px 20px' }}>Actions</th>
+                    <th style={{ padding: '14px 18px' }}>Date</th>
+                    <th style={{ padding: '14px 18px' }}>N° Facture</th>
+                    <th style={{ padding: '14px 18px' }}>Salon & SIRET</th>
+                    <th style={{ padding: '14px 18px' }}>Statut</th>
+                    <th style={{ padding: '14px 18px' }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {factures.length === 0 ? <tr><td colSpan="5" style={{ padding: '24px', textAlign: 'center', color: '#6b7280' }}>Aucune facture émise.</td></tr> : factures.map(f => (
                     <tr key={f.id_facture} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                      <td style={{ padding: '16px 20px', color: '#6b7280' }}>{new Date(f.date_emission).toLocaleDateString('fr-FR')}</td>
-                      <td style={{ padding: '16px 20px', fontWeight: '600' }}>{f.numero_facture}</td>
-                      <td style={{ padding: '16px 20px' }}>{f.nom_salon}<br/><span style={{ fontSize: '12px', color: '#6b7280' }}>SIRET : {f.siret_salon}</span></td>
-                      <td style={{ padding: '16px 20px' }}>
+                      <td style={{ padding: '14px 18px', color: '#6b7280' }}>{new Date(f.date_emission).toLocaleDateString('fr-FR')}</td>
+                      <td style={{ padding: '14px 18px', fontWeight: '600' }}>{f.numero_facture}</td>
+                      <td style={{ padding: '14px 18px' }}>{f.nom_salon}<br/><span style={{ fontSize: '12px', color: '#6b7280' }}>SIRET : {f.siret_salon}</span></td>
+                      <td style={{ padding: '14px 18px' }}>
                         <span style={{ padding: '5px 10px', borderRadius: '8px', fontSize: '12px', fontWeight: '600', backgroundColor: f.statut === 'PAYEE' ? '#dcfce7' : '#fef3c7', color: f.statut === 'PAYEE' ? '#166534' : '#92400e' }}>
                           {f.statut === 'PAYEE' ? 'Payée' : 'En attente'}
                         </span>
                       </td>
-                      <td style={{ padding: '16px 20px', display: 'flex', gap: '10px' }}>
-                        <button onClick={() => handleDownload(f.id_facture, f.numero_facture)} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '7px 12px', cursor: 'pointer', border: '1px solid #e5e7eb', borderRadius: '10px', backgroundColor: '#ffffff', color: '#111827', fontSize: '12.5px', fontWeight: '600' }}>
-                          <Icon.FileDownload /> Télécharger PDF
-                        </button>
+                      <td style={{ padding: '14px 18px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        <button onClick={() => handleDownload(f.id_facture, f.numero_facture)} style={secondaryBtn}><Icon.FileDownload /> PDF</button>
                         {f.statut !== 'PAYEE' && (
-                          <button onClick={() => handlePay(f.id_facture)} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '7px 12px', cursor: 'pointer', border: 'none', borderRadius: '10px', backgroundColor: '#111827', color: '#ffffff', fontSize: '12.5px', fontWeight: '600' }}>
-                            <Icon.Check /> Confirmer réception virement
-                          </button>
+                          <button onClick={() => handlePay(f.id_facture)} style={{ ...primaryBtn, padding: '8px 12px', fontSize: '12px' }}><Icon.Check /> Valider paiement</button>
                         )}
                       </td>
                     </tr>
@@ -1403,172 +1257,75 @@ export default function Dashboard() {
           </>
         )}
 
-        {/* ONGLET ACADÉMIE, OBJECTIONS, TUTOS & 3 SIMULATEURS BACS À SABLE */}
+        {/* ONGLET 5 : ACADÉMIE & SIMULATEURS */}
         {activeTab === 'academie' && (
           <>
-            <div style={{ marginBottom: '32px' }}>
-              <h1 style={{ fontSize: '26px', fontWeight: '700', margin: '0 0 6px 0', letterSpacing: '-0.02em' }}>Académie STACK & Simulateurs Live</h1>
-              <span style={{ fontSize: '14px', color: '#6b7280' }}>
-                Entraînez-vous dans des salons de test isolés (exclus des commissions), personnalisez votre salon de démonstration et formez-vous en vidéo.
-              </span>
+            <div style={{ marginBottom: '24px' }}>
+              <h1 style={{ fontSize: isMobile ? '22px' : '26px', fontWeight: '700', margin: '0 0 4px 0' }}>Académie STACK & Simulateurs Live</h1>
+              <span style={{ fontSize: '13.5px', color: '#6b7280' }}>Salons de test isolés, scripts de réponse aux objections et formations vidéos.</span>
             </div>
 
-            {/* SECTION 1 : LES 3 ENVIRONNEMENTS BACS À SABLE */}
-            <div style={{ fontSize: '13px', fontWeight: '700', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '12px' }}>
-              1. Vos 3 Salons de Test (Environnements Bacs à Sable isolés)
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '18px', marginBottom: '28px' }}>
-              {/* Simulateur 1 : Salon Vide */}
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}>
               <div style={{ ...cardStyle, marginBottom: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                 <div>
-                  <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '11.5px', fontWeight: '700', backgroundColor: '#f3f4f6', color: '#374151' }}>
-                    Auto-destruction garantie 24h
-                  </span>
+                  <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '11.5px', fontWeight: '700', backgroundColor: '#f3f4f6', color: '#374151' }}>Auto-destruction 24h</span>
                   <h3 style={{ fontSize: '17px', fontWeight: '700', margin: '12px 0 8px 0' }}>Créer un Salon Vide</h3>
-                  <p style={{ fontSize: '13.5px', color: '#6b7280', lineHeight: 1.5, margin: '0 0 20px 0' }}>
-                    Génère un salon 100% vierge purgé automatiquement après 24h. Idéal pour vous exercer à paramétrer des collaborateurs, des stocks et un catalogue de A à Z.
-                  </p>
+                  <p style={{ fontSize: '13px', color: '#6b7280', lineHeight: 1.5, margin: '0 0 18px 0' }}>Salon 100% vierge purgé après 24h pour vous exercer à paramétrer de A à Z.</p>
                 </div>
-                <button
-                  type="button"
-                  disabled={!!sandboxLoading}
-                  onClick={() => handleLaunchSandbox('VIDE', 'LAUNCH')}
-                  style={{ ...primaryBtn, width: '100%', justifyContent: 'center' }}
-                >
-                  <Icon.ArrowUpRight /> {sandboxLoading === 'VIDE_LAUNCH' ? 'Création en cours...' : 'Lancer un salon vide'}
+                <button type="button" disabled={!!sandboxLoading} onClick={() => handleLaunchSandbox('VIDE', 'LAUNCH')} style={{ ...primaryBtn, width: '100%' }}>
+                  <Icon.ArrowUpRight /> {sandboxLoading === 'VIDE_LAUNCH' ? 'Création...' : 'Lancer un salon vide'}
                 </button>
               </div>
 
-              {/* Simulateur 2 : Démonstrateur Pré-rempli & Personnalisable */}
               <div style={{ ...cardStyle, marginBottom: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', border: '1.5px solid #111827' }}>
                 <div>
-                  <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '11.5px', fontWeight: '700', backgroundColor: '#dcfce7', color: '#166534' }}>
-                    Données Riches + Personnalisable
-                  </span>
+                  <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '11.5px', fontWeight: '700', backgroundColor: '#dcfce7', color: '#166534' }}>Données Riches + Personnalisable</span>
                   <h3 style={{ fontSize: '17px', fontWeight: '700', margin: '12px 0 8px 0' }}>Salon Démo Pré-rempli</h3>
-                  <p style={{ fontSize: '13.5px', color: '#6b7280', lineHeight: 1.5, margin: '0 0 14px 0' }}>
-                    Embarque équipe, catalogue, clients, stocks et CA. Modifiez-le à votre guise et sauvegardez votre version, ou remettez-le à zéro entre deux RDV.
-                  </p>
+                  <p style={{ fontSize: '13px', color: '#6b7280', lineHeight: 1.5, margin: '0 0 14px 0' }}>Embarque équipe, catalogue et clients. Personnalisez-le et sauvegardez votre version.</p>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <button
-                    type="button"
-                    disabled={!!sandboxLoading}
-                    onClick={() => handleLaunchSandbox('DEMO', 'LAUNCH')}
-                    style={{ ...primaryBtn, width: '100%', justifyContent: 'center', background: 'linear-gradient(135deg, #111827 0%, #374151 100%)' }}
-                  >
-                    <Icon.ArrowUpRight /> {sandboxLoading === 'DEMO_LAUNCH' ? 'Ouverture...' : 'Ouvrir mon salon Démo'}
+                  <button type="button" disabled={!!sandboxLoading} onClick={() => handleLaunchSandbox('DEMO', 'LAUNCH')} style={{ ...primaryBtn, width: '100%' }}>
+                    <Icon.ArrowUpRight /> Ouvrir mon salon Démo
                   </button>
-                  <button
-                    type="button"
-                    disabled={!!sandboxLoading}
-                    onClick={() => handleLaunchSandbox('DEMO', 'SAVE_CUSTOM')}
-                    style={{ ...secondaryBtn, width: '100%', justifyContent: 'center' }}
-                  >
-                    <Icon.Check /> {sandboxLoading === 'DEMO_SAVE_CUSTOM' ? 'Sauvegarde...' : 'Enregistrer ma config actuelle'}
+                  <button type="button" disabled={!!sandboxLoading} onClick={() => handleLaunchSandbox('DEMO', 'SAVE_CUSTOM')} style={{ ...secondaryBtn, width: '100%' }}>
+                    <Icon.Check /> Enregistrer ma config
                   </button>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                    <button
-                      type="button"
-                      disabled={!!sandboxLoading}
-                      onClick={() => handleLaunchSandbox('DEMO', 'RESET_CUSTOM')}
-                      title="Restaure le salon tel que vous l'avez sauvegardé"
-                      style={{ ...secondaryBtn, justifyContent: 'center', fontSize: '12px', padding: '8px 10px' }}
-                    >
-                      {sandboxLoading === 'DEMO_RESET_CUSTOM' ? '...' : 'Réinitialiser'}
-                    </button>
-                    <button
-                      type="button"
-                      disabled={!!sandboxLoading}
-                      onClick={() => handleLaunchSandbox('DEMO', 'RESET_DEFAULT')}
-                      title="Écrase tout et remet les données par défaut STACK"
-                      style={{ ...secondaryBtn, justifyContent: 'center', fontSize: '12px', padding: '8px 10px', color: '#dc2626', borderColor: '#fecaca', backgroundColor: '#fef2f2' }}
-                    >
-                      {sandboxLoading === 'DEMO_RESET_DEFAULT' ? '...' : 'Défaut (Usine)'}
-                    </button>
+                    <button type="button" disabled={!!sandboxLoading} onClick={() => handleLaunchSandbox('DEMO', 'RESET_CUSTOM')} style={secondaryBtn}>Réinitialiser</button>
+                    <button type="button" disabled={!!sandboxLoading} onClick={() => handleLaunchSandbox('DEMO', 'RESET_DEFAULT')} style={{ ...secondaryBtn, color: '#dc2626', borderColor: '#fecaca', backgroundColor: '#fef2f2' }}>Défaut</button>
                   </div>
                 </div>
               </div>
 
-              {/* Simulateur 3 : Entraînement Onboarding */}
               <div style={{ ...cardStyle, marginBottom: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                 <div>
-                  <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '11.5px', fontWeight: '700', backgroundColor: '#dbeafe', color: '#1e40af' }}>
-                    Tunnel Légal + Checklist Go-Live
-                  </span>
+                  <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '11.5px', fontWeight: '700', backgroundColor: '#dbeafe', color: '#1e40af' }}>Tunnel Légal + Checklist</span>
                   <h3 style={{ fontSize: '17px', fontWeight: '700', margin: '12px 0 8px 0' }}>Simulateur d'Onboarding</h3>
-                  <p style={{ fontSize: '13.5px', color: '#6b7280', lineHeight: 1.5, margin: '0 0 20px 0' }}>
-                    Réplique exacte de la 1ère connexion d'un gérant : signature des CGV, saisie du code partenaire ({agent.code}) et déblocage de la Caisse verrouillée.
-                  </p>
+                  <p style={{ fontSize: '13px', color: '#6b7280', lineHeight: 1.5, margin: '0 0 18px 0' }}>Réplique de la 1ère connexion : signature CGV, code partenaire ({agent.code}) et checklist.</p>
                 </div>
-                <button
-                  type="button"
-                  disabled={!!sandboxLoading}
-                  onClick={() => handleLaunchSandbox('ONBOARDING', 'LAUNCH')}
-                  style={{ ...primaryBtn, width: '100%', justifyContent: 'center' }}
-                >
-                  <Icon.ArrowUpRight /> {sandboxLoading === 'ONBOARDING_LAUNCH' ? 'Initialisation...' : "S'exercer à l'onboarding"}
+                <button type="button" disabled={!!sandboxLoading} onClick={() => handleLaunchSandbox('ONBOARDING', 'LAUNCH')} style={{ ...primaryBtn, width: '100%' }}>
+                  <Icon.ArrowUpRight /> S'exercer à l'onboarding
                 </button>
               </div>
             </div>
 
-            {activeSandboxInfo && (
-              <div style={{ ...cardStyle, backgroundColor: '#f9fafb', border: '1px solid #d1d5db', padding: '18px 22px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-                  <div>
-                    <div style={{ fontSize: '14px', fontWeight: '700' }}>Dernier simulateur actif : {activeSandboxInfo.nom_salon}</div>
-                    <div style={{ fontSize: '12.5px', color: '#4b5563', marginTop: '4px', fontFamily: 'monospace' }}>
-                      Email : {activeSandboxInfo.email_test} | Mot de passe : {activeSandboxInfo.mot_de_passe_test} | Code PIN Caisse & Pointeuse : 0000
-                    </div>
-                  </div>
-                  <a href={activeSandboxInfo.url_directe} target="_blank" rel="noopener noreferrer" style={{ ...primaryBtn, textDecoration: 'none' }}>
-                    <Icon.ArrowUpRight /> Ouvrir le salon test
-                  </a>
-                </div>
-              </div>
-            )}
-
-            {/* SECTION 2 : TRAITEMENT DES OBJECTIONS CLIENTS */}
-            <div style={{ fontSize: '13px', fontWeight: '700', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '12px', marginTop: '12px' }}>
-              2. Réponses aux Objections Clients (Scripts de vente terrain)
-            </div>
-            <div style={{ ...cardStyle, padding: '12px 20px' }}>
+            <div style={{ ...cardStyle, padding: '12px 18px' }}>
               {[
-                {
-                  q: "« C'est trop cher, je paie déjà moins cher ailleurs (ou j'ai un cahier papier). »",
-                  a: "STACK n'est pas un coût, c'est un centre de profit. Entre la récupération automatique des clients inactifs (Winback), la pointeuse qui évite les erreurs d'heures, et le scan IA des factures fournisseurs qui fait gagner 4h de comptabilité par mois, le logiciel est rentabilisé dès la première semaine. De plus, un cahier papier vous expose à 7 500 € d'amende en cas de contrôle fiscal NF525."
-                },
-                {
-                  q: "« Je suis déjà engagé chez Planity / Treatwell / Wavy, c'est trop compliqué de changer. »",
-                  a: "Vous n'avez rien à saisir vous-même : mes 99 € HT de mise en service incluent justement l'importation intégrale de votre catalogue de prestations, la création de votre équipe et votre formation sur place. En 45 minutes ensemble, votre caisse est prête et vous bénéficiez de 30 jours d'essai gratuit pour comparer sans risque."
-                },
-                {
-                  q: "« Pourquoi dois-je payer 99 € HT de frais d'installation aujourd'hui ? »",
-                  a: "Ces 99 € HT rémunèrent mon intervention physique dans votre salon en tant qu'agent commercial indépendant : je paramètre vos taux de TVA, vos collaborateurs, vos protocoles, je vérifie votre matériel et je forme votre équipe à la clôture journalière certifiée NF525. C'est la garantie de ne jamais être livré à vous-même face à un écran."
-                },
-                {
-                  q: "« Je n'y connais rien en informatique, mon équipe va avoir du mal. »",
-                  a: "STACK a été conçu comme une application iPhone : un encaissement se fait en 3 clics montre en main, et le pointage des employés ne demande qu'un code PIN à 4 chiffres. Regardez sur ma tablette de démonstration : essayez d'encaisser une coupe, vous allez voir à quel point c'est intuitif."
-                },
-                {
-                  q: "« Et si internet coupe en plein samedi après-midi au salon ? »",
-                  a: "C'est la force de l'architecture STACK : la caisse dispose d'un moteur Hors-Ligne natif. Même si votre box internet tombe en panne, vous continuez d'encaisser vos clients normalement. Dès que la connexion revient, les tickets sont synchronisés et scellés automatiquement sur le serveur."
-                }
+                { q: "« C'est trop cher, je paie moins cher ailleurs (ou j'ai un cahier papier). »", a: "STACK est rentabilisé dès la 1ère semaine grâce au Winback automatique, à la pointeuse PIN et au scan IA des factures. De plus, un cahier papier expose à 7 500 € d'amende NF525." },
+                { q: "« Je suis déjà chez Planity / Treatwell / Wavy, c'est compliqué de changer. »", a: "Mes 99 € HT incluent l'importation intégrale de votre catalogue, la création de votre équipe et votre formation sur place en 45 minutes, avec 30 jours d'essai gratuit." },
+                { q: "« Pourquoi payer 99 € HT de frais d'installation aujourd'hui ? »", a: "Ils rémunèrent mon intervention physique en salon : paramétrage TVA, création des collaborateurs, test matériel et formation à la clôture journalière certifiée NF525." },
+                { q: "« Et si internet coupe en plein samedi après-midi ? »", a: "STACK intègre un mode Hors-Ligne natif : vous encaissez normalement et tout est synchronisé dès le retour de la connexion." }
               ].map((item, idx) => {
                 const isOpen = openObjectionIdx === idx;
                 return (
-                  <div key={idx} style={{ borderBottom: idx < 4 ? '1px solid #f3f4f6' : 'none', padding: '14px 4px' }}>
-                    <button
-                      type="button"
-                      onClick={() => setOpenObjectionIdx(isOpen ? null : idx)}
-                      style={{ width: '100%', background: 'none', border: 'none', padding: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', textAlign: 'left' }}
-                    >
-                      <span style={{ fontSize: '14.5px', fontWeight: '700', color: '#111827' }}>{item.q}</span>
-                      <span style={{ fontSize: '18px', fontWeight: '700', color: '#6b7280', transform: isOpen ? 'rotate(45deg)' : 'rotate(0deg)', transition: 'transform 0.15s ease' }}>+</span>
+                  <div key={idx} style={{ borderBottom: idx < 3 ? '1px solid #f3f4f6' : 'none', padding: '12px 0' }}>
+                    <button type="button" onClick={() => setOpenObjectionIdx(isOpen ? null : idx)} style={{ width: '100%', background: 'none', border: 'none', padding: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', textAlign: 'left', gap: '10px' }}>
+                      <span style={{ fontSize: '14px', fontWeight: '700', color: '#111827' }}>{item.q}</span>
+                      <span style={{ fontSize: '18px', fontWeight: '700', color: '#6b7280' }}>{isOpen ? '−' : '+'}</span>
                     </button>
                     {isOpen && (
-                      <div style={{ marginTop: '10px', padding: '14px 16px', backgroundColor: '#f9fafb', borderRadius: '12px', fontSize: '13.5px', color: '#374151', lineHeight: 1.6, borderLeft: '3px solid #111827' }}>
-                        <strong>Réponse recommandée :</strong> {item.a}
+                      <div style={{ marginTop: '10px', padding: '12px 14px', backgroundColor: '#f9fafb', borderRadius: '12px', fontSize: '13px', color: '#374151', lineHeight: 1.55, borderLeft: '3px solid #111827' }}>
+                        {item.a}
                       </div>
                     )}
                   </div>
@@ -1576,84 +1333,35 @@ export default function Dashboard() {
               })}
             </div>
 
-            {/* SECTION 3 : GALERIE VIDÉOS INTERACTIVE AVEC LECTEUR INTÉGRÉ */}
-            <div style={{ fontSize: '13px', fontWeight: '700', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '12px' }}>
-              3. Tutoriels Vidéos & Prise en main de STACK
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '18px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '16px' }}>
               {tutorialsList.map((vid) => (
-                <div key={vid.id} style={{ ...cardStyle, marginBottom: 0, padding: '18px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div key={vid.id} style={{ ...cardStyle, marginBottom: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                   <div>
-                    <div
-                      onClick={() => setActiveVideoModal(vid)}
-                      style={{ height: '150px', borderRadius: '14px', background: 'linear-gradient(135deg, #111827 0%, #1f2937 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', marginBottom: '14px', cursor: 'pointer', overflow: 'hidden' }}
-                    >
-                      <div style={{ width: '50px', height: '50px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff', fontSize: '18px', backdropFilter: 'blur(4px)', border: '1px solid rgba(255,255,255,0.3)' }}>
-                        ▶
-                      </div>
-                      <span style={{ position: 'absolute', bottom: '10px', right: '10px', backgroundColor: 'rgba(0,0,0,0.7)', color: '#fff', padding: '4px 9px', borderRadius: '6px', fontSize: '11px', fontWeight: '600' }}>
-                        {vid.duree}
-                      </span>
+                    <div onClick={() => setActiveVideoModal(vid)} style={{ height: '140px', borderRadius: '14px', background: 'linear-gradient(135deg, #111827 0%, #1f2937 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', marginBottom: '12px', cursor: 'pointer' }}>
+                      <div style={{ width: '46px', height: '46px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>▶</div>
+                      <span style={{ position: 'absolute', bottom: '10px', right: '10px', backgroundColor: 'rgba(0,0,0,0.7)', color: '#fff', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: '600' }}>{vid.duree}</span>
                     </div>
-                    <div style={{ fontSize: '11.5px', fontWeight: '700', color: '#863bff', textTransform: 'uppercase', marginBottom: '4px' }}>{vid.cat}</div>
-                    <div style={{ fontSize: '15px', fontWeight: '700', color: '#111827', marginBottom: '6px' }}>{vid.titre}</div>
-                    <div style={{ fontSize: '13px', color: '#6b7280', lineHeight: 1.45, marginBottom: '14px' }}>{vid.desc}</div>
+                    <div style={{ fontSize: '11px', fontWeight: '700', color: '#863bff', textTransform: 'uppercase' }}>{vid.cat}</div>
+                    <div style={{ fontSize: '14.5px', fontWeight: '700', margin: '4px 0 6px 0' }}>{vid.titre}</div>
+                    <div style={{ fontSize: '12.5px', color: '#6b7280', lineHeight: 1.45, marginBottom: '14px' }}>{vid.desc}</div>
                   </div>
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    <button type="button" onClick={() => setActiveVideoModal(vid)} style={{ ...primaryBtn, flex: 1, justifyContent: 'center', padding: '10px 14px', fontSize: '13px' }}>
-                      Regarder la formation
-                    </button>
-                    {isSuperAdmin && (
-                      <button type="button" onClick={() => handleUpdateVideoUrl(vid.id)} style={{ ...secondaryBtn, padding: '10px 12px' }} title="Modifier le lien vidéo (Super-Admin)">
-                        Lien
-                      </button>
-                    )}
+                    <button type="button" onClick={() => setActiveVideoModal(vid)} style={{ ...primaryBtn, flex: 1, padding: '10px' }}>Regarder</button>
+                    {isSuperAdmin && <button type="button" onClick={() => handleUpdateVideoUrl(vid.id)} style={secondaryBtn}>Lien</button>}
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* MODALE LECTEUR VIDÉO INTÉGRÉ */}
             {activeVideoModal && (
-              <div
-                onClick={() => setActiveVideoModal(null)}
-                style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(17, 24, 39, 0.72)', backdropFilter: 'blur(4px)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}
-              >
-                <div
-                  onClick={e => e.stopPropagation()}
-                  style={{ width: '100%', maxWidth: '820px', backgroundColor: '#ffffff', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.35)' }}
-                >
-                  <div style={{ padding: '18px 24px', borderBottom: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                      <span style={{ fontSize: '11px', fontWeight: '700', color: '#863bff', textTransform: 'uppercase' }}>{activeVideoModal.cat} • {activeVideoModal.duree}</span>
-                      <h3 style={{ margin: '2px 0 0 0', fontSize: '17px', fontWeight: '700', color: '#111827' }}>{activeVideoModal.titre}</h3>
-                    </div>
-                    <button type="button" onClick={() => setActiveVideoModal(null)} style={{ ...secondaryBtn, padding: '7px 14px' }}>
-                      Fermer ✕
-                    </button>
+              <div onClick={() => setActiveVideoModal(null)} style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(17,24,39,0.75)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+                <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: '780px', backgroundColor: '#fff', borderRadius: '20px', overflow: 'hidden' }}>
+                  <div style={{ padding: '14px 20px', borderBottom: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <strong style={{ fontSize: '15px' }}>{activeVideoModal.titre}</strong>
+                    <button type="button" onClick={() => setActiveVideoModal(null)} style={secondaryBtn}>Fermer ✕</button>
                   </div>
                   <div style={{ position: 'relative', paddingTop: '56.25%', backgroundColor: '#000' }}>
-                    {activeVideoModal.embedUrl.endsWith('.mp4') ? (
-                      <video src={activeVideoModal.embedUrl} controls autoPlay style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} />
-                    ) : (
-                      <iframe
-                        src={activeVideoModal.embedUrl}
-                        title={activeVideoModal.titre}
-                        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                      />
-                    )}
-                  </div>
-                  <div style={{ padding: '18px 24px', backgroundColor: '#f9fafb' }}>
-                    <div style={{ fontSize: '12px', fontWeight: '700', color: '#4b5563', textTransform: 'uppercase', marginBottom: '8px' }}>Points clés à retenir :</div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                      {activeVideoModal.pointsCles?.map((pt, idx) => (
-                        <span key={idx} style={{ padding: '6px 12px', backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '10px', fontSize: '12.5px', color: '#111827', fontWeight: '500' }}>
-                          ✓ {pt}
-                        </span>
-                      ))}
-                    </div>
+                    <iframe src={activeVideoModal.embedUrl} title={activeVideoModal.titre} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }} allowFullScreen />
                   </div>
                 </div>
               </div>
@@ -1661,512 +1369,510 @@ export default function Dashboard() {
           </>
         )}
 
-        {/* ONGLET PARAMÈTRES & CONFORMITÉ LÉGALE */}
+        {/* ONGLET 6 : PARAMÈTRES & CONFORMITÉ */}
         {activeTab === 'profil' && (
           <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+            <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', gap: '12px', marginBottom: '20px' }}>
               <div>
-                <h1 style={{ fontSize: '26px', fontWeight: '700', margin: '0 0 6px 0', letterSpacing: '-0.02em' }}>Paramètres & Dossier de Conformité</h1>
-                <span style={{ fontSize: '14px', color: '#6b7280' }}>
-                  La prospection, la facturation et l'onboarding sont verrouillés tant que les 6 étapes ci-dessous ne sont pas intégralement vérifiées.
-                </span>
+                <h1 style={{ fontSize: isMobile ? '22px' : '26px', fontWeight: '700', margin: '0 0 4px 0' }}>Paramètres & Dossier de Conformité</h1>
+                <span style={{ fontSize: '13.5px', color: '#6b7280' }}>Validez les 6 étapes ci-dessous pour débloquer votre droit de prospection et facturation.</span>
               </div>
-              <span style={{
-                padding: '8px 14px', borderRadius: '12px', fontSize: '13px', fontWeight: '700',
-                backgroundColor: profilData.autorise_a_vendre ? '#dcfce7' : '#f3f4f6',
-                color: profilData.autorise_a_vendre ? '#166534' : '#374151',
-                border: profilData.autorise_a_vendre ? '1px solid #bbf7d0' : '1px solid #e5e7eb'
-              }}>
+              <span style={{ padding: '8px 14px', borderRadius: '12px', fontSize: '12.5px', fontWeight: '700', backgroundColor: profilData.autorise_a_vendre ? '#dcfce7' : '#f3f4f6', color: profilData.autorise_a_vendre ? '#166534' : '#374151', border: '1px solid #e5e7eb' }}>
                 {profilData.autorise_a_vendre ? 'Compte Actif — Vente Autorisée' : 'Dossier en cours de validation'}
               </span>
             </div>
 
-            {/* Alertes d'expiration à 30 jours */}
-            {profilData.alertes_expiration?.length > 0 && (
-              <div style={{ backgroundColor: '#fffbeb', border: '1px solid #fde68a', color: '#92400e', padding: '16px 20px', borderRadius: '18px', marginBottom: '20px', fontSize: '13.5px' }}>
-                <div style={{ fontWeight: '700', marginBottom: '4px' }}>Rappel d'échéance réglementaire (Alerte à 30 jours) :</div>
-                {profilData.alertes_expiration.map((al, idx) => <div key={idx}>• {al}</div>)}
-              </div>
-            )}
-
-            {/* REFONTE ESTHÉTIQUE : ÉLÉMENTS REQUIS POUR DÉBLOQUER LE DROIT DE VENTE */}
             {!profilData.autorise_a_vendre && profilData.motifs_blocage?.length > 0 && (
-              <div style={{
-                backgroundColor: '#ffffff',
-                border: '1px solid #e5e7eb',
-                borderRadius: '22px',
-                padding: '22px 24px',
-                marginBottom: '24px',
-                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.02)'
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{
-                      width: '38px',
-                      height: '38px',
-                      borderRadius: '11px',
-                      backgroundColor: '#f3f4f6',
-                      color: '#111827',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0
-                    }}>
-                      <Icon.Lock />
-                    </div>
+              <div style={cardStyle}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon.Lock /></div>
                     <div>
-                      <div style={{ fontSize: '15px', fontWeight: '700', color: '#111827' }}>
-                        Éléments requis pour débloquer votre droit de vente
-                      </div>
-                      <div style={{ fontSize: '12.5px', color: '#6b7280', marginTop: '2px' }}>
-                        Complétez les étapes ci-dessous pour activer vos réservations de prospects et votre facturation.
-                      </div>
+                      <div style={{ fontSize: '14.5px', fontWeight: '700' }}>Éléments requis pour débloquer votre droit de vente</div>
+                      <div style={{ fontSize: '12px', color: '#6b7280' }}>Complétez les étapes ci-dessous pour activer votre compte partenaire.</div>
                     </div>
                   </div>
-                  <span style={{
-                    padding: '6px 12px',
-                    borderRadius: '999px',
-                    backgroundColor: '#f9fafb',
-                    border: '1px solid #e5e7eb',
-                    fontSize: '12px',
-                    fontWeight: '700',
-                    color: '#374151'
-                  }}>
-                    {profilData.motifs_blocage.length} {profilData.motifs_blocage.length > 1 ? 'éléments en attente' : 'élément en attente'}
+                  <span style={{ padding: '5px 10px', borderRadius: '999px', backgroundColor: '#f9fafb', border: '1px solid #e5e7eb', fontSize: '11.5px', fontWeight: '700' }}>
+                    {profilData.motifs_blocage.length} en attente
                   </span>
                 </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))', gap: '10px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(270px, 1fr))', gap: '8px' }}>
                   {profilData.motifs_blocage.map((motif, i) => (
-                    <div
-                      key={i}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '10px',
-                        padding: '11px 14px',
-                        backgroundColor: '#f9fafb',
-                        border: '1px solid #f3f4f6',
-                        borderRadius: '12px',
-                        fontSize: '13px',
-                        color: '#374151',
-                        fontWeight: '500'
-                      }}
-                    >
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', backgroundColor: '#f9fafb', border: '1px solid #f3f4f6', borderRadius: '11px', fontSize: '12.5px', fontWeight: '500' }}>
                       <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#f59e0b', flexShrink: 0 }} />
-                      <span style={{ lineHeight: 1.35 }}>{motif}</span>
+                      <span>{motif}</span>
                     </div>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* ÉTAPE 1 : CONTRAT D'AGENT COMMERCIAL */}
+            {/* ÉTAPE 1 */}
             <div style={cardStyle}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                <div style={{ fontSize: '16px', fontWeight: '700' }}>1. Contrat de mandat d'agent commercial (à prise d'effet conditionnelle)</div>
-                <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '12px', fontWeight: '600', backgroundColor: profilData.statut_contrat === 'VALIDE' ? '#dcfce7' : '#fef3c7', color: profilData.statut_contrat === 'VALIDE' ? '#166534' : '#92400e' }}>
-                  {profilData.statut_contrat}
-                </span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', gap: '8px' }}>
+                <div style={{ fontSize: '15.5px', fontWeight: '700' }}>1. Contrat de mandat d'agent commercial</div>
+                <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '11.5px', fontWeight: '700', backgroundColor: profilData.statut_contrat === 'VALIDE' ? '#dcfce7' : '#fef3c7', color: profilData.statut_contrat === 'VALIDE' ? '#166534' : '#92400e' }}>{profilData.statut_contrat}</span>
               </div>
-              <p style={{ fontSize: '13.5px', color: '#4b5563', lineHeight: 1.5, margin: '0 0 16px 0' }}>
-                Conformément au Code de commerce, la conclusion du contrat de mandat précède votre immatriculation au Registre Spécial des Agents Commerciaux (RSAC). Ce contrat est conclu sous condition suspensive : vous pouvez utiliser cette copie pour votre inscription au greffe, mais toute prospection ou vente demeure interdite tant que les étapes 2 à 6 ne sont pas validées.
+              <p style={{ fontSize: '13px', color: '#4b5563', lineHeight: 1.5, margin: '0 0 14px 0' }}>
+                Contrat conclu sous condition suspensive d'immatriculation RSAC.
               </p>
               {profilData.contrat_signe ? (
-                <div style={{ fontSize: '13px', fontWeight: '600', color: '#16a34a', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Icon.Check /> Contrat signé électroniquement le {profilData.date_signature_contrat ? new Date(profilData.date_signature_contrat).toLocaleString('fr-FR') : 'ce jour'}.
-                </div>
+                <div style={{ fontSize: '13px', fontWeight: '600', color: '#16a34a', display: 'flex', alignItems: 'center', gap: '6px' }}><Icon.Check /> Contrat signé électroniquement.</div>
               ) : (
-                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                  <button type="button" onClick={handleYousignSignature} disabled={isYousignLoading} style={{ ...primaryBtn, opacity: isYousignLoading ? 0.7 : 1 }}>
-                    <Icon.Check /> {isYousignLoading ? "Signature en cours..." : "Signer électroniquement le contrat de mandat"}
-                  </button>
-                </div>
+                <button type="button" onClick={handleYousignSignature} disabled={isYousignLoading} style={{ ...primaryBtn, width: isMobile ? '100%' : 'auto' }}>
+                  <Icon.Check /> {isYousignLoading ? "Signature..." : "Signer électroniquement le contrat de mandat"}
+                </button>
               )}
             </div>
 
-            {/* ÉTAPE 2 : IDENTITÉ, SIREN/SIRET, RSAC & KBIS */}
-            <div style={{ ...cardStyle, opacity: profilData.contrat_signe ? 1 : 0.55 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <div style={{ fontSize: '16px', fontWeight: '700' }}>2. Immatriculation RSAC, Identité & Statut Juridique (INSEE / Kbis)</div>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '11.5px', fontWeight: '600', backgroundColor: '#f3f4f6' }}>Identité : {profilData.statut_identite}</span>
-                  <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '11.5px', fontWeight: '600', backgroundColor: '#f3f4f6' }}>SIRET : {profilData.statut_siret}</span>
-                  <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '11.5px', fontWeight: '600', backgroundColor: '#f3f4f6' }}>RSAC : {profilData.statut_rsac}</span>
-                </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '14px' }}>
+            {/* ÉTAPE 2 */}
+            <div style={{ ...cardStyle, opacity: profilData.contrat_signe ? 1 : 0.6 }}>
+              <div style={{ fontSize: '15.5px', fontWeight: '700', marginBottom: '14px' }}>2. Identité, SIRET & Immatriculation RSAC</div>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '12px', marginBottom: '12px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Date de naissance (Majeur requis)</label>
-                  <input type="date" value={profilData.date_naissance ? profilData.date_naissance.slice(0,10) : ''} onChange={e => setProfilData({...profilData, date_naissance: e.target.value})} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
+                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Date de naissance</label>
+                  <input type="date" value={profilData.date_naissance ? profilData.date_naissance.slice(0,10) : ''} onChange={e => setProfilData({...profilData, date_naissance: e.target.value})} style={inputStyle} />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Expiration Pièce d'identité</label>
-                  <input type="date" value={profilData.date_expiration_identite ? profilData.date_expiration_identite.slice(0,10) : ''} onChange={e => setProfilData({...profilData, date_expiration_identite: e.target.value})} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
+                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Expiration Identité</label>
+                  <input type="date" value={profilData.date_expiration_identite ? profilData.date_expiration_identite.slice(0,10) : ''} onChange={e => setProfilData({...profilData, date_expiration_identite: e.target.value})} style={inputStyle} />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Pièce d'identité (PDF / Image)</label>
-                  <input type="file" accept=".pdf,image/*" onChange={e => handleFileUpload(e, 'fichier_identite')} style={{ fontSize: '12px', marginTop: '6px' }} />
+                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Pièce d'identité</label>
+                  <input type="file" accept=".pdf,image/*" onChange={e => handleFileUpload(e, 'fichier_identite')} style={{ fontSize: '12px' }} />
                   {renderFilePreviewBadge(profilData.fichier_identite, 'Identité')}
                 </div>
               </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '14px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '12px', marginBottom: '12px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Numéro SIRET (14 chiffres)</label>
-                  <input type="text" value={profilData.siret_agent || ''} onChange={e => setProfilData({...profilData, siret_agent: e.target.value})} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
+                  <input type="text" value={profilData.siret_agent || ''} onChange={e => setProfilData({...profilData, siret_agent: e.target.value})} style={inputStyle} />
                 </div>
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Forme juridique</label>
-                  <select value={profilData.forme_juridique || 'EI'} onChange={e => setProfilData({...profilData, forme_juridique: e.target.value})} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }}>
-                    <option value="EI">Entrepreneur Individuel / Micro-entreprise</option>
-                    <option value="SOCIETE">Société (SASU, EURL, SAS, SARL...)</option>
+                  <select value={profilData.forme_juridique || 'EI'} onChange={e => setProfilData({...profilData, forme_juridique: e.target.value})} style={inputStyle}>
+                    <option value="EI">Entrepreneur Individuel / Micro</option>
+                    <option value="SOCIETE">Société (SASU, EURL, SAS...)</option>
                   </select>
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Date de début d'activité</label>
-                  <input type="date" value={profilData.date_debut_activite ? profilData.date_debut_activite.slice(0,10) : ''} onChange={e => setProfilData({...profilData, date_debut_activite: e.target.value})} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
+                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Début d'activité</label>
+                  <input type="date" value={profilData.date_debut_activite ? profilData.date_debut_activite.slice(0,10) : ''} onChange={e => setProfilData({...profilData, date_debut_activite: e.target.value})} style={inputStyle} />
                 </div>
               </div>
-
-              <div style={{ marginBottom: '14px' }}>
-                <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Adresse professionnelle complète (figurant sur vos factures)</label>
-                <input type="text" placeholder="Ex: 12 rue de la Paix, 67000 Strasbourg" value={profilData.adresse_pro || ''} onChange={e => setProfilData({...profilData, adresse_pro: e.target.value})} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Adresse professionnelle complète</label>
+                <input type="text" value={profilData.adresse_pro || ''} onChange={e => setProfilData({...profilData, adresse_pro: e.target.value})} style={inputStyle} />
               </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '12px', marginBottom: '14px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)', gap: '12px', marginBottom: '14px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Numéro RSAC (Obligatoire)</label>
-                  <input type="text" placeholder="Ex: 902 123 456" value={profilData.numero_rsac || ''} onChange={e => setProfilData({...profilData, numero_rsac: e.target.value})} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
+                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Numéro RSAC</label>
+                  <input type="text" value={profilData.numero_rsac || ''} onChange={e => setProfilData({...profilData, numero_rsac: e.target.value})} style={inputStyle} />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Greffe / Tribunal Judiciaire</label>
-                  <input type="text" placeholder="Ex: TJ de Strasbourg" value={profilData.greffe_rsac || ''} onChange={e => setProfilData({...profilData, greffe_rsac: e.target.value})} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
+                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Greffe / Tribunal</label>
+                  <input type="text" value={profilData.greffe_rsac || ''} onChange={e => setProfilData({...profilData, greffe_rsac: e.target.value})} style={inputStyle} />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Date extrait RSAC (&lt; 3 mois)</label>
-                  <input type="date" value={profilData.date_emission_rsac ? profilData.date_emission_rsac.slice(0,10) : ''} onChange={e => setProfilData({...profilData, date_emission_rsac: e.target.value})} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
+                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Date extrait RSAC</label>
+                  <input type="date" value={profilData.date_emission_rsac ? profilData.date_emission_rsac.slice(0,10) : ''} onChange={e => setProfilData({...profilData, date_emission_rsac: e.target.value})} style={inputStyle} />
                 </div>
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Extrait RSAC (PDF)</label>
-                  <input type="file" accept=".pdf,image/*" onChange={e => handleFileUpload(e, 'fichier_rsac')} style={{ fontSize: '12px', marginTop: '6px' }} />
+                  <input type="file" accept=".pdf,image/*" onChange={e => handleFileUpload(e, 'fichier_rsac')} style={{ fontSize: '12px' }} />
                   {renderFilePreviewBadge(profilData.fichier_rsac, 'RSAC')}
                 </div>
               </div>
-
-              {profilData.forme_juridique === 'SOCIETE' && (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', backgroundColor: '#f9fafb', padding: '14px', borderRadius: '12px', marginBottom: '14px' }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Date d'émission de l'extrait Kbis (&lt; 3 mois)</label>
-                    <input type="date" value={profilData.date_emission_kbis ? profilData.date_emission_kbis.slice(0,10) : ''} onChange={e => setProfilData({...profilData, date_emission_kbis: e.target.value})} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Extrait Kbis mentionnant l'activité d'agent commercial ({profilData.statut_kbis})</label>
-                    <input type="file" accept=".pdf,image/*" onChange={e => handleFileUpload(e, 'fichier_kbis')} style={{ fontSize: '12px', marginTop: '6px' }} />
-                    {renderFilePreviewBadge(profilData.fichier_kbis, 'Kbis')}
-                  </div>
-                </div>
-              )}
-
-              <button type="button" disabled={!profilData.contrat_signe} onClick={() => submitEtapeConformite(2)} style={primaryBtn}>
-                <Icon.Check /> Soumettre l'Étape 2 (Identité, SIRET & RSAC)
+              <button type="button" disabled={!profilData.contrat_signe} onClick={() => submitEtapeConformite(2)} style={{ ...primaryBtn, width: isMobile ? '100%' : 'auto' }}>
+                <Icon.Check /> Enregistrer l'Étape 2
               </button>
             </div>
 
-            {/* ÉTAPE 3 : ATTESTATION DE VIGILANCE URSSAF */}
+            {/* ÉTAPE 3 */}
             <div style={cardStyle}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                <div style={{ fontSize: '16px', fontWeight: '700' }}>3. Attestation de vigilance URSSAF (Renouvellement tous les 6 mois)</div>
-                <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '12px', fontWeight: '600', backgroundColor: profilData.statut_urssaf === 'VALIDE' ? '#dcfce7' : '#fef3c7', color: profilData.statut_urssaf === 'VALIDE' ? '#166534' : '#92400e' }}>
-                  {profilData.statut_urssaf}
-                </span>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '12px', marginBottom: '14px' }}>
+              <div style={{ fontSize: '15.5px', fontWeight: '700', marginBottom: '12px' }}>3. Attestation de vigilance URSSAF</div>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)', gap: '12px', marginBottom: '14px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Code de sécurité / vérification</label>
-                  <input type="text" placeholder="Code de vérification URSSAF" value={profilData.code_verif_urssaf || ''} onChange={e => setProfilData({...profilData, code_verif_urssaf: e.target.value})} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
+                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Code vérification URSSAF</label>
+                  <input type="text" value={profilData.code_verif_urssaf || ''} onChange={e => setProfilData({...profilData, code_verif_urssaf: e.target.value})} style={inputStyle} />
                 </div>
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Date de délivrance</label>
-                  <input type="date" value={profilData.date_emission_urssaf ? profilData.date_emission_urssaf.slice(0,10) : ''} onChange={e => setProfilData({...profilData, date_emission_urssaf: e.target.value})} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
+                  <input type="date" value={profilData.date_emission_urssaf ? profilData.date_emission_urssaf.slice(0,10) : ''} onChange={e => setProfilData({...profilData, date_emission_urssaf: e.target.value})} style={inputStyle} />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Date d'expiration (6 mois)</label>
-                  <input type="date" value={profilData.date_expiration_urssaf ? profilData.date_expiration_urssaf.slice(0,10) : ''} onChange={e => setProfilData({...profilData, date_expiration_urssaf: e.target.value})} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
+                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Date d'expiration</label>
+                  <input type="date" value={profilData.date_expiration_urssaf ? profilData.date_expiration_urssaf.slice(0,10) : ''} onChange={e => setProfilData({...profilData, date_expiration_urssaf: e.target.value})} style={inputStyle} />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Fichier PDF URSSAF</label>
-                  <input type="file" accept=".pdf,image/*" onChange={e => handleFileUpload(e, 'fichier_urssaf')} style={{ fontSize: '12px', marginTop: '6px' }} />
+                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Fichier URSSAF</label>
+                  <input type="file" accept=".pdf,image/*" onChange={e => handleFileUpload(e, 'fichier_urssaf')} style={{ fontSize: '12px' }} />
                   {renderFilePreviewBadge(profilData.fichier_urssaf, 'URSSAF')}
                 </div>
               </div>
-              <button type="button" onClick={() => submitEtapeConformite(3)} style={primaryBtn}>
-                <Icon.Check /> Soumettre l'Étape 3 (Vigilance URSSAF)
+              <button type="button" onClick={() => submitEtapeConformite(3)} style={{ ...primaryBtn, width: isMobile ? '100%' : 'auto' }}>
+                <Icon.Check /> Enregistrer l'Étape 3
               </button>
             </div>
 
-            {/* ÉTAPE 4 : ASSURANCE RC PRO, IBAN, TVA, DÉCLARATIONS SUR L'HONNEUR & CHARTE */}
+            {/* ÉTAPE 4 */}
             <div style={cardStyle}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                <div style={{ fontSize: '16px', fontWeight: '700' }}>4. Assurance RC Pro, IBAN, TVA, Déclarations sur l'honneur & Charte</div>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '11.5px', fontWeight: '600', backgroundColor: '#f3f4f6' }}>RC Pro : {profilData.statut_rc_pro}</span>
-                  <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '11.5px', fontWeight: '600', backgroundColor: '#f3f4f6' }}>IBAN : {profilData.statut_iban}</span>
-                  <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '11.5px', fontWeight: '600', backgroundColor: '#f3f4f6' }}>TVA : {profilData.statut_tva}</span>
-                </div>
+              <div style={{ fontSize: '15.5px', fontWeight: '700', marginBottom: '12px' }}>4. Assurance RC Pro, IBAN, TVA & Charte</div>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '12px', marginBottom: '12px' }}>
+                <input type="text" placeholder="Assureur (ex: AXA)" value={profilData.assureur_nom || ''} onChange={e => setProfilData({...profilData, assureur_nom: e.target.value})} style={inputStyle} />
+                <input type="text" placeholder="N° Police RC Pro" value={profilData.assureur_contrat || ''} onChange={e => setProfilData({...profilData, assureur_contrat: e.target.value})} style={inputStyle} />
+                <input type="text" placeholder="Plafond garantie" value={profilData.assureur_plafond || ''} onChange={e => setProfilData({...profilData, assureur_plafond: e.target.value})} style={inputStyle} />
               </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr', gap: '10px', marginBottom: '16px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Compagnie d'assurance</label>
-                  <input type="text" placeholder="Ex: Hiscox, AXA..." value={profilData.assureur_nom || ''} onChange={e => setProfilData({...profilData, assureur_nom: e.target.value})} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>N° de police / contrat</label>
-                  <input type="text" value={profilData.assureur_contrat || ''} onChange={e => setProfilData({...profilData, assureur_contrat: e.target.value})} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Plafond de garantie</label>
-                  <input type="text" placeholder="Ex: 500 000 € / an" value={profilData.assureur_plafond || ''} onChange={e => setProfilData({...profilData, assureur_plafond: e.target.value})} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
-                </div>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Expiration RC Pro</label>
-                  <input type="date" value={profilData.date_expiration_rc_pro ? profilData.date_expiration_rc_pro.slice(0,10) : ''} onChange={e => setProfilData({...profilData, date_expiration_rc_pro: e.target.value})} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
+                  <input type="date" value={profilData.date_expiration_rc_pro ? profilData.date_expiration_rc_pro.slice(0,10) : ''} onChange={e => setProfilData({...profilData, date_expiration_rc_pro: e.target.value})} style={inputStyle} />
                 </div>
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Attestation RC Pro</label>
-                  <input type="file" accept=".pdf,image/*" onChange={e => handleFileUpload(e, 'fichier_rc_pro')} style={{ fontSize: '12px', marginTop: '6px' }} />
+                  <input type="file" accept=".pdf,image/*" onChange={e => handleFileUpload(e, 'fichier_rc_pro')} style={{ fontSize: '12px' }} />
                   {renderFilePreviewBadge(profilData.fichier_rc_pro, 'RC Pro')}
                 </div>
               </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '12px', marginBottom: '16px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Nom du titulaire de l'IBAN (Jamais un tiers)</label>
-                  <input type="text" placeholder="Votre nom ou raison sociale" value={profilData.titulaire_iban || ''} onChange={e => setProfilData({...profilData, titulaire_iban: e.target.value})} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>IBAN</label>
-                  <input type="text" value={profilData.iban || ''} onChange={e => setProfilData({...profilData, iban: e.target.value})} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Régime de TVA</label>
-                  <select value={profilData.regime_tva || 'FRANCHISE_293B'} onChange={e => setProfilData({...profilData, regime_tva: e.target.value})} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }}>
-                    <option value="FRANCHISE_293B">Franchise en base de TVA (art. 293 B CGI)</option>
-                    <option value="ASSUJETTI_TVA">Assujetti à la TVA</option>
-                  </select>
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>N° TVA Intracommunautaire (si assujetti)</label>
-                  <input type="text" placeholder="FR..." value={profilData.numero_tva_intra || ''} onChange={e => setProfilData({...profilData, numero_tva_intra: e.target.value})} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
-                </div>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '12px', marginBottom: '14px' }}>
+                <input type="text" placeholder="Titulaire de l'IBAN" value={profilData.titulaire_iban || ''} onChange={e => setProfilData({...profilData, titulaire_iban: e.target.value})} style={inputStyle} />
+                <input type="text" placeholder="IBAN" value={profilData.iban || ''} onChange={e => setProfilData({...profilData, iban: e.target.value})} style={inputStyle} />
+                <select value={profilData.regime_tva || 'FRANCHISE_293B'} onChange={e => setProfilData({...profilData, regime_tva: e.target.value})} style={inputStyle}>
+                  <option value="FRANCHISE_293B">Franchise en base de TVA (293B)</option>
+                  <option value="ASSUJETTI_TVA">Assujetti à la TVA</option>
+                </select>
               </div>
-
-              <div style={{ backgroundColor: '#f9fafb', padding: '14px 16px', borderRadius: '14px', marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
-                  <input type="checkbox" checked={!!profilData.honneur_aucune_interdiction} onChange={e => setProfilData({...profilData, honneur_aucune_interdiction: e.target.checked})} />
-                  <span>Je déclare sur l'honneur ne faire l'objet d'aucune interdiction ni incapacité d'exercer une activité commerciale ou de gérer.</span>
-                </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
-                  <input type="checkbox" checked={!!profilData.honneur_pas_exclusivite_employeur} onChange={e => setProfilData({...profilData, honneur_pas_exclusivite_employeur: e.target.checked})} />
-                  <span>Je déclare sur l'honneur n'être lié par aucune clause d'exclusivité ou de non-concurrence avec un employeur m'empêchant d'agir.</span>
-                </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
-                  <input type="checkbox" checked={!!profilData.honneur_pas_mandat_concurrent} onChange={e => setProfilData({...profilData, honneur_pas_mandat_concurrent: e.target.checked})} />
-                  <span>Je déclare sur l'honneur ne détenir aucun mandat concurrent non déclaré (logiciels d'encaissement / gestion de salons).</span>
-                </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontWeight: '600', marginTop: '4px' }}>
-                  <input type="checkbox" checked={!!profilData.charte_acceptee} onChange={e => setProfilData({...profilData, charte_acceptee: e.target.checked})} />
-                  <span>J'accepte la Charte Commerciale STACK (v1.0) : je m'engage à ne tenir que des promesses validées par STACK, à ne jamais signer au nom de STACK et à respecter les règles de démarchage B2B et RGPD.</span>
-                </label>
+              <div style={{ backgroundColor: '#f9fafb', padding: '12px 14px', borderRadius: '12px', marginBottom: '14px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12.5px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}><input type="checkbox" checked={!!profilData.honneur_aucune_interdiction} onChange={e => setProfilData({...profilData, honneur_aucune_interdiction: e.target.checked})} /><span>Aucune interdiction de gérer ou d'exercer.</span></label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}><input type="checkbox" checked={!!profilData.honneur_pas_exclusivite_employeur} onChange={e => setProfilData({...profilData, honneur_pas_exclusivite_employeur: e.target.checked})} /><span>Aucune clause d'exclusivité employeur bloquante.</span></label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}><input type="checkbox" checked={!!profilData.honneur_pas_mandat_concurrent} onChange={e => setProfilData({...profilData, honneur_pas_mandat_concurrent: e.target.checked})} /><span>Aucun mandat concurrent non déclaré.</span></label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: '600' }}><input type="checkbox" checked={!!profilData.charte_acceptee} onChange={e => setProfilData({...profilData, charte_acceptee: e.target.checked})} /><span>J'accepte la Charte Commerciale STACK (v1.0).</span></label>
               </div>
-
-              <button type="button" onClick={() => submitEtapeConformite(4)} style={primaryBtn}>
-                <Icon.Check /> Soumettre l'Étape 4 (Assurance, IBAN, TVA & Déclarations)
+              <button type="button" onClick={() => submitEtapeConformite(4)} style={{ ...primaryBtn, width: isMobile ? '100%' : 'auto' }}>
+                <Icon.Check /> Enregistrer l'Étape 4
               </button>
             </div>
 
-            {/* ÉTAPE 5 : FORMATION & QUIZ NF525 + CONTACT VÉRIFIÉ */}
+            {/* ÉTAPE 5 */}
             <form onSubmit={handleQuizSubmit} style={cardStyle}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                <div style={{ fontSize: '16px', fontWeight: '700' }}>5. Examen de Certification STACK & Conformité Fiscale NF525</div>
-                <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '12px', fontWeight: '600', backgroundColor: profilData.formation_validee ? '#dcfce7' : '#fef3c7', color: profilData.formation_validee ? '#166534' : '#92400e' }}>
-                  {profilData.formation_validee ? `Validé (${profilData.quiz_score}%)` : 'Quiz requis (100% exigé)'}
-                </span>
+              <div style={{ fontSize: '15.5px', fontWeight: '700', marginBottom: '12px' }}>5. Quiz de Certification NF525 & Contact</div>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                <select required value={quizAnswers.q1} onChange={e => setQuizAnswers({...quizAnswers, q1: e.target.value})} style={inputStyle}>
+                  <option value="">Q1. Quelle norme encadre la caisse STACK ?</option>
+                  <option value="nf525">La certification NF525 obligatoire</option>
+                  <option value="aucune">Aucune norme</option>
+                </select>
+                <select required value={quizAnswers.q2} onChange={e => setQuizAnswers({...quizAnswers, q2: e.target.value})} style={inputStyle}>
+                  <option value="">Q2. Un agent peut-il supprimer un ticket ?</option>
+                  <option value="interdit">Strictement interdit (séparation NF525)</option>
+                  <option value="autorise">Oui sur demande</option>
+                </select>
+                <select required value={quizAnswers.q3} onChange={e => setQuizAnswers({...quizAnswers, q3: e.target.value})} style={inputStyle}>
+                  <option value="">Q3. Votre statut vis-à-vis de STACK ?</option>
+                  <option value="mandataire">Mandataire indépendant</option>
+                  <option value="salarie">Salarié STACK</option>
+                </select>
+                <select required value={quizAnswers.q4} onChange={e => setQuizAnswers({...quizAnswers, q4: e.target.value})} style={inputStyle}>
+                  <option value="">Q4. Facturation des 99 € HT de mise en service ?</option>
+                  <option value="99">Facturés par l'agent au salon (mention RSAC)</option>
+                  <option value="stack">Encaissés par STACK</option>
+                </select>
               </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Q1. Quelle norme fiscale encadre obligatoirement le logiciel de caisse STACK ?</label>
-                  <select required value={quizAnswers.q1} onChange={e => setQuizAnswers({...quizAnswers, q1: e.target.value})} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }}>
-                    <option value="">Sélectionner...</option>
-                    <option value="nf525">La certification NF525 (inaltérabilité, sécurisation, conservation, archivage)</option>
-                    <option value="aucune">Aucune norme obligatoire</option>
-                  </select>
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Q2. Un agent peut-il modifier ou supprimer une transaction d'encaissement d'un salon ?</label>
-                  <select required value={quizAnswers.q2} onChange={e => setQuizAnswers({...quizAnswers, q2: e.target.value})} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }}>
-                    <option value="">Sélectionner...</option>
-                    <option value="interdit">Strictement interdit (séparation étanche et zéro accès aux tables NF525)</option>
-                    <option value="autorise">Autorisé sur demande du gérant</option>
-                  </select>
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Q3. Quel est votre statut juridique vis-à-vis de STACK ?</label>
-                  <select required value={quizAnswers.q3} onChange={e => setQuizAnswers({...quizAnswers, q3: e.target.value})} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }}>
-                    <option value="">Sélectionner...</option>
-                    <option value="mandataire">Mandataire indépendant sans lien de subordination, qui ne signe jamais au nom de STACK</option>
-                    <option value="salarie">Salarié habilité à engager l'entreprise</option>
-                  </select>
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>Q4. Comment sont facturés les 99 € HT de mise en service et formation ?</label>
-                  <select required value={quizAnswers.q4} onChange={e => setQuizAnswers({...quizAnswers, q4: e.target.value})} style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }}>
-                    <option value="">Sélectionner...</option>
-                    <option value="99">Facturés directement par l'agent au salon (avec mention obligatoire du numéro RSAC)</option>
-                    <option value="stack">Encaissés par STACK</option>
-                  </select>
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', gap: '16px', alignItems: 'center', marginBottom: '14px' }}>
-                <input type="text" placeholder="Téléphone mobile actif" required value={profilData.telephone || ''} onChange={e => setProfilData({...profilData, telephone: e.target.value})} style={{ ...inputStyle, maxWidth: '260px' }} />
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', cursor: 'pointer' }}>
+              <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '12px', alignItems: isMobile ? 'stretch' : 'center', marginBottom: '14px' }}>
+                <input type="text" placeholder="Téléphone mobile actif" required value={profilData.telephone || ''} onChange={e => setProfilData({...profilData, telephone: e.target.value})} style={{ ...inputStyle, maxWidth: isMobile ? '100%' : '260px' }} />
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12.5px', cursor: 'pointer' }}>
                   <input type="checkbox" required checked={!!profilData.telephone_confirme} onChange={e => setProfilData({...profilData, telephone_confirme: e.target.checked})} />
-                  <span>Je confirme que mon e-mail ({profilData.email}) et mon numéro de téléphone sont actifs et vérifiés.</span>
+                  <span>Je confirme que mes coordonnées sont actives.</span>
                 </label>
               </div>
-
-              <button type="submit" style={primaryBtn}>
-                <Icon.Check /> Valider le Quiz NF525 & mon contact (Étape 5)
-              </button>
+              <button type="submit" style={{ ...primaryBtn, width: isMobile ? '100%' : 'auto' }}><Icon.Check /> Valider le Quiz NF525</button>
             </form>
-
-            {/* ÉTAPE 6 : CHANGEMENT DE SITUATION & HISTORIQUE D'AUDIT */}
-            <div style={cardStyle}>
-              <div style={{ fontSize: '16px', fontWeight: '700', marginBottom: '8px' }}>6. Signalement de changement de situation & Historique des vérifications</div>
-              <p style={{ fontSize: '13px', color: '#6b7280', margin: '0 0 12px 0' }}>
-                Vous avez l'obligation de signaler tout changement de statut, d'adresse ou de forme juridique, et d'informer le greffe du RSAC de tout événement modifiant votre extrait.
-              </p>
-              <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
-                <input type="text" placeholder="Décrivez votre changement de situation (nouvelle adresse, passage en société, greffe...)" value={changementMotif} onChange={e => setChangementMotif(e.target.value)} style={inputStyle} />
-                <button type="button" onClick={() => { submitEtapeConformite('CHANGEMENT_SITUATION', { motif_changement: changementMotif }); setChangementMotif(''); }} style={{ ...primaryBtn, backgroundColor: '#374151' }}>
-                  Déclarer un changement
-                </button>
-              </div>
-
-              <div style={{ fontSize: '12px', fontWeight: '700', color: '#6b7280', textTransform: 'uppercase', marginBottom: '8px' }}>Journal d'audit des pièces</div>
-              {profilData.historique?.length === 0 ? (
-                <div style={{ fontSize: '13px', color: '#9ca3af' }}>Aucun événement enregistré.</div>
-              ) : (
-                <div style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid #f3f4f6', borderRadius: '12px' }}>
-                  {profilData.historique?.map(h => (
-                    <div key={h.id_historique} style={{ padding: '10px 14px', borderBottom: '1px solid #f3f4f6', fontSize: '12.5px', display: 'flex', justifyContent: 'space-between' }}>
-                      <span><strong>{h.type_piece}</strong> — {h.commentaire} ({h.verifie_par})</span>
-                      <span style={{ color: '#6b7280' }}>{new Date(h.date_evenement).toLocaleString('fr-FR')} [{h.statut_resultat}]</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
           </>
         )}
 
-        {/* ONGLET 5 : GOD MODE (SUPER-ADMIN) */}
+        {/* ===================================================================== */}
+        {/* ONGLET 7 : GOD MODE — REFONTE ESTHÉTIQUE EXECUTIVE & RESPONSIVE        */}
+        {/* ===================================================================== */}
         {activeTab === 'godmode' && isSuperAdmin && (
           <>
-            <div style={{ marginBottom: '32px' }}>
-              <h1 style={{ fontSize: '26px', fontWeight: '700', margin: '0 0 6px 0', letterSpacing: '-0.02em', color: '#8b5cf6' }}>God Mode (Contrôle Légal & Paiements)</h1>
-              <span style={{ fontSize: '14px', color: '#6b7280' }}>Vérifiez chaque pièce dans l'ordre (Contrat, Identité, SIRET/INSEE, RSAC, Kbis, URSSAF, RC Pro, IBAN, TVA) avant d'activer un agent.</span>
-            </div>
-
-            {adminAgents.map(a => (
-              <div key={a.id_agent} style={cardStyle}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                  <div>
-                    <div style={{ fontSize: '17px', fontWeight: '700' }}>{a.prenom} {a.nom} ({a.code_partenaire})</div>
-                    <div style={{ fontSize: '13px', color: '#6b7280' }}>
-                      {a.email} • Tél : {a.telephone || 'N/A'} • SIRET : {a.siret_agent} ({a.forme_juridique || 'EI'}) • RSAC : {a.numero_rsac || 'Manquant'} ({a.greffe_rsac || 'Greffe N/A'})
-                    </div>
+            {/* En-tête Executive Noir & Argent */}
+            <div style={{
+              background: 'linear-gradient(135deg, #111827 0%, #1f2937 100%)',
+              borderRadius: isMobile ? '18px' : '24px',
+              padding: isMobile ? '20px 18px' : '28px 32px',
+              color: '#ffffff',
+              marginBottom: '20px',
+              boxShadow: '0 12px 30px rgba(17, 24, 39, 0.14)'
+            }}>
+              <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', gap: '14px' }}>
+                <div>
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '999px', backgroundColor: 'rgba(255,255,255,0.12)', fontSize: '11px', fontWeight: '700', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '10px' }}>
+                    <Icon.Shield /> Super-Admin • Contrôle Réglementaire & Trésorerie
                   </div>
-                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    <span style={{ padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: '700', backgroundColor: a.statut_compte === 'ACTIF' ? '#dcfce7' : '#fef3c7', color: a.statut_compte === 'ACTIF' ? '#166534' : '#92400e' }}>
-                      Compte : {a.statut_compte}
-                    </span>
-                    <button onClick={() => handleVerifyPieceAdmin(a.id_agent, 'STATUT_COMPTE_FINAL', 'ACTIF')} style={{ ...primaryBtn, backgroundColor: '#8b5cf6', padding: '8px 14px', fontSize: '12.5px' }}>
-                      Activer le compte (Étape 6)
-                    </button>
-                    <button onClick={() => handleVerifyPieceAdmin(a.id_agent, 'STATUT_COMPTE_FINAL', 'BLOQUE_CONFORMITE')} style={{ ...primaryBtn, backgroundColor: '#dc2626', padding: '8px 14px', fontSize: '12.5px' }}>
-                      Bloquer
-                    </button>
+                  <h1 style={{ fontSize: isMobile ? '22px' : '28px', fontWeight: '800', margin: '0 0 6px 0', letterSpacing: '-0.02em' }}>
+                    God Mode STACK Partners
+                  </h1>
+                  <div style={{ fontSize: '13.5px', color: '#9ca3af' }}>
+                    Auditez les pièces légales de vos agents, débloquez les droits de vente et validez vos virements de commissions.
                   </div>
                 </div>
+                <button
+                  type="button"
+                  onClick={fetchAdminData}
+                  style={{ ...secondaryBtn, backgroundColor: 'rgba(255,255,255,0.1)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.2)', alignSelf: isMobile ? 'stretch' : 'auto' }}
+                >
+                  Actualiser les dossiers
+                </button>
+              </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', fontSize: '12.5px' }}>
-                  {[
-                    { label: '1. Contrat signé', field: 'statut_contrat', val: a.statut_contrat, info: a.contrat_signe ? 'Signé' : 'Non signé' },
-                    { label: '2a. Pièce Identité', field: 'statut_identite', val: a.statut_identite, file: a.fichier_identite, info: `Né(e): ${a.date_naissance ? a.date_naissance.slice(0,10) : '?'} | Exp: ${a.date_expiration_identite ? a.date_expiration_identite.slice(0,10) : '?'}`, rgpd: true },
-                    { label: '2b. SIREN/SIRET (INSEE)', field: 'statut_siret', val: a.statut_siret, info: `${a.siret_agent} (${a.forme_juridique || 'EI'})` },
-                    { label: '2c. Extrait RSAC (<3m)', field: 'statut_rsac', val: a.statut_rsac, file: a.fichier_rsac, info: `N° ${a.numero_rsac || 'Aucun'} | Émis: ${a.date_emission_rsac ? a.date_emission_rsac.slice(0,10) : '?'}` },
-                    { label: '2d. Extrait Kbis (Société)', field: 'statut_kbis', val: a.statut_kbis, file: a.fichier_kbis, info: a.forme_juridique === 'SOCIETE' ? `Émis: ${a.date_emission_kbis ? a.date_emission_kbis.slice(0,10) : '?'}` : 'Non requis (EI)' },
-                    { label: '3. Vigilance URSSAF', field: 'statut_urssaf', val: a.statut_urssaf, file: a.fichier_urssaf, info: `Code: ${a.code_verif_urssaf || '?'} | Exp: ${a.date_expiration_urssaf ? a.date_expiration_urssaf.slice(0,10) : '?'}` },
-                    { label: '4a. Assurance RC Pro', field: 'statut_rc_pro', val: a.statut_rc_pro, file: a.fichier_rc_pro, info: `${a.assureur_nom || '?'} (${a.assureur_plafond || '?'}) | Exp: ${a.date_expiration_rc_pro ? a.date_expiration_rc_pro.slice(0,10) : '?'}` },
-                    { label: '4b. IBAN & Titulaire', field: 'statut_iban', val: a.statut_iban, info: `Titulaire: ${a.titulaire_iban || '?'} | ${a.iban || ''}` },
-                    { label: '4c. TVA & Déclarations', field: 'statut_tva', val: a.statut_tva, info: `${a.regime_tva || '293B'} ${a.numero_tva_intra || ''} | Quiz: ${a.quiz_score || 0}%` }
-                  ].map(item => (
-                    <div key={item.field} style={{ border: '1px solid #e5e7eb', borderRadius: '12px', padding: '10px 12px', backgroundColor: '#f9fafb' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: '700', marginBottom: '4px' }}>
-                        <span>{item.label}</span>
-                        <span style={{ color: item.val === 'VALIDE' ? '#16a34a' : (item.val === 'REFUSE' ? '#dc2626' : '#d97706') }}>{item.val || 'MANQUANT'}</span>
-                      </div>
-                      <div style={{ color: '#6b7280', fontSize: '11.5px', marginBottom: '8px' }}>{item.info}</div>
-                      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                        {item.file && typeof item.file === 'string' && (
-                          <button
-                            type="button"
-                            onClick={() => openUploadedDocument(item.file, item.label)}
-                            style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 8px', backgroundColor: '#ffffff', border: '1px solid #d1d5db', borderRadius: '6px', color: '#111827', fontWeight: '600', cursor: 'pointer', fontSize: '12px' }}
-                          >
-                            <Icon.Eye /> Voir pièce
-                          </button>
-                        )}
-                        <button onClick={() => handleVerifyPieceAdmin(a.id_agent, item.field, 'VALIDE', item.rgpd)} style={{ padding: '4px 8px', backgroundColor: '#16a34a', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600' }}>
-                          {item.rgpd ? 'Valider + Purger RGPD' : 'Valider'}
-                        </button>
-                        <button onClick={() => handleVerifyPieceAdmin(a.id_agent, item.field, 'REFUSE')} style={{ padding: '4px 8px', backgroundColor: '#dc2626', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600' }}>Refuser</button>
-                      </div>
-                    </div>
-                  ))}
+              {/* 4 KPIs Super-Admin intégrés */}
+              <div style={{ display: 'grid', gridTemplateColumns: isSmall ? '1fr' : isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: '12px', marginTop: '22px' }}>
+                <div style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '14px 16px' }}>
+                  <div style={{ fontSize: '11px', color: '#9ca3af', fontWeight: '600', textTransform: 'uppercase' }}>Agents Inscrits</div>
+                  <div style={{ fontSize: '24px', fontWeight: '800', marginTop: '4px' }}>{adminAgents.length}</div>
+                </div>
+                <div style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '14px 16px' }}>
+                  <div style={{ fontSize: '11px', color: '#9ca3af', fontWeight: '600', textTransform: 'uppercase' }}>Agents Autorisés</div>
+                  <div style={{ fontSize: '24px', fontWeight: '800', marginTop: '4px', color: '#4ade80' }}>
+                    {adminAgents.filter(a => a.statut_compte === 'ACTIF').length}
+                  </div>
+                </div>
+                <div style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '14px 16px' }}>
+                  <div style={{ fontSize: '11px', color: '#9ca3af', fontWeight: '600', textTransform: 'uppercase' }}>Pièces à Auditer</div>
+                  <div style={{ fontSize: '24px', fontWeight: '800', marginTop: '4px', color: '#fbbf24' }}>{totalPendingPieces}</div>
+                </div>
+                <div style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '14px 16px' }}>
+                  <div style={{ fontSize: '11px', color: '#9ca3af', fontWeight: '600', textTransform: 'uppercase' }}>Virements à Émettre</div>
+                  <div style={{ fontSize: '24px', fontWeight: '800', marginTop: '4px' }}>{totalCommissionsToPay} <span style={{ fontSize: '13px', color: '#9ca3af' }}>€</span></div>
                 </div>
               </div>
-            ))}
-
-            <div style={{ fontSize: '13px', fontWeight: '600', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.04em', margin: '28px 0 12px 0' }}>
-              Paiement des Commissions (Suspendu automatiquement si URSSAF ou RC Pro expirée)
             </div>
-            <div style={{ ...cardStyle, padding: '0', overflow: 'hidden' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
-                <thead style={{ backgroundColor: '#f9fafb', borderBottom: '1px solid #e5e7eb', color: '#6b7280', fontSize: '12px', textTransform: 'uppercase' }}>
+
+            {/* Barre de recherche et filtres d'audit */}
+            <div style={{ ...cardStyle, padding: isMobile ? '14px' : '16px 20px', display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'stretch' : 'center', gap: '12px' }}>
+              <div style={{ position: 'relative', flex: 1 }}>
+                <input
+                  type="text"
+                  placeholder="Rechercher un agent (nom, e-mail, code PARTNER, SIRET)..."
+                  value={adminSearch}
+                  onChange={e => setAdminSearch(e.target.value)}
+                  style={inputStyle}
+                />
+              </div>
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                {[
+                  { key: 'TOUS', label: `Tous (${adminAgents.length})` },
+                  { key: 'A_VERIFIER', label: `À vérifier (${adminAgents.filter(a => a.statut_compte !== 'ACTIF').length})` },
+                  { key: 'ACTIFS', label: `Actifs (${adminAgents.filter(a => a.statut_compte === 'ACTIF').length})` },
+                  { key: 'BLOQUES', label: `Bloqués (${adminAgents.filter(a => a.statut_compte === 'BLOQUE_CONFORMITE').length})` }
+                ].map(f => (
+                  <button
+                    key={f.key}
+                    type="button"
+                    onClick={() => setAdminStatusFilter(f.key)}
+                    style={{
+                      padding: '8px 13px', borderRadius: '10px', fontSize: '12.5px', fontWeight: '600', cursor: 'pointer',
+                      border: adminStatusFilter === f.key ? '1px solid #111827' : '1px solid #e5e7eb',
+                      backgroundColor: adminStatusFilter === f.key ? '#111827' : '#ffffff',
+                      color: adminStatusFilter === f.key ? '#ffffff' : '#374151'
+                    }}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Liste des dossiers Agents */}
+            {filteredAdminAgents.map(a => {
+              const pieces = getAgentPiecesList(a);
+              const nbValides = pieces.filter(p => p.val === 'VALIDE').length;
+              const pctConforme = Math.round((nbValides / pieces.length) * 100);
+              const isExpanded = !!expandedAgentIds[a.id_agent];
+              const isActif = a.statut_compte === 'ACTIF';
+              const isBloque = a.statut_compte === 'BLOQUE_CONFORMITE';
+
+              return (
+                <div key={a.id_agent} style={{ ...cardStyle, padding: 0, overflow: 'hidden' }}>
+                  {/* En-tête de la carte Agent */}
+                  <div style={{ padding: isMobile ? '16px' : '20px 24px', display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'stretch' : 'center', gap: '16px', borderBottom: isExpanded ? '1px solid #f3f4f6' : 'none' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                      <div style={{
+                        width: '46px', height: '46px', borderRadius: '14px', flexShrink: 0,
+                        backgroundColor: isActif ? '#dcfce7' : isBloque ? '#fef2f2' : '#f3f4f6',
+                        color: isActif ? '#166534' : isBloque ? '#dc2626' : '#111827',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', fontSize: '16px'
+                      }}>
+                        {(a.prenom?.[0] || a.nom?.[0] || 'A').toUpperCase()}
+                      </div>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                          <span style={{ fontSize: '16.5px', fontWeight: '800', color: '#111827', textTransform: 'capitalize' }}>
+                            {a.prenom} {a.nom}
+                          </span>
+                          <span style={{ fontSize: '11.5px', fontFamily: 'monospace', fontWeight: '700', padding: '3px 8px', borderRadius: '6px', backgroundColor: '#f3f4f6', color: '#374151' }}>
+                            {a.code_partenaire}
+                          </span>
+                          <span style={{
+                            padding: '4px 10px', borderRadius: '999px', fontSize: '11.5px', fontWeight: '700',
+                            backgroundColor: isActif ? '#dcfce7' : isBloque ? '#fef2f2' : '#fef3c7',
+                            color: isActif ? '#166534' : isBloque ? '#dc2626' : '#92400e'
+                          }}>
+                            {isActif ? 'Compte Actif' : isBloque ? 'Bloqué' : 'En attente de validation'}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: '12.5px', color: '#6b7280', marginTop: '4px', display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                          <span>{a.email}</span>
+                          <span>• Tél : {a.telephone || 'Non renseigné'}</span>
+                          <span>• SIRET : {a.siret_agent || 'N/A'} ({a.forme_juridique || 'EI'})</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Barre de progression + Boutons globaux */}
+                    <div style={{ display: 'flex', flexDirection: isSmall ? 'column' : 'row', alignItems: isSmall ? 'stretch' : 'center', gap: '10px' }}>
+                      <div style={{ minWidth: '140px', textAlign: isSmall ? 'left' : 'right', marginRight: '4px' }}>
+                        <div style={{ fontSize: '12px', fontWeight: '700', color: '#111827' }}>{nbValides} / {pieces.length} pièces validées</div>
+                        <div style={{ height: '6px', backgroundColor: '#f3f4f6', borderRadius: '999px', overflow: 'hidden', marginTop: '4px' }}>
+                          <div style={{ width: `${pctConforme}%`, height: '100%', backgroundColor: pctConforme === 100 ? '#16a34a' : '#111827', borderRadius: '999px' }} />
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setExpandedAgentIds(prev => ({ ...prev, [a.id_agent]: !prev[a.id_agent] }))}
+                        style={secondaryBtn}
+                      >
+                        {isExpanded ? 'Masquer les pièces' : 'Auditer les 9 pièces'}
+                      </button>
+
+                      {!isActif ? (
+                        <button
+                          type="button"
+                          onClick={() => handleVerifyPieceAdmin(a.id_agent, 'STATUT_COMPTE_FINAL', 'ACTIF')}
+                          style={{ ...primaryBtn, padding: '9px 14px', fontSize: '12.5px', backgroundColor: '#16a34a' }}
+                        >
+                          <Icon.Check /> Activer l'agent
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleVerifyPieceAdmin(a.id_agent, 'STATUT_COMPTE_FINAL', 'BLOQUE_CONFORMITE')}
+                          style={{ ...secondaryBtn, color: '#dc2626', borderColor: '#fecaca', backgroundColor: '#fef2f2' }}
+                        >
+                          Suspendre
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Grille détaillée des 9 pièces justificatives */}
+                  {isExpanded && (
+                    <div style={{ padding: isMobile ? '14px' : '20px 24px', backgroundColor: '#f9fafb' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '12px' }}>
+                        {pieces.map(item => {
+                          const isValide = item.val === 'VALIDE';
+                          const isRefuse = item.val === 'REFUSE';
+                          return (
+                            <div
+                              key={item.field}
+                              style={{
+                                backgroundColor: '#ffffff',
+                                border: isValide ? '1px solid #bbf7d0' : isRefuse ? '1px solid #fecaca' : '1px solid #e5e7eb',
+                                borderRadius: '16px',
+                                padding: '14px 16px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                justifyContent: 'space-between',
+                                gap: '10px'
+                              }}
+                            >
+                              <div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                                  <span style={{ fontSize: '11px', fontWeight: '700', color: '#6b7280', textTransform: 'uppercase' }}>{item.step}</span>
+                                  <span style={{
+                                    padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: '700',
+                                    backgroundColor: isValide ? '#dcfce7' : isRefuse ? '#fef2f2' : '#fef3c7',
+                                    color: isValide ? '#166534' : isRefuse ? '#dc2626' : '#92400e'
+                                  }}>
+                                    {item.val || 'MANQUANT'}
+                                  </span>
+                                </div>
+                                <div style={{ fontSize: '14px', fontWeight: '700', color: '#111827', marginBottom: '4px' }}>{item.label}</div>
+                                <div style={{ fontSize: '12px', color: '#6b7280', lineHeight: 1.4, wordBreak: 'break-word' }}>{item.info}</div>
+                              </div>
+
+                              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', paddingTop: '10px', borderTop: '1px solid #f3f4f6' }}>
+                                {item.file && typeof item.file === 'string' && (
+                                  <button
+                                    type="button"
+                                    onClick={() => openUploadedDocument(item.file)}
+                                    style={{ ...secondaryBtn, padding: '6px 10px', fontSize: '11.5px', flex: 1 }}
+                                  >
+                                    <Icon.Eye /> Voir pièce
+                                  </button>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => handleVerifyPieceAdmin(a.id_agent, item.field, 'VALIDE', item.rgpd)}
+                                  style={{
+                                    padding: '6px 10px', borderRadius: '8px', border: 'none', cursor: 'pointer',
+                                    fontSize: '11.5px', fontWeight: '700', flex: 1,
+                                    backgroundColor: isValide ? '#f0fdf4' : '#111827',
+                                    color: isValide ? '#166534' : '#ffffff'
+                                  }}
+                                >
+                                  {item.rgpd ? 'Valider + Purge RGPD' : 'Approuver'}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleVerifyPieceAdmin(a.id_agent, item.field, 'REFUSE')}
+                                  style={{
+                                    padding: '6px 10px', borderRadius: '8px', cursor: 'pointer',
+                                    fontSize: '11.5px', fontWeight: '700',
+                                    backgroundColor: '#ffffff', color: '#dc2626', border: '1px solid #fecaca'
+                                  }}
+                                >
+                                  Refuser
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            {/* Tableau des virements de commissions */}
+            <div style={{ fontSize: '12.5px', fontWeight: '700', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.04em', margin: '28px 0 10px 0' }}>
+              Virements des Commissions Acquises ({adminCommissions.length})
+            </div>
+            <div style={{ ...cardStyle, padding: 0, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+              <table style={{ width: '100%', minWidth: '600px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13.5px' }}>
+                <thead style={{ backgroundColor: '#f9fafb', borderBottom: '1px solid #e5e7eb', color: '#6b7280', fontSize: '11.5px', textTransform: 'uppercase' }}>
                   <tr>
-                    <th style={{ padding: '14px 20px' }}>Agent Bénéficiaire</th>
-                    <th style={{ padding: '14px 20px' }}>Mois & Salon</th>
-                    <th style={{ padding: '14px 20px' }}>Montant</th>
-                    <th style={{ padding: '14px 20px' }}>IBAN Virement</th>
-                    <th style={{ padding: '14px 20px' }}>Action</th>
+                    <th style={{ padding: '14px 18px' }}>Agent Bénéficiaire</th>
+                    <th style={{ padding: '14px 18px' }}>Mois & Salon</th>
+                    <th style={{ padding: '14px 18px' }}>Montant</th>
+                    <th style={{ padding: '14px 18px' }}>IBAN de Virement</th>
+                    <th style={{ padding: '14px 18px' }}>Action</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {adminCommissions.length === 0 ? <tr><td colSpan="5" style={{ padding: '24px', textAlign: 'center', color: '#6b7280' }}>Aucune commission en attente de paiement.</td></tr> : adminCommissions.map(c => (
+                  {adminCommissions.length === 0 ? (
+                    <tr><td colSpan="5" style={{ padding: '24px', textAlign: 'center', color: '#6b7280' }}>Aucune commission en attente de virement.</td></tr>
+                  ) : adminCommissions.map(c => (
                     <tr key={c.id_commission} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                      <td style={{ padding: '16px 20px', fontWeight: '600' }}>{c.prenom} {c.nom}</td>
-                      <td style={{ padding: '16px 20px' }}>{c.periode_mois}<br/><span style={{ fontSize: '12px', color: '#6b7280' }}>{c.nom_salon}</span></td>
-                      <td style={{ padding: '16px 20px', fontWeight: '700', color: '#111827' }}>{c.montant_commission} €</td>
-                      <td style={{ padding: '16px 20px', fontFamily: 'monospace', fontSize: '13px' }}>{c.iban}</td>
-                      <td style={{ padding: '16px 20px' }}>
-                        <button onClick={() => handlePayCommission(c.id_commission)} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '7px 12px', cursor: 'pointer', border: 'none', borderRadius: '10px', backgroundColor: '#111827', color: '#ffffff', fontSize: '12.5px', fontWeight: '600' }}>
-                          <Icon.Check /> Marquer Payée
+                      <td style={{ padding: '14px 18px', fontWeight: '700' }}>{c.prenom} {c.nom}</td>
+                      <td style={{ padding: '14px 18px' }}>{c.periode_mois}<br/><span style={{ fontSize: '12px', color: '#6b7280' }}>{c.nom_salon}</span></td>
+                      <td style={{ padding: '14px 18px', fontWeight: '800', color: '#111827' }}>{c.montant_commission} € HT</td>
+                      <td style={{ padding: '14px 18px', fontFamily: 'monospace', fontSize: '12.5px' }}>{c.iban || 'IBAN non renseigné'}</td>
+                      <td style={{ padding: '14px 18px' }}>
+                        <button onClick={() => handlePayCommission(c.id_commission)} style={{ ...primaryBtn, padding: '8px 14px', fontSize: '12px' }}>
+                          <Icon.Check /> Confirmer le virement
                         </button>
                       </td>
                     </tr>
@@ -2178,6 +1884,53 @@ export default function Dashboard() {
         )}
 
       </div>
+
+      {/* BARRE DE NAVIGATION MOBILE FIXE EN BAS (STYLE APP NATIVE) */}
+      {isMobile && (
+        <div style={{
+          position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 950,
+          backgroundColor: 'rgba(255, 255, 255, 0.96)', backdropFilter: 'blur(16px)',
+          borderTop: '1px solid #e5e7eb',
+          display: 'grid',
+          gridTemplateColumns: `repeat(${isSuperAdmin ? 6 : 5}, 1fr)`,
+          padding: '6px 4px calc(6px + env(safe-area-inset-bottom, 0px)) 4px',
+          boxShadow: '0 -4px 20px rgba(0,0,0,0.04)'
+        }}>
+          {[
+            { key: 'bord', label: 'Bord', icon: <Icon.Bord /> },
+            { key: 'prospects', label: 'Leads', icon: <Icon.Prospects /> },
+            { key: 'carte', label: 'Carte', icon: <Icon.MapPin /> },
+            { key: 'factures', label: 'Factures', icon: <Icon.Factures /> },
+            { key: 'academie', label: 'Tutos', icon: <Icon.Academie /> },
+            ...(isSuperAdmin ? [{ key: 'godmode', label: 'Admin', icon: <Icon.Shield /> }] : [])
+          ].map(item => {
+            const active = activeTab === item.key;
+            return (
+              <button
+                key={item.key}
+                type="button"
+                onClick={() => setActiveTab(item.key)}
+                style={{
+                  background: 'none', border: 'none', padding: '6px 2px',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '3px',
+                  color: active ? '#111827' : '#9ca3af',
+                  fontWeight: active ? '700' : '500',
+                  fontSize: '10.5px', cursor: 'pointer'
+                }}
+              >
+                <div style={{
+                  padding: '4px 10px', borderRadius: '999px',
+                  backgroundColor: active ? '#f3f4f6' : 'transparent',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}>
+                  {item.icon}
+                </div>
+                <span>{item.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
