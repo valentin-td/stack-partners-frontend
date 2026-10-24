@@ -66,15 +66,12 @@ export default function Dashboard() {
   const [quickLockForm, setQuickLockForm] = useState({ email_gerant: '', telephone_salon: '' });
   const [leafletReady, setLeafletReady] = useState(!!window.L);
 
-  // États God Mode (Super-Admin) — Détection élargie sur ID, code partenaire, nom ou email
+  // États God Mode (Super-Admin) — Restreint STRICTEMENT à ton compte
   const isSuperAdmin =
     Number(agent?.id) === 1 ||
     Number(agent?.id_agent) === 1 ||
-    String(agent?.code || '').includes('TAR') ||
-    String(agent?.nom || '').toLowerCase().includes('tardy') ||
-    String(agent?.email || '').toLowerCase().includes('tardy') ||
-    String(profilData?.email || '').toLowerCase().includes('tardy') ||
-    String(profilData?.nom || '').toLowerCase().includes('tardy');
+    String(agent?.email || '').toLowerCase().trim() === 'tardy.valentin04@gmail.com' ||
+    String(profilData?.email || '').toLowerCase().trim() === 'tardy.valentin04@gmail.com';
 
   const [adminAgents, setAdminAgents] = useState([]);
   const [adminCommissions, setAdminCommissions] = useState([]);
