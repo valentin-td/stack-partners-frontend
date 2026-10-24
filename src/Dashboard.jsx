@@ -213,9 +213,9 @@ export default function Dashboard() {
           const prevSalons = (isNewCenter && currentStep === 0) ? [] : prev;
           const merged = new Map(prevSalons.map(s => [s.siret, s]));
           (data.salons || []).forEach(s => merged.set(s.siret, s));
-          return Array.from(merged.values())
-            .filter(s => parseFloat(s.distance_km) <= radius)
-            .sort((a, b) => parseFloat(a.distance_km) - parseFloat(b.distance_km));
+          // CRUCIAL : On ne supprime plus rien de la mémoire !
+          // On garde tous les salons trouvés, et c'est l'affichage visuel qui les masquera au besoin.
+          return Array.from(merged.values()).sort((a, b) => parseFloat(a.distance_km) - parseFloat(b.distance_km));
         });
 
         if (currentStep === 0) setMapLoading(false); // Affiche la carte dès que l'étape 0 (la plus grosse) est prête
