@@ -181,19 +181,28 @@ export default function Dashboard() {
     if (activeTab === 'bord') fetchStats();
     if (activeTab === 'factures') fetchFactures();
     if (activeTab === 'prospects') fetchProspects();
-    if (activeTab === 'carte') fetchMapSalons(mapCenter.lat, mapCenter.lng, mapRadius);
+    if (activeTab === 'carte') fetchMapSalons(mapCenter.lat, mapCenter.lng, mapRadius, true);
     if (activeTab === 'godmode' && isSuperAdmin) fetchAdminData();
   }, [activeTab, isSuperAdmin]);
 
-  const fetchMapSalons = async (lat = mapCenter.lat, lng = mapCenter.lng, radius = mapRadius) => {
+  // isNewCenter=true vide la carte (changement de ville), isNewCenter=false fusionne (agrandissement du rayon)
+  const fetchMapSalons = async (lat = mapCenter.lat, lng = mapCenter.lng, radius = mapRadius, isNewCenter = false) => {
     setMapLoading(true);
+    if (isNewCenter) setMapSalons([]); // On efface seulement si on change totalement de ville
+    
     try {
       const res = await fetch(`${API_URL}/map-salons?lat=${lat}&lng=${lng}&radius=${radius}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
         const data = await res.json();
-        setMapSalons(data.salons || []);
+        setMapSalons(prev => {
+          if (isNewCenter) return data.salons || [];
+          // Si on agrandit juste le rayon, on fusionne pour ne pas faire clignoter les anciens points
+          const merged = new Map(prev.map(s => [s.siret, s]));
+          (data.salons || []).forEach(s => merged.set(s.siret, s));
+          return Array.from(merged.values()).sort((a, b) => parseFloat(a.distance_km) - parseFloat(b.distance_km));
+        });
       }
     } catch (e) {
       notify("Impossible de charger les salons du secteur.", true);
@@ -209,7 +218,7 @@ export default function Dashboard() {
       (pos) => {
         const nextCenter = { lat: pos.coords.latitude, lng: pos.coords.longitude, label: 'Ma position GPS' };
         setMapCenter(nextCenter);
-        fetchMapSalons(nextCenter.lat, nextCenter.lng, mapRadius);
+        fetchMapSalons(nextCenter.lat, nextCenter.lng, mapRadius, true);
       },
       () => {
         setMapLoading(false);
@@ -230,7 +239,7 @@ export default function Dashboard() {
         const [lng, lat] = data.features[0].geometry.coordinates;
         const label = data.features[0].properties.label;
         setMapCenter({ lat, lng, label });
-        fetchMapSalons(lat, lng, mapRadius);
+        fetchMapSalons(lat, lng, mapRadius, true);
       } else {
         setMapLoading(false);
         notify("Adresse introuvable.", true);
@@ -243,7 +252,8 @@ export default function Dashboard() {
 
   const handleRadiusChange = (newRadius) => {
     setMapRadius(newRadius);
-    fetchMapSalons(mapCenter.lat, mapCenter.lng, newRadius);
+    // On passe isNewCenter = false : l'UI garde les anciens points instantanément en attendant les nouveaux !
+    fetchMapSalons(mapCenter.lat, mapCenter.lng, newRadius, false);
   };
 
   const handleQuickLockFromMap = async (e) => {
@@ -1131,8 +1141,31 @@ export default function Dashboard() {
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 360px', gap: '16px', alignItems: 'stretch' }}>
-              <div style={{ ...cardStyle, padding: 0, overflow: 'hidden', height: isMobile ? '360px' : '540px', marginBottom: 0 }}>
+              <div style={{ ...cardStyle, padding: 0, overflow: 'hidden', height: isMobile ? '360px' : '540px', position: 'relative', marginBottom: 0 }}>
                 <div id="stack-partners-map" style={{ width: '100%', height: '100%' }} />
+                
+                {/* OVERLAY DE CHARGEMENT PENDANT LE SCAN */}
+                {mapLoading && (
+                  <div style={{ 
+                    position: 'absolute', inset: 0, 
+                    backgroundColor: 'rgba(255, 255, 255, 0.45)', backdropFilter: 'blur(3px)', 
+                    zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' 
+                  }}>
+                    <div style={{ 
+                      backgroundColor: '#111827', color: '#ffffff', 
+                      padding: '12px 22px', borderRadius: '999px', fontSize: '13px', fontWeight: '700', 
+                      display: 'flex', alignItems: 'center', gap: '12px', boxShadow: '0 10px 30px rgba(0,0,0,0.15)' 
+                    }}>
+                      <div style={{ 
+                        width: '16px', height: '16px', borderRadius: '50%', 
+                        border: '3px solid rgba(255,255,255,0.2)', borderTopColor: '#ffffff', 
+                        animation: 'spin 0.8s linear infinite' 
+                      }} />
+                      Scan en cours... ({mapSalons.length} résultats consolidés)
+                    </div>
+                    <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+                  </div>
+                )}
               </div>
 
               <div style={{ ...cardStyle, height: isMobile ? 'auto' : '540px', maxHeight: isMobile ? '440px' : '540px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', marginBottom: 0, overflowY: 'auto' }}>
