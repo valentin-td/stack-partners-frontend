@@ -63,8 +63,25 @@ export default function Dashboard() {
   const [mapLoading, setMapLoading] = useState(false);
   const [mapProgress, setMapProgress] = useState(null); // Gère la barre de chargement en arrière-plan
   const [mapFilter, setMapFilter] = useState('TOUS');
-  const [mapSortBy, setMapSortBy] = useState('DISTANCE_ASC'); // 'DISTANCE_ASC' | 'STARS_DESC' | 'STARS_ASC'
+  const [hideVisitedSalons, setHideVisitedSalons] = useState(false);
+  const [mapSortBy, setMapSortBy] = useState('DISTANCE_ASC');
   const [selectedSalonMap, setSelectedSalonMap] = useState(null);
+
+  // États CRM Terrain : Qualification, Tags, Notes & Géo-fencing 100m
+  const [visiteForm, setVisiteForm] = useState({ tag_concurrent: 'PLANITY', statut_visite: 'ABSENT_3MOIS', note_texte: '' });
+  const [isSavingVisite, setIsSavingVisite] = useState(false);
+
+  // États Planificateur de Tournée OSRM
+  const [showRoutePlanner, setShowRoutePlanner] = useState(false);
+  const [routeSalons, setRouteSalons] = useState([]);
+  const [routeMaxCount, setRouteMaxCount] = useState(8);
+  const [routeEndQuery, setRouteEndQuery] = useState('');
+  const [routeEndPoint, setRouteEndPoint] = useState(null);
+  const [optimizedRoute, setOptimizedRoute] = useState(null);
+  const [isOptimizingRoute, setIsOptimizingRoute] = useState(false);
+
+  // État Analytique Marché (God Mode)
+  const [adminMarketStats, setAdminMarketStats] = useState({ repartition_concurrents: [], recentes_visites: [] });
   const [quickLockForm, setQuickLockForm] = useState({ email_gerant: '', telephone_salon: '' });
   const [leafletReady, setLeafletReady] = useState(!!window.L);
 
@@ -338,13 +355,22 @@ export default function Dashboard() {
       window.__lastCenterKey = centerKey;
     }
 
-    const colorMap = { LIBRE: '#10b981', PROSPECTE_MOI: '#2563eb', PROSPECTE_AUTRE: '#f59e0b', CLIENT_STACK: '#111827' };
+    const colorMap = {
+      LIBRE: '#10b981',
+      PROSPECTE_MOI: '#2563eb',
+      PROSPECTE_AUTRE: '#f59e0b',
+      CLIENT_STACK: '#111827',
+      VISITE_MOI: '#6b7280',
+      VISITE_AUTRE: '#9ca3af'
+    };
     
-    // C'est ICI qu'on masque visuellement les salons en dehors du rayon sans les supprimer de la mémoire
-    const filtered = mapSalons.filter(s => 
-      parseFloat(s.distance_km) <= mapRadius && 
-      (mapFilter === 'TOUS' || s.statut_carte === mapFilter)
-    );
+    const filtered = mapSalons.filter(s => {
+      if (parseFloat(s.distance_km) > mapRadius) return false;
+      if (hideVisitedSalons && (s.statut_carte === 'VISITE_MOI' || s.statut_carte === 'VISITE_AUTRE' || s.visite_info?.est_visite_physique)) return false;
+      if (mapFilter === 'TOUS') return true;
+      if (mapFilter === 'VISITES') return s.statut_carte === 'VISITE_MOI' || s.statut_carte === 'VISITE_AUTRE';
+      return s.statut_carte === mapFilter;
+    });
 
     // Fonction de rendu ultra-rapide avec regroupement automatique (Clustering) selon l'échelle de zoom
     const renderMarkersAndClusters = () => {
@@ -437,11 +463,35 @@ export default function Dashboard() {
       });
     };
 
-    renderMarkersAndClusters();
-    map.on('zoomend moveend', renderMarkersAndClusters);
+    const renderFullMap = () => {
+      renderMarkersAndClusters();
+
+      // Tracé visuel de la tournée optimisée OSRM + Pastilles numérotées (1, 2, 3...)
+      if (optimizedRoute?.polyline?.length > 1) {
+        L.polyline(optimizedRoute.polyline, {
+          color: '#111827', weight: 4, opacity: 0.85, dashArray: '8, 8'
+        }).addTo(layerGroup);
+
+        (optimizedRoute.orderedSalons || []).forEach((stopSalon, idx) => {
+          const stepBadge = L.divIcon({
+            className: '',
+            html: `<div style="width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#863bff 0%,#111827 100%);color:#fff;border:2.5px solid #fff;box-shadow:0 4px 12px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:800;cursor:pointer;">${idx + 1}</div>`,
+            iconSize: [24, 24],
+            iconAnchor: [12, 12]
+          });
+          L.marker([stopSalon.lat, stopSalon.lng], { icon: stepBadge, zIndexOffset: 1000 })
+            .addTo(layerGroup)
+            .bindTooltip(`<strong>Étape #${idx + 1} : ${stopSalon.nom_salon}</strong>`, { direction: 'top' })
+            .on('click', () => setSelectedSalonMap(stopSalon));
+        });
+      }
+    };
+
+    renderFullMap();
+    map.on('zoomend moveend', renderFullMap);
 
     return () => {
-      map.off('zoomend moveend', renderMarkersAndClusters);
+      map.off('zoomend moveend', renderFullMap);
       if (activeTab !== 'carte' && window.__stackMap) {
         window.__stackMap.remove();
         window.__stackMap = null;
@@ -449,7 +499,7 @@ export default function Dashboard() {
         window.__lastCenterKey = null;
       }
     };
-  }, [activeTab, leafletReady, mapCenter, mapRadius, mapSalons, mapFilter, selectedSalonMap]);
+  }, [activeTab, leafletReady, mapCenter, mapRadius, mapSalons, mapFilter, hideVisitedSalons, selectedSalonMap, optimizedRoute]);
 
   const fetchAdminData = async () => {
     try {
@@ -467,8 +517,145 @@ export default function Dashboard() {
         const dataCom = await resCom.json();
         setAdminCommissions(Array.isArray(dataCom) ? dataCom : (dataCom.commissions || []));
       }
+      const resMarket = await fetch(`${API_URL}/admin/market-stats`, { headers: { 'Authorization': `Bearer ${token}` } });
+      if (resMarket.ok) {
+        setAdminMarketStats(await resMarket.json());
+      }
     } catch (err) {
       console.error("Erreur chargement God Mode:", err);
+    }
+  };
+
+  // Synchronise le formulaire de note/tag quand on clique sur un salon
+  useEffect(() => {
+    if (selectedSalonMap) {
+      const v = selectedSalonMap.visite_info;
+      setVisiteForm({
+        tag_concurrent: v?.tag_concurrent && v.tag_concurrent !== 'NON_RENSEIGNE' ? v.tag_concurrent : 'PLANITY',
+        statut_visite: v?.statut_visite && v.statut_visite !== 'NOTE_SIMPLE' ? v.statut_visite : 'ABSENT_3MOIS',
+        note_texte: v?.note_texte || ''
+      });
+    }
+  }, [selectedSalonMap?.siret]);
+
+  // Validation de visite avec contrôle GPS Anti-Triche (< 100m) ou sauvegarde de note
+  const handleSaveVisiteOrNote = async (validerPassagePhysique = false, forceAdmin = false) => {
+    if (!selectedSalonMap) return;
+    setIsSavingVisite(true);
+
+    const sendRequest = async (latAgent = null, lngAgent = null) => {
+      try {
+        const res = await fetch(`${API_URL}/visites`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({
+            siret_salon: selectedSalonMap.siret,
+            nom_salon: selectedSalonMap.nom_salon,
+            ville: selectedSalonMap.ville,
+            lat_salon: selectedSalonMap.lat,
+            lng_salon: selectedSalonMap.lng,
+            tag_concurrent: visiteForm.tag_concurrent,
+            statut_visite: visiteForm.statut_visite,
+            note_texte: visiteForm.note_texte,
+            valider_passage_physique: validerPassagePhysique,
+            lat_agent: latAgent,
+            lng_agent: lngAgent,
+            force_super_admin: forceAdmin
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          notify(data.error || "Impossible de valider la visite.", true);
+          return;
+        }
+        notify(data.message);
+        const nextStatut = validerPassagePhysique ? 'VISITE_MOI' : selectedSalonMap.statut_carte;
+        setMapSalons(prev => prev.map(s => s.siret === selectedSalonMap.siret ? { ...s, statut_carte: nextStatut, visite_info: data.visite_info } : s));
+        setSelectedSalonMap(prev => prev ? { ...prev, statut_carte: nextStatut, visite_info: data.visite_info } : null);
+      } catch (e) {
+        notify("Erreur réseau lors de l'enregistrement.", true);
+      } finally {
+        setIsSavingVisite(false);
+      }
+    };
+
+    if (validerPassagePhysique && !forceAdmin) {
+      if (!navigator.geolocation) {
+        setIsSavingVisite(false);
+        return notify("Géolocalisation requise pour certifier une visite à moins de 100m.", true);
+      }
+      navigator.geolocation.getCurrentPosition(
+        (pos) => sendRequest(pos.coords.latitude, pos.coords.longitude),
+        () => {
+          setIsSavingVisite(false);
+          notify("Activez votre GPS pour vérifier que vous êtes à moins de 100 mètres du salon.", true);
+        },
+        { enableHighAccuracy: true, timeout: 7000 }
+      );
+    } else {
+      await sendRequest(mapCenter.lat, mapCenter.lng);
+    }
+  };
+
+  // Ajouter / Retirer un salon de la tournée
+  const toggleSalonInRoute = (salon) => {
+    setOptimizedRoute(null);
+    setRouteSalons(prev => {
+      const exists = prev.some(s => s.siret === salon.siret);
+      if (exists) return prev.filter(s => s.siret !== salon.siret);
+      if (prev.length >= 15) {
+        notify("Maximum 15 salons par tournée pour garantir un guidage GPS fluide.", true);
+        return prev;
+      }
+      return [...prev, salon];
+    });
+  };
+
+  // Remplissage intelligent automatique des N meilleurs salons libres jamais visités dans le rayon
+  const handleAutoSelectRouteSalons = () => {
+    const candidates = mapSalons
+      .filter(s => parseFloat(s.distance_km) <= mapRadius && s.statut_carte === 'LIBRE' && !s.visite_info?.est_visite_physique)
+      .slice(0, routeMaxCount);
+    if (candidates.length === 0) return notify("Aucun salon libre non visité dans ce périmètre.", true);
+    setRouteSalons(candidates);
+    setOptimizedRoute(null);
+    notify(`${candidates.length} salons sélectionnés. Cliquez sur "Optimiser l'itinéraire".`);
+  };
+
+  // Calcul de la tournée optimale via le backend OSRM
+  const handleOptimizeTournee = async () => {
+    if (routeSalons.length === 0) return notify("Ajoutez d'abord des salons ou cliquez sur Sélection Auto.", true);
+    setIsOptimizingRoute(true);
+    try {
+      let resolvedEnd = routeEndPoint;
+      if (routeEndQuery.trim() && !resolvedEnd) {
+        const gRes = await fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(routeEndQuery)}&limit=1`);
+        const gData = await gRes.json();
+        if (gData.features?.length > 0) {
+          const [lng, lat] = gData.features[0].geometry.coordinates;
+          resolvedEnd = { lat, lng, label: gData.features[0].properties.label };
+          setRouteEndPoint(resolvedEnd);
+        }
+      }
+
+      const res = await fetch(`${API_URL}/tournee/optimiser`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({
+          startPoint: mapCenter,
+          endPoint: resolvedEnd || mapCenter,
+          salons: routeSalons
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Erreur d'optimisation");
+      setOptimizedRoute(data);
+      setRouteSalons(data.orderedSalons || routeSalons);
+      notify(`Tournée optimisée : ${data.total_distance_km} km (${data.estimated_minutes} min).`);
+    } catch (e) {
+      notify(e.message, true);
+    } finally {
+      setIsOptimizingRoute(false);
     }
   };
 
@@ -1225,54 +1412,240 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginTop: '14px', paddingTop: '12px', borderTop: '1px solid #f3f4f6' }}>
-                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                  {[
-                    { key: 'TOUS', label: `Tous (${mapSalons.length})`, dot: null },
-                    { key: 'LIBRE', label: `Libres (${mapSalons.filter(s => s.statut_carte === 'LIBRE').length})`, dot: '#10b981' },
-                    { key: 'PROSPECTE_MOI', label: `Mes leads (${mapSalons.filter(s => s.statut_carte === 'PROSPECTE_MOI').length})`, dot: '#2563eb' },
-                    { key: 'PROSPECTE_AUTRE', label: `Réservés (${mapSalons.filter(s => s.statut_carte === 'PROSPECTE_AUTRE').length})`, dot: '#f59e0b' },
-                    { key: 'CLIENT_STACK', label: `Clients (${mapSalons.filter(s => s.statut_carte === 'CLIENT_STACK').length})`, dot: '#111827' }
-                  ].map(tab => (
-                    <button
-                      key={tab.key} type="button" onClick={() => setMapFilter(tab.key)}
-                      style={{
-                        display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 10px', borderRadius: '9px',
-                        border: mapFilter === tab.key ? '1px solid #111827' : '1px solid #e5e7eb',
-                        backgroundColor: mapFilter === tab.key ? '#111827' : '#ffffff',
-                        color: mapFilter === tab.key ? '#ffffff' : '#374151', fontSize: '12px', fontWeight: '600', cursor: 'pointer'
-                      }}
-                    >
-                      {tab.dot && <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: tab.dot }} />}
-                      {tab.label}
-                    </button>
-                  ))}
-                </div>
+              {(() => {
+                const inRadiusSalons = mapSalons.filter(s => parseFloat(s.distance_km) <= mapRadius);
+                return (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginTop: '14px', paddingTop: '12px', borderTop: '1px solid #f3f4f6' }}>
+                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+                      {[
+                        { key: 'TOUS', label: `Tous (${inRadiusSalons.length})`, dot: null },
+                        { key: 'LIBRE', label: `Jamais visités (${inRadiusSalons.filter(s => s.statut_carte === 'LIBRE').length})`, dot: '#10b981' },
+                        { key: 'VISITES', label: `Déjà visités (${inRadiusSalons.filter(s => s.statut_carte === 'VISITE_MOI' || s.statut_carte === 'VISITE_AUTRE').length})`, dot: '#9ca3af' },
+                        { key: 'PROSPECTE_MOI', label: `Mes leads (${inRadiusSalons.filter(s => s.statut_carte === 'PROSPECTE_MOI').length})`, dot: '#2563eb' },
+                        { key: 'PROSPECTE_AUTRE', label: `Réservés (${inRadiusSalons.filter(s => s.statut_carte === 'PROSPECTE_AUTRE').length})`, dot: '#f59e0b' },
+                        { key: 'CLIENT_STACK', label: `Clients (${inRadiusSalons.filter(s => s.statut_carte === 'CLIENT_STACK').length})`, dot: '#111827' }
+                      ].map(tab => (
+                        <button
+                          key={tab.key} type="button" onClick={() => setMapFilter(tab.key)}
+                          style={{
+                            display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 10px', borderRadius: '9px',
+                            border: mapFilter === tab.key ? '1px solid #111827' : '1px solid #e5e7eb',
+                            backgroundColor: mapFilter === tab.key ? '#111827' : '#ffffff',
+                            color: mapFilter === tab.key ? '#ffffff' : '#374151', fontSize: '12px', fontWeight: '600', cursor: 'pointer'
+                          }}
+                        >
+                          {tab.dot && <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: tab.dot }} />}
+                          {tab.label}
+                        </button>
+                      ))}
 
-                {/* Sélecteur de Tri : Distance ou Nombre d'étoiles */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '12px', fontWeight: '600', color: '#6b7280' }}>Trier par :</span>
-                  <select
-                    value={mapSortBy}
-                    onChange={e => setMapSortBy(e.target.value)}
-                    style={{
-                      padding: '6px 12px', borderRadius: '9px', border: '1px solid #e5e7eb',
-                      backgroundColor: '#f9fafb', fontSize: '12px', fontWeight: '600', color: '#111827', cursor: 'pointer', outline: 'none'
-                    }}
-                  >
-                    <option value="DISTANCE_ASC">Distance (Plus proche au plus loin)</option>
-                    <option value="STARS_DESC">Étoiles ★ (Meilleure à la pire note)</option>
-                    <option value="STARS_ASC">Étoiles ★ (Pire à la meilleure note)</option>
-                  </select>
-                </div>
-              </div>
+                      {/* Bouton Toggle : Masquer les salons déjà visités */}
+                      <button
+                        type="button"
+                        onClick={() => setHideVisitedSalons(!hideVisitedSalons)}
+                        style={{
+                          padding: '6px 11px', borderRadius: '9px', fontSize: '12px', fontWeight: '700', cursor: 'pointer',
+                          border: hideVisitedSalons ? '1px solid #16a34a' : '1px solid #e5e7eb',
+                          backgroundColor: hideVisitedSalons ? '#dcfce7' : '#f9fafb',
+                          color: hideVisitedSalons ? '#166534' : '#4b5563'
+                        }}
+                      >
+                        {hideVisitedSalons ? '✓ Visités masqués' : 'Masquer les visités'}
+                      </button>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <button
+                        type="button"
+                        onClick={() => setShowRoutePlanner(!showRoutePlanner)}
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: '7px',
+                          padding: '7px 14px', borderRadius: '10px', fontSize: '12.5px', fontWeight: '700', cursor: 'pointer',
+                          background: showRoutePlanner ? '#111827' : 'linear-gradient(135deg, #111827 0%, #374151 100%)',
+                          color: '#ffffff', border: 'none', boxShadow: '0 4px 12px rgba(17,24,39,0.14)'
+                        }}
+                      >
+                        <Icon.Compass /> Planificateur de Tournée ({routeSalons.length})
+                      </button>
+
+                      <select
+                        value={mapSortBy}
+                        onChange={e => setMapSortBy(e.target.value)}
+                        style={{
+                          padding: '7px 12px', borderRadius: '10px', border: '1px solid #e5e7eb',
+                          backgroundColor: '#f9fafb', fontSize: '12px', fontWeight: '600', color: '#111827', cursor: 'pointer', outline: 'none'
+                        }}
+                      >
+                        <option value="DISTANCE_ASC">Trier : Distance ↑</option>
+                        <option value="STARS_DESC">Trier : Étoiles ★ (Meilleure)</option>
+                        <option value="STARS_ASC">Trier : Étoiles ★ (Pire)</option>
+                      </select>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 370px', gap: '16px', alignItems: 'stretch' }}>
-              <div style={{ ...cardStyle, padding: 0, overflow: 'hidden', height: isMobile ? '360px' : '540px', position: 'relative', marginBottom: 0 }}>
+            {/* TIROIR PLANIFICATEUR DE TOURNÉE INTELLIGENT (OSRM + WAZE / GOOGLE MAPS) */}
+            {showRoutePlanner && (
+              <div style={{
+                ...cardStyle,
+                background: 'linear-gradient(180deg, #ffffff 0%, #f9fafb 100%)',
+                border: '1.5px solid #111827',
+                padding: isMobile ? '16px' : '20px 24px',
+                marginBottom: '18px'
+              }}>
+                <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', gap: '10px', marginBottom: '16px' }}>
+                  <div>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: '800', color: '#863bff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      Algorithme OSRM • Optimisation de Tournée Terrain
+                    </div>
+                    <h3 style={{ fontSize: '17px', fontWeight: '800', margin: '2px 0 0 0', color: '#111827' }}>
+                      Construisez votre feuille de route optimale
+                    </h3>
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {routeSalons.length > 0 && (
+                      <button type="button" onClick={() => { setRouteSalons([]); setOptimizedRoute(null); }} style={{ ...secondaryBtn, color: '#dc2626' }}>
+                        Vider la liste
+                      </button>
+                    )}
+                    <button type="button" onClick={() => setShowRoutePlanner(false)} style={secondaryBtn}>Fermer ✕</button>
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1.3fr auto auto', gap: '12px', alignItems: 'end', marginBottom: '16px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '11.5px', fontWeight: '700', color: '#4b5563', marginBottom: '5px' }}>
+                      1. Point de départ verrouillé
+                    </label>
+                    <div style={{ ...inputStyle, backgroundColor: '#ffffff', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>📍 {mapCenter.label || 'Ma position GPS'}</span>
+                      <button type="button" onClick={handleGeolocateAgent} style={{ background: 'none', border: 'none', color: '#2563eb', fontWeight: '700', fontSize: '11.5px', cursor: 'pointer' }}>GPS</button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '11.5px', fontWeight: '700', color: '#4b5563', marginBottom: '5px' }}>
+                      2. Point d'arrivée (Domicile / Bureau pour retour optimisé)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Ex: 12 rue de la Paix, Strasbourg (ou laisser vide = boucle)"
+                      value={routeEndQuery}
+                      onChange={e => { setRouteEndQuery(e.target.value); setRouteEndPoint(null); }}
+                      style={{ ...inputStyle, backgroundColor: '#ffffff' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '11.5px', fontWeight: '700', color: '#4b5563', marginBottom: '5px' }}>
+                      3. Nombre de salons
+                    </label>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <select value={routeMaxCount} onChange={e => setRouteMaxCount(Number(e.target.value))} style={{ ...inputStyle, backgroundColor: '#ffffff', width: '95px' }}>
+                        {[5, 8, 10, 12, 15].map(n => <option key={n} value={n}>{n} salons</option>)}
+                      </select>
+                      <button type="button" onClick={handleAutoSelectRouteSalons} style={secondaryBtn}>
+                        Sélection Auto
+                      </button>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    disabled={isOptimizingRoute}
+                    onClick={handleOptimizeTournee}
+                    style={{ ...primaryBtn, height: '42px', padding: '0 20px' }}
+                  >
+                    {isOptimizingRoute ? 'Calcul OSRM...' : '⚡ Optimiser la route'}
+                  </button>
+                </div>
+
+                {/* Liste ordonnée des étapes + Export Waze & Google Maps */}
+                {routeSalons.length > 0 && (
+                  <div style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '14px', padding: '14px' }}>
+                    <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', gap: '10px', marginBottom: '12px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: '13px', fontWeight: '800', color: '#111827' }}>
+                          Étapes de votre tournée ({routeSalons.length} salons)
+                        </span>
+                        {optimizedRoute && (
+                          <span style={{ padding: '4px 10px', borderRadius: '999px', backgroundColor: '#dcfce7', color: '#166534', fontSize: '12px', fontWeight: '700' }}>
+                            Trajet total : {optimizedRoute.total_distance_km} km • ~{optimizedRoute.estimated_minutes} min (visites incluses)
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Boutons d'export GPS vers le téléphone */}
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        <a
+                          href={(() => {
+                            const origin = `${mapCenter.lat},${mapCenter.lng}`;
+                            const dest = routeEndPoint ? `${routeEndPoint.lat},${routeEndPoint.lng}` : `${routeSalons[routeSalons.length - 1].lat},${routeSalons[routeSalons.length - 1].lng}`;
+                            const waypoints = routeSalons.slice(0, 9).map(s => `${s.lat},${s.lng}`).join('|');
+                            return `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(dest)}&waypoints=${encodeURIComponent(waypoints)}&travelmode=driving`;
+                          })()}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ ...primaryBtn, padding: '8px 14px', fontSize: '12px', textDecoration: 'none', backgroundColor: '#2563eb' }}
+                        >
+                          🗺️ Ouvrir l'itinéraire complet Google Maps
+                        </a>
+                        <a
+                          href={`https://waze.com/ul?ll=${routeSalons[0].lat},${routeSalons[0].lng}&navigate=yes`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ ...secondaryBtn, padding: '8px 14px', fontSize: '12px', textDecoration: 'none', color: '#111827', borderColor: '#d1d5db' }}
+                        >
+                          🚗 Waze (Étape #1)
+                        </a>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
+                      {routeSalons.map((s, idx) => (
+                        <div
+                          key={s.siret}
+                          onClick={() => setSelectedSalonMap(s)}
+                          style={{
+                            minWidth: '185px', padding: '10px 12px', borderRadius: '11px',
+                            border: '1px solid #e5e7eb', backgroundColor: '#f9fafb', cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px'
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                            <span style={{
+                              width: '22px', height: '22px', borderRadius: '50%', flexShrink: 0,
+                              backgroundColor: '#111827', color: '#ffffff', fontSize: '11px', fontWeight: '800',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center'
+                            }}>
+                              {idx + 1}
+                            </span>
+                            <div style={{ minWidth: 0 }}>
+                              <div style={{ fontSize: '12.5px', fontWeight: '700', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.nom_salon}</div>
+                              <div style={{ fontSize: '11px', color: '#6b7280' }}>{s.distance_km} km • ★ {s.etoiles || 'N/A'}</div>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); toggleSalonInRoute(s); }}
+                            style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: '13px', fontWeight: '700' }}
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 390px', gap: '16px', alignItems: 'stretch' }}>
+              <div style={{ ...cardStyle, padding: 0, overflow: 'hidden', height: isMobile ? '380px' : '580px', position: 'relative', marginBottom: 0 }}>
                 <div id="stack-partners-map" style={{ width: '100%', height: '100%' }} />
 
-                {/* CHARGEMENT ÉTAPE 0 : Overlay Plein Écran */}
                 {mapLoading && (
                   <div style={{
                     position: 'absolute', inset: 0, backgroundColor: 'rgba(255, 255, 255, 0.45)', backdropFilter: 'blur(3px)',
@@ -1289,7 +1662,6 @@ export default function Dashboard() {
                   </div>
                 )}
 
-                {/* CHARGEMENT PROGRESSIF ÉTAPES 1 à 5 : Badge discret en arrière-plan */}
                 {mapProgress !== null && mapProgress > 0 && mapProgress < 6 && (
                   <>
                     <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', backgroundColor: 'rgba(255,255,255,0.3)', zIndex: 1000 }}>
@@ -1301,82 +1673,189 @@ export default function Dashboard() {
                       zIndex: 1000, boxShadow: '0 6px 20px rgba(0,0,0,0.15)', display: 'flex', alignItems: 'center', gap: '8px'
                     }}>
                       <div style={{ width: '12px', height: '12px', borderRadius: '50%', border: '2px solid rgba(255,255,255,0.2)', borderTopColor: '#ffffff', animation: 'spin 0.8s linear infinite' }} />
-                      Recherche approfondie... ({mapSalons.length})
+                      Recherche approfondie... ({mapSalons.filter(s => parseFloat(s.distance_km) <= mapRadius).length})
                     </div>
                   </>
                 )}
               </div>
 
-              <div style={{ ...cardStyle, height: isMobile ? 'auto' : '540px', maxHeight: isMobile ? '460px' : '540px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', marginBottom: 0, overflowY: 'auto' }}>
+              <div style={{ ...cardStyle, height: isMobile ? 'auto' : '580px', maxHeight: isMobile ? '560px' : '580px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', marginBottom: 0, overflowY: 'auto' }}>
                 {selectedSalonMap ? (
                   <>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px', marginBottom: '10px' }}>
                       <span style={{
-                        padding: '5px 10px', borderRadius: '8px', fontSize: '11.5px', fontWeight: '700',
-                        backgroundColor: selectedSalonMap.statut_carte === 'LIBRE' ? '#dcfce7' : selectedSalonMap.statut_carte === 'PROSPECTE_MOI' ? '#dbeafe' : '#fef3c7',
-                        color: selectedSalonMap.statut_carte === 'LIBRE' ? '#166534' : selectedSalonMap.statut_carte === 'PROSPECTE_MOI' ? '#1e40af' : '#92400e'
+                        padding: '5px 10px', borderRadius: '8px', fontSize: '11px', fontWeight: '700',
+                        backgroundColor:
+                          selectedSalonMap.statut_carte === 'LIBRE' ? '#dcfce7' :
+                          selectedSalonMap.statut_carte === 'PROSPECTE_MOI' ? '#dbeafe' :
+                          (selectedSalonMap.statut_carte === 'VISITE_MOI' || selectedSalonMap.statut_carte === 'VISITE_AUTRE') ? '#f3f4f6' : '#fef3c7',
+                        color:
+                          selectedSalonMap.statut_carte === 'LIBRE' ? '#166534' :
+                          selectedSalonMap.statut_carte === 'PROSPECTE_MOI' ? '#1e40af' :
+                          (selectedSalonMap.statut_carte === 'VISITE_MOI' || selectedSalonMap.statut_carte === 'VISITE_AUTRE') ? '#374151' : '#92400e'
                       }}>
-                        {selectedSalonMap.statut_carte === 'LIBRE' && 'Jamais prospecté — Libre'}
+                        {selectedSalonMap.statut_carte === 'LIBRE' && 'Jamais visité — Cible Libre'}
+                        {selectedSalonMap.statut_carte === 'VISITE_MOI' && 'Visité par moi'}
+                        {selectedSalonMap.statut_carte === 'VISITE_AUTRE' && `Visité par ${selectedSalonMap.visite_info?.agent_nom_complet || 'un agent'}`}
                         {selectedSalonMap.statut_carte === 'PROSPECTE_MOI' && `Mon prospect (${selectedSalonMap.jours_restants}j)`}
-                        {selectedSalonMap.statut_carte === 'PROSPECTE_AUTRE' && `Déjà prospecté`}
+                        {selectedSalonMap.statut_carte === 'PROSPECTE_AUTRE' && 'Réservé par un autre agent'}
                         {selectedSalonMap.statut_carte === 'CLIENT_STACK' && 'Déjà équipé STACK'}
                       </span>
-                      <button type="button" onClick={() => setSelectedSalonMap(null)} style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>Fermer ✕</button>
+
+                      <div style={{ display: 'flex', gap: '6px' }}>
+                        <button
+                          type="button"
+                          onClick={() => { toggleSalonInRoute(selectedSalonMap); setShowRoutePlanner(true); }}
+                          style={{
+                            padding: '5px 10px', borderRadius: '8px', fontSize: '11.5px', fontWeight: '700', cursor: 'pointer',
+                            border: '1px solid #111827',
+                            backgroundColor: routeSalons.some(r => r.siret === selectedSalonMap.siret) ? '#111827' : '#ffffff',
+                            color: routeSalons.some(r => r.siret === selectedSalonMap.siret) ? '#ffffff' : '#111827'
+                          }}
+                        >
+                          {routeSalons.some(r => r.siret === selectedSalonMap.siret) ? '✓ Dans ma tournée' : '+ Tournée'}
+                        </button>
+                        <button type="button" onClick={() => setSelectedSalonMap(null)} style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}>✕</button>
+                      </div>
                     </div>
 
-                    <h3 style={{ fontSize: '18px', fontWeight: '700', margin: '0 0 8px 0' }}>{selectedSalonMap.nom_salon}</h3>
+                    <h3 style={{ fontSize: '17px', fontWeight: '800', margin: '0 0 8px 0' }}>{selectedSalonMap.nom_salon}</h3>
 
-                    {/* Badge Étoiles & Distance */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
                       <span style={{
                         display: 'inline-flex', alignItems: 'center', gap: '5px',
-                        padding: '5px 10px', borderRadius: '8px', fontSize: '12.5px', fontWeight: '700',
+                        padding: '4px 9px', borderRadius: '8px', fontSize: '12px', fontWeight: '700',
                         backgroundColor: selectedSalonMap.etoiles ? '#fffbeb' : '#f3f4f6',
                         color: selectedSalonMap.etoiles ? '#b45309' : '#6b7280',
                         border: selectedSalonMap.etoiles ? '1px solid #fde68a' : '1px solid #e5e7eb'
                       }}>
-                        <span style={{ color: selectedSalonMap.etoiles ? '#f59e0b' : '#9ca3af' }}>★</span>
-                        {selectedSalonMap.etoiles ? `${selectedSalonMap.etoiles} / 5` : 'Note : N/A'}
+                        ★ {selectedSalonMap.etoiles ? `${selectedSalonMap.etoiles} / 5` : 'N/A'}
                       </span>
-                      <span style={{ padding: '5px 10px', borderRadius: '8px', fontSize: '12px', fontWeight: '600', backgroundColor: '#f3f4f6', color: '#374151' }}>
+                      <span style={{ padding: '4px 9px', borderRadius: '8px', fontSize: '12px', fontWeight: '600', backgroundColor: '#f3f4f6', color: '#374151' }}>
                         À {selectedSalonMap.distance_km} km
                       </span>
+                      <span style={{ fontSize: '11.5px', color: '#6b7280' }}>
+                        {selectedSalonMap.adresse}, {selectedSalonMap.code_postal} {selectedSalonMap.ville}
+                      </span>
                     </div>
 
-                    {/* Bloc d'informations détaillées du salon */}
-                    <div style={{ backgroundColor: '#f9fafb', border: '1px solid #f3f4f6', borderRadius: '14px', padding: '12px 14px', marginBottom: '14px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12.5px' }}>
-                      <div>
-                        <span style={{ color: '#6b7280', fontWeight: '600' }}>Adresse : </span>
-                        <span style={{ color: '#111827', fontWeight: '500' }}>{selectedSalonMap.adresse || 'Non renseignée'}, {selectedSalonMap.code_postal} {selectedSalonMap.ville}</span>
-                      </div>
-                      <div>
-                        <span style={{ color: '#6b7280', fontWeight: '600' }}>Téléphone : </span>
-                        <span style={{ color: '#111827', fontWeight: '600' }}>{selectedSalonMap.telephone || 'N/A'}</span>
-                      </div>
-                      <div>
-                        <span style={{ color: '#6b7280', fontWeight: '600' }}>SIRET / Réf : </span>
-                        <span style={{ fontFamily: 'monospace', color: '#374151' }}>{selectedSalonMap.siret}</span>
-                      </div>
-                      {selectedSalonMap.horaires && (
-                        <div>
-                          <span style={{ color: '#6b7280', fontWeight: '600' }}>Horaires : </span>
-                          <span style={{ color: '#374151' }}>{selectedSalonMap.horaires}</span>
+                    {/* Encart Traçabilité Réseau si déjà visité */}
+                    {selectedSalonMap.visite_info && (
+                      <div style={{
+                        backgroundColor: '#f3f4f6', border: '1px solid #e5e7eb', borderRadius: '12px',
+                        padding: '10px 12px', marginBottom: '12px', fontSize: '12px'
+                      }}>
+                        <div style={{ fontWeight: '700', color: '#111827', display: 'flex', justifyContent: 'space-between' }}>
+                          <span>👤 {selectedSalonMap.visite_info.agent_nom_complet}</span>
+                          <span style={{ color: '#6b7280', fontWeight: '600' }}>
+                            {new Date(selectedSalonMap.visite_info.date_visite).toLocaleDateString('fr-FR')}
+                          </span>
                         </div>
-                      )}
-                      {selectedSalonMap.site_web && (
-                        <div>
-                          <a href={selectedSalonMap.site_web} target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb', fontWeight: '600', textDecoration: 'none' }}>
-                            Visiter le site web ↗
-                          </a>
+                        <div style={{ color: '#4b5563', marginTop: '4px', fontSize: '11.5px' }}>
+                          Concurrent : <strong>{selectedSalonMap.visite_info.tag_concurrent}</strong> • Remise à zéro : {new Date(selectedSalonMap.visite_info.date_expiration).toLocaleDateString('fr-FR')}
                         </div>
+                      </div>
+                    )}
+
+                    {/* BLOC CRM TERRAIN : TAGS RAPIDES + NOTE TEXTUELLE + VALIDATION GPS 100M */}
+                    <div style={{
+                      backgroundColor: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '14px',
+                      padding: '12px', marginBottom: '12px', display: 'flex', flexDirection: 'column', gap: '10px'
+                    }}>
+                      <div>
+                        <div style={{ fontSize: '11px', fontWeight: '700', color: '#6b7280', textTransform: 'uppercase', marginBottom: '6px' }}>
+                          Équipement actuel / Qualification rapide
+                        </div>
+                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                          {[
+                            { id: 'PLANITY', label: 'Chez Planity' },
+                            { id: 'TREATWELL', label: 'Chez Treatwell' },
+                            { id: 'CAHIER_PAPIER', label: 'Cahier papier' },
+                            { id: 'A_RAPPELER', label: 'À rappeler' }
+                          ].map(tg => {
+                            const active = visiteForm.tag_concurrent === tg.id;
+                            return (
+                              <button
+                                key={tg.id}
+                                type="button"
+                                onClick={() => setVisiteForm({ ...visiteForm, tag_concurrent: tg.id })}
+                                style={{
+                                  padding: '5px 9px', borderRadius: '8px', fontSize: '11.5px', fontWeight: '700', cursor: 'pointer',
+                                  border: active ? '1px solid #111827' : '1px solid #e5e7eb',
+                                  backgroundColor: active ? '#111827' : '#ffffff',
+                                  color: active ? '#ffffff' : '#374151'
+                                }}
+                              >
+                                {tg.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      <div>
+                        <div style={{ fontSize: '11px', fontWeight: '700', color: '#6b7280', textTransform: 'uppercase', marginBottom: '4px' }}>
+                          Issue de la visite & Délai de carence
+                        </div>
+                        <select
+                          value={visiteForm.statut_visite}
+                          onChange={e => setVisiteForm({ ...visiteForm, statut_visite: e.target.value })}
+                          style={{ ...inputStyle, padding: '8px 10px', fontSize: '12px', backgroundColor: '#ffffff' }}
+                        >
+                          <option value="ABSENT_3MOIS">Gérant absent / Plaquette déposée (Re-libre dans 3 mois)</option>
+                          <option value="A_RAPPELER_3MOIS">Intéressé / À rappeler (Re-libre dans 3 mois)</option>
+                          <option value="REFUS_1AN">Refus catégorique / Engagé 2 ans (Re-libre dans 1 an)</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <textarea
+                          rows={2}
+                          placeholder="Note personnelle sur ce salon (prénom du gérant, horaires creux, matériel...)"
+                          value={visiteForm.note_texte}
+                          onChange={e => setVisiteForm({ ...visiteForm, note_texte: e.target.value })}
+                          style={{ ...inputStyle, backgroundColor: '#ffffff', fontSize: '12.5px', resize: 'vertical' }}
+                        />
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        <button
+                          type="button"
+                          disabled={isSavingVisite}
+                          onClick={() => handleSaveVisiteOrNote(false)}
+                          style={{ ...secondaryBtn, flex: 1, padding: '8px 10px', fontSize: '12px' }}
+                        >
+                          Sauvegarder la note
+                        </button>
+                        <button
+                          type="button"
+                          disabled={isSavingVisite}
+                          onClick={() => handleSaveVisiteOrNote(true, false)}
+                          style={{ ...primaryBtn, flex: 1.4, padding: '8px 12px', fontSize: '12px', backgroundColor: '#16a34a' }}
+                        >
+                          📍 Valider ma visite (&lt; 100m)
+                        </button>
+                      </div>
+
+                      {isSuperAdmin && (
+                        <button
+                          type="button"
+                          onClick={() => handleSaveVisiteOrNote(true, true)}
+                          style={{ background: 'none', border: 'none', color: '#6b7280', fontSize: '11px', textDecoration: 'underline', cursor: 'pointer', textAlign: 'right' }}
+                        >
+                          Forcer validation sans limite 100m (Super-Admin)
+                        </button>
                       )}
                     </div>
 
-                    {selectedSalonMap.statut_carte === 'LIBRE' && (
-                      <form onSubmit={handleQuickLockFromMap} style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: 'auto', paddingTop: '14px', borderTop: '1px solid #f3f4f6' }}>
-                        <input type="email" required placeholder="E-mail du gérant (Obligatoire)" value={quickLockForm.email_gerant} onChange={e => setQuickLockForm({ ...quickLockForm, email_gerant: e.target.value })} style={inputStyle} />
-                        <input type="text" placeholder="Téléphone du salon" value={quickLockForm.telephone_salon || selectedSalonMap.telephone || ''} onChange={e => setQuickLockForm({ ...quickLockForm, telephone_salon: e.target.value })} style={inputStyle} />
-                        <button type="submit" style={{ ...primaryBtn, width: '100%' }}><Icon.Check /> Verrouiller ce prospect (45j)</button>
+                    {selectedSalonMap.statut_carte !== 'PROSPECTE_AUTRE' && selectedSalonMap.statut_carte !== 'CLIENT_STACK' && selectedSalonMap.statut_carte !== 'PROSPECTE_MOI' && (
+                      <form onSubmit={handleQuickLockFromMap} style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: 'auto', paddingTop: '10px', borderTop: '1px solid #f3f4f6' }}>
+                        <div style={{ fontSize: '11px', fontWeight: '700', color: '#6b7280', textTransform: 'uppercase' }}>Verrouiller en Prospect Exclusif (45j)</div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+                          <input type="email" required placeholder="E-mail gérant" value={quickLockForm.email_gerant} onChange={e => setQuickLockForm({ ...quickLockForm, email_gerant: e.target.value })} style={{ ...inputStyle, padding: '8px 10px', fontSize: '12px' }} />
+                          <input type="text" placeholder="Téléphone" value={quickLockForm.telephone_salon || selectedSalonMap.telephone || ''} onChange={e => setQuickLockForm({ ...quickLockForm, telephone_salon: e.target.value })} style={{ ...inputStyle, padding: '8px 10px', fontSize: '12px' }} />
+                        </div>
+                        <button type="submit" style={{ ...primaryBtn, width: '100%', padding: '9px' }}><Icon.Check /> Réserver ce lead (45j)</button>
                       </form>
                     )}
 
@@ -1398,7 +1877,13 @@ export default function Dashboard() {
                   <>
                     {(() => {
                       const filteredList = mapSalons
-                        .filter(s => parseFloat(s.distance_km) <= mapRadius && (mapFilter === 'TOUS' || s.statut_carte === mapFilter))
+                        .filter(s => {
+                          if (parseFloat(s.distance_km) > mapRadius) return false;
+                          if (hideVisitedSalons && (s.statut_carte === 'VISITE_MOI' || s.statut_carte === 'VISITE_AUTRE' || s.visite_info?.est_visite_physique)) return false;
+                          if (mapFilter === 'TOUS') return true;
+                          if (mapFilter === 'VISITES') return s.statut_carte === 'VISITE_MOI' || s.statut_carte === 'VISITE_AUTRE';
+                          return s.statut_carte === mapFilter;
+                        })
                         .slice()
                         .sort((a, b) => {
                           if (mapSortBy === 'STARS_DESC') {
@@ -1406,7 +1891,6 @@ export default function Dashboard() {
                             const rB = b.etoiles !== null && b.etoiles !== undefined ? Number(b.etoiles) : -1;
                             if (rB !== rA) return rB - rA;
                           } else if (mapSortBy === 'STARS_ASC') {
-                            // Les salons ayant une note vont du pire au meilleur, et les N/A restent en fin de liste
                             const rA = a.etoiles !== null && a.etoiles !== undefined ? Number(a.etoiles) : 99;
                             const rB = b.etoiles !== null && b.etoiles !== undefined ? Number(b.etoiles) : 99;
                             if (rA !== rB) return rA - rB;
@@ -1421,33 +1905,72 @@ export default function Dashboard() {
                             {filteredList.length > 120 && <span style={{ fontSize: '11px', color: '#9ca3af' }}>Top 120 affichés</span>}
                           </div>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', overflowY: 'auto' }}>
-                            {filteredList.slice(0, 120).map(s => (
-                              <div
-                                key={s.siret}
-                                onClick={() => {
-                                  setSelectedSalonMap(s);
-                                  if (window.__stackMap) {
-                                    window.__stackMap.setView([s.lat, s.lng], Math.max(window.__stackMap.getZoom(), 16));
-                                  }
-                                }}
-                                style={{ padding: '11px 13px', borderRadius: '12px', border: '1px solid #f3f4f6', backgroundColor: '#f9fafb', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}
-                              >
-                                <div style={{ minWidth: 0 }}>
-                                  <div style={{ fontSize: '13px', fontWeight: '600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.nom_salon}</div>
-                                  <div style={{ fontSize: '11.5px', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
-                                    <span>{s.ville || 'France'} • {s.distance_km} km</span>
+                            {filteredList.slice(0, 120).map(s => {
+                              const inRoute = routeSalons.some(r => r.siret === s.siret);
+                              const isVisited = s.statut_carte === 'VISITE_MOI' || s.statut_carte === 'VISITE_AUTRE';
+                              return (
+                                <div
+                                  key={s.siret}
+                                  onClick={() => {
+                                    setSelectedSalonMap(s);
+                                    if (window.__stackMap) {
+                                      window.__stackMap.setView([s.lat, s.lng], Math.max(window.__stackMap.getZoom(), 16));
+                                    }
+                                  }}
+                                  style={{
+                                    padding: '11px 13px', borderRadius: '12px',
+                                    border: inRoute ? '1.5px solid #111827' : '1px solid #f3f4f6',
+                                    backgroundColor: isVisited ? '#f3f4f6' : '#f9fafb',
+                                    opacity: isVisited ? 0.78 : 1,
+                                    cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px'
+                                  }}
+                                >
+                                  <div style={{ minWidth: 0 }}>
+                                    <div style={{ fontSize: '13px', fontWeight: '600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                      {s.nom_salon}
+                                    </div>
+                                    <div style={{ fontSize: '11.5px', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px', flexWrap: 'wrap' }}>
+                                      <span>{s.ville || 'France'} • {s.distance_km} km</span>
+                                      <span style={{
+                                        padding: '1px 6px', borderRadius: '5px', fontSize: '10.5px', fontWeight: '700',
+                                        backgroundColor: s.etoiles ? '#fffbeb' : '#f3f4f6',
+                                        color: s.etoiles ? '#b45309' : '#6b7280'
+                                      }}>
+                                        ★ {s.etoiles ? s.etoiles : 'N/A'}
+                                      </span>
+                                      {s.visite_info && (
+                                        <span style={{ fontSize: '10.5px', fontWeight: '700', color: '#4b5563' }}>
+                                          • Visité ({s.visite_info.agent_nom_complet})
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                                    <button
+                                      type="button"
+                                      title="Ajouter à ma tournée"
+                                      onClick={(e) => { e.stopPropagation(); toggleSalonInRoute(s); }}
+                                      style={{
+                                        padding: '4px 8px', borderRadius: '7px', fontSize: '11px', fontWeight: '700', cursor: 'pointer',
+                                        border: '1px solid #e5e7eb',
+                                        backgroundColor: inRoute ? '#111827' : '#ffffff',
+                                        color: inRoute ? '#ffffff' : '#374151'
+                                      }}
+                                    >
+                                      {inRoute ? '✓' : '+'}
+                                    </button>
                                     <span style={{
-                                      padding: '1px 6px', borderRadius: '5px', fontSize: '10.5px', fontWeight: '700',
-                                      backgroundColor: s.etoiles ? '#fffbeb' : '#f3f4f6',
-                                      color: s.etoiles ? '#b45309' : '#6b7280'
-                                    }}>
-                                      ★ {s.etoiles ? s.etoiles : 'N/A'}
-                                    </span>
+                                      width: '9px', height: '9px', borderRadius: '50%',
+                                      backgroundColor:
+                                        s.statut_carte === 'LIBRE' ? '#10b981' :
+                                        s.statut_carte === 'PROSPECTE_MOI' ? '#2563eb' :
+                                        s.statut_carte === 'PROSPECTE_AUTRE' ? '#f59e0b' :
+                                        isVisited ? '#9ca3af' : '#111827'
+                                    }} />
                                   </div>
                                 </div>
-                                <span style={{ width: '9px', height: '9px', borderRadius: '50%', flexShrink: 0, backgroundColor: s.statut_carte === 'LIBRE' ? '#10b981' : s.statut_carte === 'PROSPECTE_MOI' ? '#2563eb' : s.statut_carte === 'PROSPECTE_AUTRE' ? '#f59e0b' : '#111827' }} />
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         </>
                       );
@@ -2104,6 +2627,38 @@ export default function Dashboard() {
                 </div>
               );
             })}
+
+            {/* Intelligence Terrain : Parts de marché des concurrents remontées par les agents */}
+            <div style={{ fontSize: '12.5px', fontWeight: '700', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.04em', margin: '28px 0 10px 0' }}>
+              Intelligence Terrain & Parts de Marché Concurrents
+            </div>
+            <div style={cardStyle}>
+              {adminMarketStats.repartition_concurrents?.length === 0 ? (
+                <div style={{ fontSize: '13px', color: '#6b7280' }}>
+                  Les statistiques concurrentielles (Planity, Treatwell, Cahier papier...) s'afficheront ici dès les premières qualifications terrain de vos agents.
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)', gap: '12px' }}>
+                  {(() => {
+                    const totalTagged = adminMarketStats.repartition_concurrents.reduce((acc, item) => acc + Number(item.count || 0), 0) || 1;
+                    return adminMarketStats.repartition_concurrents.map(item => {
+                      const pct = Math.round((Number(item.count) / totalTagged) * 100);
+                      return (
+                        <div key={item.tag_concurrent} style={{ padding: '14px 16px', borderRadius: '14px', backgroundColor: '#f9fafb', border: '1px solid #e5e7eb' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: '700', color: '#4b5563' }}>
+                            <span>{item.tag_concurrent}</span>
+                            <span style={{ color: '#111827' }}>{pct}% ({item.count})</span>
+                          </div>
+                          <div style={{ height: '6px', backgroundColor: '#e5e7eb', borderRadius: '999px', overflow: 'hidden', marginTop: '8px' }}>
+                            <div style={{ width: `${pct}%`, height: '100%', backgroundColor: '#111827', borderRadius: '999px' }} />
+                          </div>
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+              )}
+            </div>
 
             {/* Tableau des virements de commissions */}
             <div style={{ fontSize: '12.5px', fontWeight: '700', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.04em', margin: '28px 0 10px 0' }}>
