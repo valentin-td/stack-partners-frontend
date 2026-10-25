@@ -732,13 +732,13 @@ export default function Dashboard() {
         method: 'POST', headers: { 'Authorization': `Bearer ${token}` }
       });
       
-      // Sécurité : On lit le texte brut d'abord pour éviter le crash JSON si le serveur renvoie du HTML
       const text = await res.text();
       let data;
       try { 
         data = JSON.parse(text); 
       } catch (e) { 
-        throw new Error(`Crash Serveur Inattendu : ${text.substring(0, 120)}...`); 
+        alert("CRASH DU SERVEUR (Le backend a planté) :\n\n" + text.substring(0, 200));
+        throw new Error("Crash"); 
       }
       
       if (res.ok) {
@@ -748,10 +748,11 @@ export default function Dashboard() {
         notify(data.message || "Ouverture du contrat Yousign...");
         fetchProfil();
       } else {
-        notify(data.error || "Erreur lors de la génération du contrat.", true);
+        // FORCAGE D'UNE POPUP NATIVE IMPOSSIBLE À MANQUER
+        alert("YOUSIGN A REJETÉ LA DEMANDE :\n\n" + (data.error || "Erreur inconnue"));
       }
     } catch (e) {
-      notify(e.message || "Erreur de connexion au serveur.", true);
+      console.error(e);
     } finally {
       setIsYousignLoading(false);
     }
