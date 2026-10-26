@@ -737,21 +737,25 @@ export default function Dashboard() {
       try { 
         data = JSON.parse(text); 
       } catch (e) { 
-        alert("CRASH DU SERVEUR :\n\n" + text.substring(0, 200));
-        throw new Error("Crash"); 
+        alert(`CRASH DU SERVEUR (HTTP ${res.status}) :\n\n` + text.substring(0, 300));
+        return; 
       }
       
       if (res.ok) {
-        if (data.require_redirect && data.redirect_url) {
-          // Contourne le bloqueur de pop-up en redirigeant l'onglet actuel
-          window.location.href = data.redirect_url;
+        const targetUrl = data.redirect_url || data.signatureLink;
+        if (targetUrl) {
+          await fetchProfil();
+          window.location.assign(targetUrl);
+          return;
+        } else {
+          alert("ERREUR : Le serveur a répondu OK mais aucun lien Yousign n'a été trouvé dans la réponse :\n\n" + JSON.stringify(data));
         }
       } else {
-        alert("YOUSIGN A REJETÉ LA DEMANDE :\n\n" + (data.error || "Erreur inconnue"));
-        setIsYousignLoading(false);
+        alert(`YOUSIGN A REJETÉ LA DEMANDE (HTTP ${res.status}) :\n\n` + (data.error || JSON.stringify(data)));
       }
     } catch (e) {
-      console.error(e);
+      alert("ERREUR RÉSEAU OU SERVEUR INJOIGNABLE :\n\n" + e.message);
+    } finally {
       setIsYousignLoading(false);
     }
   };
@@ -760,15 +764,22 @@ export default function Dashboard() {
     setIsYousignLoading(true);
     try {
       const res = await fetch(`${API_URL}/profil/yousign/check`, { headers: { 'Authorization': `Bearer ${token}` } });
-      const data = await res.json();
-      if (data.status === 'done') {
+      const text = await res.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        alert(`ERREUR SERVEUR CHECK (HTTP ${res.status}) :\n\n` + text.substring(0, 300));
+        return;
+      }
+      if (res.ok && data.status === 'done') {
         notify(data.message || "Félicitations, contrat validé !");
         fetchProfil();
       } else {
-        notify(data.message || "Contrat toujours en attente de signature.", true);
+        alert(`STATUT ACTUEL SUR YOUSIGN : "${data.status || 'inconnu'}"\n\n` + (data.message || data.error || "Vous n'avez pas encore terminé la signature sur la page Yousign."));
       }
     } catch (e) {
-      notify("Erreur lors de la vérification.", true);
+      alert("Erreur réseau lors de la vérification : " + e.message);
     } finally {
       setIsYousignLoading(false);
     }
@@ -2232,15 +2243,22 @@ export default function Dashboard() {
               <p style={{ fontSize: '13px', color: '#4b5563', lineHeight: 1.5, margin: '0 0 14px 0' }}>
                 Contrat conclu sous condition suspensive d'immatriculation RSAC.
               </p>
-              {profilData.contrat_signe || profilData.statut_contrat === 'VALIDE' ? (
-                <div style={{ fontSize: '13px', fontWeight: '600', color: '#16a34a', display: 'flex', alignItems: 'center', gap: '6px' }}><Icon.Check /> Contrat signé électroniquement.</div>
+              {profilData.contrat_signe && profilData.statut_contrat === 'VALIDE' ? (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+                  <div style={{ fontSize: '13px', fontWeight: '600', color: '#16a34a', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Icon.Check /> Contrat signé électroniquement.
+                  </div>
+                  <button type="button" onClick={handleYousignSignature} disabled={isYousignLoading} style={secondaryBtn}>
+                    {isYousignLoading ? "Génération..." : "Relancer un test de signature Yousign"}
+                  </button>
+                </div>
               ) : profilData.statut_contrat === 'EN_ATTENTE_SIGNATURE' ? (
                 <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                   <button type="button" onClick={handleCheckYousign} disabled={isYousignLoading} style={{ ...primaryBtn, backgroundColor: '#16a34a', width: isMobile ? '100%' : 'auto' }}>
-                    <Icon.Check /> {isYousignLoading ? "Vérification..." : "Vérifier si j'ai signé"}
+                    <Icon.Check /> {isYousignLoading ? "Vérification..." : "J'ai signé, vérifier mon contrat"}
                   </button>
                   <button type="button" onClick={handleYousignSignature} disabled={isYousignLoading} style={{ ...secondaryBtn, width: isMobile ? '100%' : 'auto' }}>
-                    Relancer la signature
+                    {isYousignLoading ? "Génération..." : "Ouvrir à nouveau le lien Yousign"}
                   </button>
                 </div>
               ) : (
