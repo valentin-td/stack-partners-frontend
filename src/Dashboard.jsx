@@ -737,22 +737,38 @@ export default function Dashboard() {
       try { 
         data = JSON.parse(text); 
       } catch (e) { 
-        alert("CRASH DU SERVEUR (Le backend a planté) :\n\n" + text.substring(0, 200));
+        alert("CRASH DU SERVEUR :\n\n" + text.substring(0, 200));
         throw new Error("Crash"); 
       }
       
       if (res.ok) {
         if (data.require_redirect && data.redirect_url) {
-          window.open(data.redirect_url, '_blank');
+          // Contourne le bloqueur de pop-up en redirigeant l'onglet actuel
+          window.location.href = data.redirect_url;
         }
-        notify(data.message || "Ouverture du contrat Yousign...");
-        fetchProfil();
       } else {
-        // FORCAGE D'UNE POPUP NATIVE IMPOSSIBLE À MANQUER
         alert("YOUSIGN A REJETÉ LA DEMANDE :\n\n" + (data.error || "Erreur inconnue"));
+        setIsYousignLoading(false);
       }
     } catch (e) {
       console.error(e);
+      setIsYousignLoading(false);
+    }
+  };
+
+  const handleCheckYousign = async () => {
+    setIsYousignLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/profil/yousign/check`, { headers: { 'Authorization': `Bearer ${token}` } });
+      const data = await res.json();
+      if (data.status === 'done') {
+        notify(data.message || "Félicitations, contrat validé !");
+        fetchProfil();
+      } else {
+        notify(data.message || "Contrat toujours en attente de signature.", true);
+      }
+    } catch (e) {
+      notify("Erreur lors de la vérification.", true);
     } finally {
       setIsYousignLoading(false);
     }
@@ -2216,11 +2232,20 @@ export default function Dashboard() {
               <p style={{ fontSize: '13px', color: '#4b5563', lineHeight: 1.5, margin: '0 0 14px 0' }}>
                 Contrat conclu sous condition suspensive d'immatriculation RSAC.
               </p>
-              {profilData.contrat_signe ? (
+              {profilData.contrat_signe || profilData.statut_contrat === 'VALIDE' ? (
                 <div style={{ fontSize: '13px', fontWeight: '600', color: '#16a34a', display: 'flex', alignItems: 'center', gap: '6px' }}><Icon.Check /> Contrat signé électroniquement.</div>
+              ) : profilData.statut_contrat === 'EN_ATTENTE_SIGNATURE' ? (
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                  <button type="button" onClick={handleCheckYousign} disabled={isYousignLoading} style={{ ...primaryBtn, backgroundColor: '#16a34a', width: isMobile ? '100%' : 'auto' }}>
+                    <Icon.Check /> {isYousignLoading ? "Vérification..." : "Vérifier si j'ai signé"}
+                  </button>
+                  <button type="button" onClick={handleYousignSignature} disabled={isYousignLoading} style={{ ...secondaryBtn, width: isMobile ? '100%' : 'auto' }}>
+                    Relancer la signature
+                  </button>
+                </div>
               ) : (
                 <button type="button" onClick={handleYousignSignature} disabled={isYousignLoading} style={{ ...primaryBtn, width: isMobile ? '100%' : 'auto' }}>
-                  <Icon.Check /> {isYousignLoading ? "Signature..." : "Signer électroniquement le contrat de mandat"}
+                  <Icon.Check /> {isYousignLoading ? "Génération..." : "Signer électroniquement le contrat de mandat"}
                 </button>
               )}
             </div>
