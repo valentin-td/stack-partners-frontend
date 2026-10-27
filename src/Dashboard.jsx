@@ -819,20 +819,52 @@ export default function Dashboard() {
 
   const submitEtapeConformite = async (etape, customPayload = null) => {
     try {
+      const rawPayload = { ...(customPayload || profilData) };
+      const formData = new FormData();
+      formData.append('etape', String(etape));
+
+      // Convertit les images/PDF Base64 en vrais fichiers binaires Multipart
+      // pour ne jamais être bloqué par la limite JSON de 100 ko d'Express !
+      const fileFields = ['fichier_identite', 'fichier_rsac', 'fichier_kbis', 'fichier_urssaf', 'fichier_rc_pro'];
+      for (const field of fileFields) {
+        const val = rawPayload[field];
+        if (typeof val === 'string' && val.startsWith('data:')) {
+          const match = val.match(/^data:([^;]+);base64,(.+)$/);
+          if (match) {
+            const mime = match[1];
+            const bstr = atob(match[2]);
+            let n = bstr.length;
+            const u8arr = new Uint8Array(n);
+            while (n--) u8arr[n] = bstr.charCodeAt(n);
+            const ext = mime.includes('png') ? 'png' : mime.includes('jpeg') || mime.includes('jpg') ? 'jpg' : 'pdf';
+            formData.append(field, new Blob([u8arr], { type: mime }), `${field}.${ext}`);
+            delete rawPayload[field];
+          }
+        }
+      }
+
+      formData.append('payload', JSON.stringify(rawPayload));
+
       const res = await fetch(`${API_URL}/profil/etape`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ etape, payload: customPayload || profilData })
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData
       });
-      const data = await res.json().catch(() => ({}));
+
+      const text = await res.text();
+      let data = {};
+      try { data = JSON.parse(text); } catch (e) { data = { error: text.substring(0, 200) }; }
+
       if (res.ok) {
-        notify(data.message || `Étape ${etape} enregistrée.`);
-        fetchProfil();
+        notify(data.message || `Étape ${etape} enregistrée avec succès !`);
+        await fetchProfil();
       } else {
-        notify(data.error || "Erreur d'enregistrement.", true);
+        notify(data.error || `Erreur (${res.status}) lors de l'enregistrement.`, true);
+        alert(`Erreur d'enregistrement (Étape ${etape}) :\n\n` + (data.error || text.substring(0, 200)));
       }
     } catch (err) {
-      notify("Erreur réseau.", true);
+      notify("Erreur réseau : " + err.message, true);
+      alert("Erreur réseau lors de l'enregistrement :\n\n" + err.message);
     }
   };
 
@@ -1253,7 +1285,22 @@ export default function Dashboard() {
       <div style={{ flex: 1, padding: isMobile ? '18px 14px' : '40px 48px', maxWidth: '1180px', width: '100%', boxSizing: 'border-box', overflowX: 'hidden' }}>
 
         {toastMsg && (
-          <div style={{ backgroundColor: toastMsg.isError ? '#fef2f2' : '#111827', color: toastMsg.isError ? '#dc2626' : '#ffffff', border: toastMsg.isError ? '1px solid #fecaca' : 'none', padding: '14px 18px', borderRadius: '14px', marginBottom: '20px', fontSize: '13.5px', fontWeight: '500', boxShadow: '0 8px 20px rgba(0,0,0,0.08)' }}>
+          <div style={{
+            position: 'fixed',
+            bottom: isMobile ? '90px' : '28px',
+            right: isMobile ? '16px' : '28px',
+            left: isMobile ? '16px' : 'auto',
+            maxWidth: isMobile ? 'none' : '420px',
+            zIndex: 99999,
+            backgroundColor: toastMsg.isError ? '#fef2f2' : '#111827',
+            color: toastMsg.isError ? '#dc2626' : '#ffffff',
+            border: toastMsg.isError ? '1.5px solid #ef4444' : '1px solid rgba(255,255,255,0.12)',
+            padding: '14px 20px',
+            borderRadius: '14px',
+            fontSize: '13.5px',
+            fontWeight: '600',
+            boxShadow: '0 14px 35px rgba(0,0,0,0.22)'
+          }}>
             {toastMsg.text}
           </div>
         )}
