@@ -665,17 +665,23 @@ export default function Dashboard() {
 
   const handleVerifyPieceAdmin = async (idAgent, champ_statut, decision, purge_identite_rgpd = false) => {
     const commentaire = decision === 'REFUSE' ? prompt("Motif du refus (affiché à l'agent) :") || 'Pièce non conforme' : 'Vérifié et validé par la direction STACK';
-    const res = await fetch(`${API_URL}/admin/agents/${idAgent}/verifier-piece`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify({ champ_statut, decision, commentaire, purge_identite_rgpd })
-    });
-    const data = await res.json();
-    if (res.ok) {
-      notify(data.message);
-      fetchAdminData();
-    } else {
-      notify(data.error || "Action refusée", true);
+    try {
+      const res = await fetch(`${API_URL}/admin/agents/${idAgent}/verifier-piece`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ champ_statut, decision, commentaire, purge_identite_rgpd })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        notify(data.message || "Pièce validée !");
+        fetchAdminData();
+        fetchProfil();
+      } else {
+        notify(data.error || "Action refusée", true);
+        alert("Erreur lors de la validation God Mode :\n\n" + (data.error || `Statut HTTP ${res.status}`));
+      }
+    } catch (e) {
+      alert("Erreur réseau God Mode : " + e.message);
     }
   };
 
