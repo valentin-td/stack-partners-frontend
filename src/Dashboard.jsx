@@ -698,11 +698,39 @@ export default function Dashboard() {
   const handleFileUpload = (e, fieldName) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 4 * 1024 * 1024) return notify("Fichier trop volumineux (max 4 Mo).", true);
+    if (file.size > 8 * 1024 * 1024) return notify("Fichier trop volumineux (max 8 Mo).", true);
+
+    // Si c'est une image (ex: Capture d'écran Mac Retina), on la compresse en JPEG léger pour que l'enregistrement soit instantané
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const maxDim = 1400;
+          let w = img.width, h = img.height;
+          if (w > maxDim || h > maxDim) {
+            if (w > h) { h = Math.round((h * maxDim) / w); w = maxDim; }
+            else { w = Math.round((w * maxDim) / h); h = maxDim; }
+          }
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.75);
+          setProfilData(prev => ({ ...prev, [fieldName]: compressedDataUrl }));
+          notify(`Pièce "${file.name}" optimisée et prête. Cliquez sur Enregistrer l'étape.`);
+        };
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = () => {
       setProfilData(prev => ({ ...prev, [fieldName]: reader.result }));
-      notify(`Pièce "${file.name}" prête. Cliquez sur Soumettre l'étape pour l'enregistrer.`);
+      notify(`Pièce "${file.name}" prête. Cliquez sur Enregistrer l'étape.`);
     };
     reader.readAsDataURL(file);
   };
