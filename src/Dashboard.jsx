@@ -204,9 +204,11 @@ export default function Dashboard() {
     if (activeTab === 'godmode' && isSuperAdmin) fetchAdminData();
   }, [activeTab, isSuperAdmin]);
 
-  // Chargement par paquets (Chunks) : Affiche la carte instantanément, puis charge le reste en arrière-plan
+  // Chargement par paquets (Chunks) : Optimisé Mobile & Desktop avec retry automatique
   const fetchMapSalons = async (lat = mapCenter.lat, lng = mapCenter.lng, radius = mapRadius, isNewCenter = false) => {
-    if (window.__mapAbortController) window.__mapAbortController.abort();
+    if (window.__mapAbortController) {
+      try { window.__mapAbortController.abort(); } catch (e) {}
+    }
     const ac = new AbortController();
     window.__mapAbortController = ac;
 
@@ -216,40 +218,60 @@ export default function Dashboard() {
     
     let currentStep = 0;
     let keepFetching = true;
+    let hasLoadedAtLeastOneStep = false;
+    // Sur mobile, 3 paquets (1500 salons) suffisent largement et évitent de saturer la connexion 4G/5G
+    const maxStepAllowed = isMobile ? 2 : 5;
 
     try {
       while (keepFetching && !ac.signal.aborted) {
-        const res = await fetch(`${API_URL}/map-salons?lat=${lat}&lng=${lng}&radius=${radius}&step=${currentStep}`, {
-          headers: { 'Authorization': `Bearer ${token}` },
-          signal: ac.signal
-        });
-        if (!res.ok) throw new Error("Erreur");
+        let res = null;
+        try {
+          res = await fetch(`${API_URL}/map-salons?lat=${lat}&lng=${lng}&radius=${radius}&step=${currentStep}`, {
+            headers: { 'Authorization': `Bearer ${token}` },
+            signal: ac.signal
+          });
+        } catch (netErr) {
+          if (ac.signal.aborted) return;
+          // Si une étape secondaire échoue sur mobile, on garde les salons déjà affichés sans erreur !
+          if (hasLoadedAtLeastOneStep) break;
+          throw netErr;
+        }
+
+        if (!res || !res.ok) {
+          if (hasLoadedAtLeastOneStep) break;
+          throw new Error(`HTTP ${res?.status || 'Network'}`);
+        }
+
         const data = await res.json();
+        hasLoadedAtLeastOneStep = true;
         
         setMapSalons(prev => {
           const prevSalons = (isNewCenter && currentStep === 0) ? [] : prev;
           const merged = new Map(prevSalons.map(s => [s.siret, s]));
           (data.salons || []).forEach(s => merged.set(s.siret, s));
-          // CRUCIAL : On ne supprime plus rien de la mémoire !
-          // On garde tous les salons trouvés, et c'est l'affichage visuel qui les masquera au besoin.
           return Array.from(merged.values()).sort((a, b) => parseFloat(a.distance_km) - parseFloat(b.distance_km));
         });
 
-        if (currentStep === 0) setMapLoading(false); // Affiche la carte dès que l'étape 0 (la plus grosse) est prête
+        if (currentStep === 0) setMapLoading(false);
         
-        if (data.nextStep !== null && data.nextStep !== undefined) {
+        if (data.nextStep !== null && data.nextStep !== undefined && currentStep < maxStepAllowed) {
           currentStep = data.nextStep;
-          setMapProgress(currentStep); // Barre de progression : 1, 2, 3, 4, 5...
+          setMapProgress(currentStep);
         } else {
           keepFetching = false;
-          setMapProgress(6); // Fin du scan à 100%
-          setTimeout(() => setMapProgress(null), 2500);
+          setMapProgress(6);
+          setTimeout(() => setMapProgress(null), 2000);
         }
       }
     } catch (e) {
-      if (e.name !== 'AbortError') notify("Erreur réseau (carte).", true);
-      setMapLoading(false);
-      setMapProgress(null);
+      if (e.name !== 'AbortError' && !ac.signal.aborted && !hasLoadedAtLeastOneStep) {
+        notify("Connexion lente au serveur de carte, nouvel essai...", true);
+      }
+    } finally {
+      if (!ac.signal.aborted) {
+        setMapLoading(false);
+        setMapProgress(null);
+      }
     }
   };
 
