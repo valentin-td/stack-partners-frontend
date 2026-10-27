@@ -330,8 +330,18 @@ export default function Dashboard() {
     const container = document.getElementById('stack-partners-map');
     if (!container) return;
 
+    // Si on revient d'un autre onglet, React a créé un nouveau <div> : on détache l'ancienne carte fantôme et on la recrée sur le nouveau <div>
+    if (window.__stackMap && window.__stackMap.getContainer() !== container) {
+      try { window.__stackMap.remove(); } catch (e) {}
+      window.__stackMap = null;
+      window.__stackLayerGroup = null;
+      window.__lastCenterKey = null;
+    }
+
     if (!window.__stackMap) {
-      const map = L.map(container, { zoomControl: false, preferCanvas: true }).setView([mapCenter.lat, mapCenter.lng], 13);
+      if (container._leaflet_id) container._leaflet_id = null;
+      const zoomByRadius = mapRadius <= 2 ? 14 : mapRadius <= 5 ? 13 : mapRadius <= 15 ? 11 : 10;
+      const map = L.map(container, { zoomControl: false, preferCanvas: true }).setView([mapCenter.lat, mapCenter.lng], zoomByRadius);
       L.control.zoom({ position: 'bottomright' }).addTo(map);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap', maxZoom: 19
@@ -492,12 +502,6 @@ export default function Dashboard() {
 
     return () => {
       map.off('zoomend moveend', renderFullMap);
-      if (activeTab !== 'carte' && window.__stackMap) {
-        window.__stackMap.remove();
-        window.__stackMap = null;
-        window.__stackLayerGroup = null;
-        window.__lastCenterKey = null;
-      }
     };
   }, [activeTab, leafletReady, mapCenter, mapRadius, mapSalons, mapFilter, hideVisitedSalons, selectedSalonMap, optimizedRoute]);
 
@@ -2275,8 +2279,19 @@ export default function Dashboard() {
                   <button type="button" onClick={handleCheckYousign} disabled={isYousignLoading} style={{ ...primaryBtn, backgroundColor: '#16a34a', width: isMobile ? '100%' : 'auto' }}>
                     <Icon.Check /> {isYousignLoading ? "Vérification..." : "J'ai signé, vérifier mon contrat"}
                   </button>
-                  <button type="button" onClick={handleYousignSignature} disabled={isYousignLoading} style={{ ...secondaryBtn, width: isMobile ? '100%' : 'auto' }}>
-                    {isYousignLoading ? "Génération..." : "Ouvrir à nouveau le lien Yousign"}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (profilData.url_yousign_contrat) {
+                        window.location.assign(profilData.url_yousign_contrat);
+                      } else {
+                        handleYousignSignature();
+                      }
+                    }}
+                    disabled={isYousignLoading}
+                    style={{ ...secondaryBtn, width: isMobile ? '100%' : 'auto' }}
+                  >
+                    {isYousignLoading ? "Ouverture..." : "Ouvrir à nouveau le lien Yousign"}
                   </button>
                 </div>
               ) : (
