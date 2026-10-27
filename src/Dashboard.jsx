@@ -875,6 +875,23 @@ export default function Dashboard() {
     }
   };
 
+  const handleSendFactureEmail = async (id, nomSalon) => {
+    const emailSaisi = prompt(`À quelle adresse e-mail envoyer la facture PDF pour "${nomSalon}" ?`);
+    if (!emailSaisi || !emailSaisi.trim()) return;
+    try {
+      const res = await fetch(`${API_URL}/factures/${id}/send-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ email_destinataire: emailSaisi.trim() })
+      });
+      const data = await res.json();
+      if (res.ok) notify(data.message || "Facture envoyée par e-mail !");
+      else notify(data.error || "Erreur lors de l'envoi de l'e-mail.", true);
+    } catch (e) {
+      notify("Erreur réseau lors de l'envoi de l'e-mail.", true);
+    }
+  };
+
   const handlePay = async (id) => {
     await fetch(`${API_URL}/factures/${id}/payee`, { method: 'PATCH', headers: { 'Authorization': `Bearer ${token}` } });
     fetchFactures();
@@ -2072,6 +2089,7 @@ export default function Dashboard() {
                       </td>
                       <td style={{ padding: '14px 18px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                         <button onClick={() => handleDownload(f.id_facture, f.numero_facture)} style={secondaryBtn}><Icon.FileDownload /> PDF</button>
+                        <button onClick={() => handleSendFactureEmail(f.id_facture, f.nom_salon)} style={secondaryBtn}><Icon.ArrowUpRight /> E-mail</button>
                         {f.statut !== 'PAYEE' && (
                           <button onClick={() => handlePay(f.id_facture)} style={{ ...primaryBtn, padding: '8px 12px', fontSize: '12px' }}><Icon.Check /> Valider paiement</button>
                         )}
