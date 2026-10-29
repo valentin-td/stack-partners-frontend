@@ -2344,7 +2344,7 @@ export default function Dashboard() {
                   </div>
                 </div>
               </div>
-            </div>
+         
 
             <div style={{ ...cardStyle, padding: '12px 18px' }}>
               {[
