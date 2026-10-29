@@ -915,9 +915,10 @@ export default function Dashboard() {
       const vraisSalons = (raw.salons || []).filter(s =>
         !s.est_bac_a_sable &&
         !(s.email_gerant || '').includes('@stack-sim.fr') &&
-        !(s.nom_salon || '').includes('Salon Vierge d\'Entraînement') &&
-        !(s.nom_salon || '').includes('Maison Éclat — Démo') &&
-        !(s.nom_salon || '').includes('Salon Test Onboarding')
+        !(s.nom_salon || '').includes('Maison Éclat') &&
+        !(s.nom_salon || '').includes('Entraînement') &&
+        !(s.nom_salon || '').includes('Salon Vierge') &&
+        !(s.nom_salon || '').includes('Onboarding')
       );
       const salonsPayants = vraisSalons.filter(s => s.statut_abonnement === 'actif' && s.plan_actuel !== 'PREMIUM_TRIAL');
       const salonsEssai = vraisSalons.filter(s => s.plan_actuel === 'PREMIUM_TRIAL' || s.statut_abonnement !== 'actif');
@@ -2209,14 +2210,14 @@ export default function Dashboard() {
           </>
         )}
 
-        {/* ONGLET 5 : ACADÉMIE & SIMULATEURS (MODE ÉCOLE HORS-CHAMP NF525) */}
+        {/* ONGLET 5 : ACADÉMIE & SIMULATEURS (ENVIRONNEMENTS ASSUJETTIS & SCELLÉS NF525) */}
         {activeTab === 'academie' && (
           <>
             <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', gap: '12px', marginBottom: '20px' }}>
               <div>
                 <h1 style={{ fontSize: isMobile ? '22px' : '26px', fontWeight: '700', margin: '0 0 4px 0' }}>Académie STACK & Simulateurs Live</h1>
                 <span style={{ fontSize: '13.5px', color: '#6b7280' }}>
-                  Environnements en <strong>Mode École Hors-Champ NF525</strong> (SIRET 00000000000000 — Sans valeur fiscale, isolés du chaînage réel).
+                  Environnements <strong>100 % Assujettis & Scellés NF525</strong> (Chaînage SHA-256 actif, Audit NF525, Bilans Z et Liasse Comptable fonctionnels).
                 </span>
               </div>
               <button
@@ -2240,7 +2241,7 @@ export default function Dashboard() {
             <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '16px', marginBottom: '20px' }}>
               <div style={{ ...cardStyle, marginBottom: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                 <div>
-                  <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '11.5px', fontWeight: '700', backgroundColor: '#f3f4f6', color: '#374151' }}>Mode École Hors-NF525 • Slot Unique</span>
+                  <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '11.5px', fontWeight: '700', backgroundColor: '#f3f4f6', color: '#374151' }}>Assujetti NF525 • Slot Unique</span>
                   <h3 style={{ fontSize: '17px', fontWeight: '700', margin: '12px 0 8px 0' }}>Créer un Salon Vide</h3>
                   <p style={{ fontSize: '13px', color: '#6b7280', lineHeight: 1.5, margin: '0 0 18px 0' }}>Instance unique réinitialisable (ne crée aucun doublon en base) pour vous exercer à paramétrer un salon de A à Z.</p>
                 </div>
@@ -2287,8 +2288,9 @@ export default function Dashboard() {
             <div style={{ ...cardStyle, border: '1px solid #e5e7eb', backgroundColor: '#ffffff', marginBottom: '24px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '14px' }}>
                 <div>
-                  <div style={{ fontSize: '11px', fontWeight: '800', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    Données pré-injectées dans « Maison Éclat — Démo » (Mode École Hors-NF525)
+                  <div style={{ fontSize: '11px', fontWeight: '800', color: '#166534', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Données pré-embarquées dans « Maison Éclat — Salon Démo » (100 % Assujetti & Scellé NF525)
+                  </div>
                   </div>
                   <div style={{ fontSize: '15.5px', fontWeight: '800', color: '#111827', marginTop: '2px' }}>
                     Les 4 scénarios clés à montrer au gérant pendant votre démonstration
