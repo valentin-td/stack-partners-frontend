@@ -2345,8 +2345,9 @@ export default function Dashboard() {
                 </div>
               </div>
             </div>
+          </div>
 
-            <div style={{ ...cardStyle, padding: '12px 18px' }}>
+          <div style={{ ...cardStyle, padding: '12px 18px' }}>
               {[
                 { q: "« C'est trop cher, je paie moins cher ailleurs (ou j'ai un cahier papier). »", a: "STACK est rentabilisé dès la 1ère semaine grâce au Winback automatique, à la pointeuse PIN et au scan IA des factures. De plus, un cahier papier expose à 7 500 € d'amende NF525." },
                 { q: "« Je suis déjà chez Planity / Treatwell / Wavy, c'est compliqué de changer. »", a: "Mes 99 € HT incluent l'importation intégrale de votre catalogue, la création de votre équipe et votre formation sur place en 45 minutes, avec 30 jours d'essai gratuit." },
