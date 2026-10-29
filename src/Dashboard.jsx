@@ -2209,31 +2209,53 @@ export default function Dashboard() {
           </>
         )}
 
-        {/* ONGLET 5 : ACADÉMIE & SIMULATEURS */}
+        {/* ONGLET 5 : ACADÉMIE & SIMULATEURS (MODE ÉCOLE HORS-CHAMP NF525) */}
         {activeTab === 'academie' && (
           <>
-            <div style={{ marginBottom: '24px' }}>
-              <h1 style={{ fontSize: isMobile ? '22px' : '26px', fontWeight: '700', margin: '0 0 4px 0' }}>Académie STACK & Simulateurs Live</h1>
-              <span style={{ fontSize: '13.5px', color: '#6b7280' }}>Salons de test isolés, scripts de réponse aux objections et formations vidéos.</span>
+            <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', gap: '12px', marginBottom: '20px' }}>
+              <div>
+                <h1 style={{ fontSize: isMobile ? '22px' : '26px', fontWeight: '700', margin: '0 0 4px 0' }}>Académie STACK & Simulateurs Live</h1>
+                <span style={{ fontSize: '13.5px', color: '#6b7280' }}>
+                  Environnements en <strong>Mode École Hors-Champ NF525</strong> (SIRET 00000000000000 — Sans valeur fiscale, isolés du chaînage réel).
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!confirm("Purger tous les salons d'entraînement de la base de données (Sécurité Contrôle NF525) ?")) return;
+                  try {
+                    const res = await fetch(`${API_URL}/sandbox/purge-all`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+                    const data = await res.json();
+                    notify(data.message || "Salons de test purgés.");
+                  } catch (e) {
+                    notify("Erreur lors de la purge.", true);
+                  }
+                }}
+                style={{ ...secondaryBtn, color: '#dc2626', borderColor: '#fecaca', backgroundColor: '#fef2f2' }}
+              >
+                <Icon.Shield /> Purger les salons de test (Sécurité NF525)
+              </button>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '16px', marginBottom: '20px' }}>
               <div style={{ ...cardStyle, marginBottom: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                 <div>
-                  <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '11.5px', fontWeight: '700', backgroundColor: '#f3f4f6', color: '#374151' }}>Auto-destruction 24h</span>
+                  <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '11.5px', fontWeight: '700', backgroundColor: '#f3f4f6', color: '#374151' }}>Mode École Hors-NF525 • Slot Unique</span>
                   <h3 style={{ fontSize: '17px', fontWeight: '700', margin: '12px 0 8px 0' }}>Créer un Salon Vide</h3>
-                  <p style={{ fontSize: '13px', color: '#6b7280', lineHeight: 1.5, margin: '0 0 18px 0' }}>Salon 100% vierge purgé après 24h pour vous exercer à paramétrer de A à Z.</p>
+                  <p style={{ fontSize: '13px', color: '#6b7280', lineHeight: 1.5, margin: '0 0 18px 0' }}>Instance unique réinitialisable (ne crée aucun doublon en base) pour vous exercer à paramétrer un salon de A à Z.</p>
                 </div>
                 <button type="button" disabled={!!sandboxLoading} onClick={() => handleLaunchSandbox('VIDE', 'LAUNCH')} style={{ ...primaryBtn, width: '100%' }}>
-                  <Icon.ArrowUpRight /> {sandboxLoading === 'VIDE_LAUNCH' ? 'Création...' : 'Lancer un salon vide'}
+                  <Icon.ArrowUpRight /> {sandboxLoading === 'VIDE_LAUNCH' ? 'Ouverture...' : 'Lancer mon salon vide'}
                 </button>
               </div>
 
               <div style={{ ...cardStyle, marginBottom: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', border: '1.5px solid #111827' }}>
                 <div>
-                  <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '11.5px', fontWeight: '700', backgroundColor: '#dcfce7', color: '#166534' }}>Données Riches + Personnalisable</span>
+                  <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '11.5px', fontWeight: '700', backgroundColor: '#dcfce7', color: '#166534' }}>Complet : Bilan + Stock + Arrêt Maladie + Winback</span>
                   <h3 style={{ fontSize: '17px', fontWeight: '700', margin: '12px 0 8px 0' }}>Salon Démo Pré-rempli</h3>
-                  <p style={{ fontSize: '13px', color: '#6b7280', lineHeight: 1.5, margin: '0 0 14px 0' }}>Embarque équipe, catalogue et clients. Personnalisez-le et sauvegardez votre version.</p>
+                  <p style={{ fontSize: '13px', color: '#6b7280', lineHeight: 1.5, margin: '0 0 14px 0' }}>
+                    Inclut Liasse comptable (+4 820 € net), 11 articles & alertes rupture, planning avec arrêt maladie (Chloé) et avis Google 2★ déclenchant un sauvetage client.
+                  </p>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <button type="button" disabled={!!sandboxLoading} onClick={() => handleLaunchSandbox('DEMO', 'LAUNCH')} style={{ ...primaryBtn, width: '100%' }}>
@@ -2244,7 +2266,7 @@ export default function Dashboard() {
                   </button>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                     <button type="button" disabled={!!sandboxLoading} onClick={() => handleLaunchSandbox('DEMO', 'RESET_CUSTOM')} style={secondaryBtn}>Réinitialiser</button>
-                    <button type="button" disabled={!!sandboxLoading} onClick={() => handleLaunchSandbox('DEMO', 'RESET_DEFAULT')} style={{ ...secondaryBtn, color: '#dc2626', borderColor: '#fecaca', backgroundColor: '#fef2f2' }}>Défaut</button>
+                    <button type="button" disabled={!!sandboxLoading} onClick={() => handleLaunchSandbox('DEMO', 'RESET_DEFAULT')} style={{ ...secondaryBtn, color: '#dc2626', borderColor: '#fecaca', backgroundColor: '#fef2f2' }}>Recharger pack riche</button>
                   </div>
                 </div>
               </div>
@@ -2253,11 +2275,72 @@ export default function Dashboard() {
                 <div>
                   <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '11.5px', fontWeight: '700', backgroundColor: '#dbeafe', color: '#1e40af' }}>Tunnel Légal + Checklist</span>
                   <h3 style={{ fontSize: '17px', fontWeight: '700', margin: '12px 0 8px 0' }}>Simulateur d'Onboarding</h3>
-                  <p style={{ fontSize: '13px', color: '#6b7280', lineHeight: 1.5, margin: '0 0 18px 0' }}>Réplique de la 1ère connexion : signature CGV, code partenaire ({agent.code}) et checklist.</p>
+                  <p style={{ fontSize: '13px', color: '#6b7280', lineHeight: 1.5, margin: '0 0 18px 0' }}>Réplique de la 1ère connexion : signature CGV, code partenaire ({agent.code}) et checklist Go-Live.</p>
                 </div>
                 <button type="button" disabled={!!sandboxLoading} onClick={() => handleLaunchSandbox('ONBOARDING', 'LAUNCH')} style={{ ...primaryBtn, width: '100%' }}>
                   <Icon.ArrowUpRight /> S'exercer à l'onboarding
                 </button>
+              </div>
+            </div>
+
+            {/* DOSSIER DE DÉMONSTRATION PRÉ-CHARGÉ (SCÉNARIOS TERRAIN POUR L'AGENT) */}
+            <div style={{ ...cardStyle, border: '1px solid #e5e7eb', backgroundColor: '#ffffff', marginBottom: '24px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '14px' }}>
+                <div>
+                  <div style={{ fontSize: '11px', fontWeight: '800', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Données pré-injectées dans « Maison Éclat — Démo » (Mode École Hors-NF525)
+                  </div>
+                  <div style={{ fontSize: '15.5px', fontWeight: '800', color: '#111827', marginTop: '2px' }}>
+                    Les 4 scénarios clés à montrer au gérant pendant votre démonstration
+                  </div>
+                </div>
+                <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '11.5px', fontWeight: '700', backgroundColor: '#f3f4f6', color: '#111827' }}>
+                  Code PIN Pointeuse : 0000
+                </span>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '12px' }}>
+                <div style={{ padding: '14px', borderRadius: '14px', backgroundColor: '#f9fafb', border: '1px solid #e5e7eb' }}>
+                  <div style={{ fontSize: '12px', fontWeight: '800', color: '#111827', marginBottom: '6px' }}>
+                    1. Bilan, Liasse Comptable (2033-A/B) & Scan Factures IA
+                  </div>
+                  <div style={{ fontSize: '12.5px', color: '#4b5563', lineHeight: 1.5 }}>
+                    • <strong>CA Mensuel simulé :</strong> 18 450 € HT (22 140 € TTC) • Marge brute : 86,2%<br/>
+                    • <strong>Résultat Net Comptable :</strong> <span style={{ color: '#16a34a', fontWeight: '700' }}>+4 820 €</span> (TVA à décaisser : 3 048 €)<br/>
+                    • <strong>5 Factures Fournisseurs scannées par IA :</strong> L'Oréal (640 € HT), Wella (310 € HT), Loyer SCI (1 250 € HT), EDF Pro (185 € HT), DSN URSSAF (2 450 €).
+                  </div>
+                </div>
+
+                <div style={{ padding: '14px', borderRadius: '14px', backgroundColor: '#f9fafb', border: '1px solid #e5e7eb' }}>
+                  <div style={{ fontSize: '12px', fontWeight: '800', color: '#111827', marginBottom: '6px' }}>
+                    2. Planning Rempli, Arrêt Maladie Cerfa & Réassignation
+                  </div>
+                  <div style={{ fontSize: '12.5px', color: '#4b5563', lineHeight: 1.5 }}>
+                    • <strong>Chloé (Coiffeuse Mixte) :</strong> En <span style={{ color: '#dc2626', fontWeight: '700' }}>Arrêt Maladie (J-2 à J+5)</span> avec justificatif Cerfa.<br/>
+                    • <strong>Continuité planning :</strong> Ses 4 RDV ont été automatiquement réassignés à Camille et Sarah.<br/>
+                    • <strong>Lucas (Maître Barbier) :</strong> Congé payé posé et validé pour vendredi.
+                  </div>
+                </div>
+
+                <div style={{ padding: '14px', borderRadius: '14px', backgroundColor: '#f9fafb', border: '1px solid #e5e7eb' }}>
+                  <div style={{ fontSize: '12px', fontWeight: '800', color: '#111827', marginBottom: '6px' }}>
+                    3. Avis Google (4,8/5) & Sauvetage Client Automatique (Winback)
+                  </div>
+                  <div style={{ fontSize: '12.5px', color: '#4b5563', lineHeight: 1.5 }}>
+                    • <strong>Avis Négatif 2★ détecté (Marine Lefèvre) :</strong> <em>« 25 min d'attente et brushing qui n'a pas tenu »</em>.<br/>
+                    • <strong>Sauvetage Client déclenché :</strong> Réponse d'excuse IA + Bon de rattrapage (Soin profond Kératine offert) + RDV de sauvetage positionné à 14h00 avec Camille.
+                  </div>
+                </div>
+
+                <div style={{ padding: '14px', borderRadius: '14px', backgroundColor: '#f9fafb', border: '1px solid #e5e7eb' }}>
+                  <div style={{ fontSize: '12px', fontWeight: '800', color: '#111827', marginBottom: '6px' }}>
+                    4. Gestion des Stocks & Alertes Rupture Fournisseur
+                  </div>
+                  <div style={{ fontSize: '12.5px', color: '#4b5563', lineHeight: 1.5 }}>
+                    • <strong>11 Prestations & Produits :</strong> Prix d'achat HT, TVA 20% et durées configurés.<br/>
+                    • <strong>2 Alertes Stock Critique :</strong> <em>Huile Élixir 100ml</em> (reste <strong>2</strong> en stock, seuil à 6) et <em>Spray Thermo-Protecteur</em> (reste <strong>1</strong> en stock).
+                  </div>
+                </div>
               </div>
             </div>
 
