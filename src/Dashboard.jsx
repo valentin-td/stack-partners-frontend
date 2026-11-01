@@ -98,11 +98,247 @@ export default function Dashboard() {
   const [adminStatusFilter, setAdminStatusFilter] = useState('TOUS');
   const [expandedAgentIds, setExpandedAgentIds] = useState({});
 
-  // États Académie, Objections, Vidéos & Simulateurs
+  // États Académie, Playbook Onboarding, Objections, Vidéos & Simulateurs
+  const [academieSubTab, setAcademieSubTab] = useState('playbook'); // 'playbook' | 'scenarios' | 'videos'
+  const [openPlaybookPhase, setOpenPlaybookPhase] = useState(0);
+  const [playbookChecks, setPlaybookChecks] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('stack_partner_playbook_checks_v1') || '{}'); } catch (e) { return {}; }
+  });
   const [openObjectionIdx, setOpenObjectionIdx] = useState(0);
   const [sandboxLoading, setSandboxLoading] = useState(null);
   const [activeSandboxInfo, setActiveSandboxInfo] = useState(null);
   const [activeVideoModal, setActiveVideoModal] = useState(null);
+
+  const togglePlaybookStep = (stepKey) => {
+    setPlaybookChecks(prev => {
+      const next = { ...prev, [stepKey]: !prev[stepKey] };
+      localStorage.setItem('stack_partner_playbook_checks_v1', JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const resetPlaybookChecks = () => {
+    setPlaybookChecks({});
+    localStorage.removeItem('stack_partner_playbook_checks_v1');
+    notify("Checklist d'onboarding réinitialisée pour votre prochain salon client.");
+  };
+
+  const PLAYBOOK_ONBOARDING = [
+    {
+      phase: 'Phase 1',
+      titre: 'Facturation 99 € HT & Création du Compte',
+      duree: '10 min',
+      resume: 'Sécuriser les frais de mise en service et créer l’accès Gérant avec affiliation.',
+      etapes: [
+        {
+          id: 'p1_1',
+          label: 'Émettre et faire régler la facture d’installation (99 € HT)',
+          detail: 'Dans l’onglet « Factures Onboarding », saisir le Nom du salon, l’Adresse et le SIRET. Préciser au gérant : les 99 € HT rémunèrent votre prestation d’installation sur place ; l’abonnement STACK est offert pendant 30 jours (Reverse Trial Premium sans engagement).'
+        },
+        {
+          id: 'p1_2',
+          label: 'Inscrire le gérant avec votre Code Partenaire',
+          detail: `Ouvrir l’application de caisse avec votre lien affilié ou saisir votre code (${agent.code || 'PARTNER-...'}). Faire saisir Prénom ET Nom de famille, Nom du salon, E-mail et un mot de passe d’au moins 8 caractères (sans suite simple type 1234 ou azerty).`
+        },
+        {
+          id: 'p1_3',
+          label: 'Noter l’ID unique du Salon (#ID)',
+          detail: 'Dès l’arrivée sur le Tableau de bord, relever l’ID du Salon affiché à côté du titre (et dans Paramètres). Il servira à connecter la tablette commune du comptoir et les smartphones des employés.'
+        }
+      ]
+    },
+    {
+      phase: 'Phase 2',
+      titre: 'Contrat Légal & Attestation NF525 (PopupLegal)',
+      duree: '5 min',
+      resume: 'Accompagner le gérant sur les 3 volets contractuels avant sa signature électronique.',
+      etapes: [
+        {
+          id: 'p2_1',
+          label: 'Expliquer le Volet 1 : CGUV, Conformité NF525 & Mode Hors-Ligne',
+          detail: '1) Essai 30j 100 % Premium sans engagement. 2) NF525 : STACK scelle cryptographiquement (SHA-256) les écritures, mais le gérant doit effectuer son Z chaque soir. 3) Mode Hors-Ligne : en cas de coupure internet, la caisse stocke les tickets en mémoire locale (ne jamais vider le cache navigateur avant synchronisation).'
+        },
+        {
+          id: 'p2_2',
+          label: 'Expliquer le Volet 2 (RGPD) & le Volet 3 (Stripe)',
+          detail: 'Le gérant reste propriétaire exclusif de son fichier client (STACK est sous-traitant). L’IA traite les factures/mails sans entraîner de modèles publics. Conservation légale : 6 ans pour les pièces fiscales (Art. L. 102 B LPF).'
+        },
+        {
+          id: 'p2_3',
+          label: 'Faire valider le Popup Légal par le gérant',
+          detail: 'Le gérant coche et signe lui-même. Un certificat PDF horodaté avec IP et empreinte SHA-256 (valeur probante eIDAS / Art. 1367 C. civ.) est généré.'
+        }
+      ]
+    },
+    {
+      phase: 'Phase 3',
+      titre: 'Audit & Réglage des Paramètres (Questions Clés)',
+      duree: '15 min',
+      resume: 'Configurer les 7 sous-menus de Paramètres dans l’ordre des dépendances fiscales.',
+      etapes: [
+        {
+          id: 'p3_1',
+          label: '1. Identité & Légal (NF525) — Obligatoire en premier',
+          detail: 'Questions : « Quelle est votre forme juridique (SARL, SASU, EI...), votre SIRET (14 chiffres), votre capital social et ville RCS ? Êtes-vous assujetti à la TVA ou en Franchise en base (Art. 293 B) ? » -> Si franchise de TVA, laisser la case N° TVA Intracom. VIDE (STACK appliquera 0 % et activera le suivi des seuils). Télécharger ensuite le Dossier Technique & Attestation NF525 (PDF).'
+        },
+        {
+          id: 'p3_2',
+          label: '2. Horaires de l’agenda & 3. Suivi des heures RH',
+          detail: 'Questions : « Quelles sont vos heures d’ouverture/fermeture au plus large (ex: 8h-20h) ? Préférez-vous la Pointeuse Numérique par code PIN (recommandé : bloque la caisse tant que l’employé n’a pas pointé) ou le Mode Semi-Automatique sur base contrat ? »'
+        },
+        {
+          id: 'p3_3',
+          label: '4. Sécurité & Codes PIN (Poste Salon + Actions sensibles)',
+          detail: 'Questions : « Quel code PIN (4 à 10 chiffres, hors 0000/1234) voulez-vous pour ouvrir la tablette commune le matin ? » Laisser actif le switch « Code PIN sur les actions sensibles » (oblige chaque employé à signer de son PIN personnel les clôtures Z, mouvements d’espèces et pointages).'
+        },
+        {
+          id: 'p3_4',
+          label: '5. Programme de fidélité & Relance automatique',
+          detail: 'Questions : « Récompensez-vous par Points (1 € = 1 pt, ex: 100 pts = 10 €) ou par Tampons (ex: 10 visites = -20 % ou Soin offert) ? Après combien de jours sans visite relancer automatiquement le client par SMS (ex: 60 jours) ? »'
+        },
+        {
+          id: 'p3_5',
+          label: '6. Fidélisation SMS, Google Maps & Alertes Gérant',
+          detail: 'Questions : « Quel nom d’expéditeur SMS (11 caract. max) ? Avez-vous votre lien Google Maps ? Utilisez-vous déjà Planity ? » -> Si Planity est utilisé, laisser DÉSACTIVÉ le rappel SMS 2h avant RDV pour éviter les doublons. Dans « Alertes urgences », activer les notifications Push sur le téléphone du gérant.'
+        },
+        {
+          id: 'p3_6',
+          label: '7. Export Comptable, Codes PCG (FEC) & TPE Stripe',
+          detail: 'Questions : « Quel est l’e-mail de votre expert-comptable et quel jour du mois (1 à 31) envoyer le bilan ? Avez-vous une clé API Pennylane/Tiime ou un lecteur Stripe Terminal (tmr_...) ? »'
+        }
+      ]
+    },
+    {
+      phase: 'Phase 4',
+      titre: 'Création de l’Équipe, Contrats RH & Liens Planity',
+      duree: '10 min',
+      resume: 'Enregistrer les collaborateurs, leurs commissions HT et leurs bases horaires.',
+      etapes: [
+        {
+          id: 'p4_1',
+          label: 'Créer chaque collaborateur dans l’onglet « Équipe »',
+          detail: 'Pour chaque salarié : Prénom + Nom, Code PIN personnel (4 chiffres non triviaux), % Commission Prestations et % Commission Produits (calculés automatiquement sur le HT), et Contrat (35H = 151.67h/mois, 39H = 169h/mois, Temps partiel ou Apprenti).'
+        },
+        {
+          id: 'p4_2',
+          label: 'Expliquer l’ajustement des heures & le déblocage PIN',
+          detail: 'Montrer au gérant comment saisir un ajustement manuel (+2h ou -1.5h) qui ira directement sur la Liasse Comptable, comment arbitrer un congé en attente, et comment débloquer un PIN verrouillé après 3 erreurs.'
+        },
+        {
+          id: 'p4_3',
+          label: 'Relier les agendas iCal à Planity / Treatwell (si utilisé)',
+          detail: 'Retourner dans Paramètres > Synchronisation Planity (iCal) : copier le lien .ics généré pour chaque employé créé et le coller dans Planity PRO > Réglages > Gestion des agendas > Importer.'
+        }
+      ]
+    },
+    {
+      phase: 'Phase 5',
+      titre: 'Stocks, Catalogue Prestations & Tutoriels Académie',
+      duree: '15 min',
+      resume: 'Respecter l’ordre : 1. Stocks -> 2. Prestations -> 3. Recettes étape par étape.',
+      etapes: [
+        {
+          id: 'p5_1',
+          label: '1. Renseigner les Produits Revente & Labo (Onglet « Stocks »)',
+          detail: 'Cliquer sur « + » : saisir le Nom, Prix TTC, Référence (obligatoirement 4 caractères min, ex: KER-250), Stock actuel et Délai livraison (jours). Montrer la prédiction de rupture (~X j restants) et l’outil de fusion des doublons.'
+        },
+        {
+          id: 'p5_2',
+          label: '2. Créer les Prestations (Onglet « L’Académie » -> Bouton « + »)',
+          detail: 'Créer les services (Coupe, Balayage, Couleur, Soin...) avec leur Durée estimée (min) et leur Prix TTC (€).'
+        },
+        {
+          id: 'p5_3',
+          label: '3. Créer 1 Tutoriel Pas-à-Pas complet (« Créer un Tutoriel »)',
+          detail: 'Sélectionner la prestation cible, activer le temps de nettoyage agenda (ex: +5 min), choisir les Tags, puis ajouter chaque étape avec : Titre, Durée (minuteur), Instructions, Photo d’illustration et Produits du stock liés avec leur Proportion exacte (ex: 30g, 1:1.5) et la Dose déstockée. Montrer le calcul automatique de Marge Brute en bas de fiche.'
+        }
+      ]
+    },
+    {
+      phase: 'Phase 6',
+      titre: 'Branchement Boîtes Mail & Démonstration de l’IA',
+      duree: '10 min',
+      resume: 'Connecter les e-mails du salon et montrer les 4 détections automatiques.',
+      etapes: [
+        {
+          id: 'p6_1',
+          label: 'Connecter jusqu’à 5 boîtes mail (Paramètres > Boîtes mail)',
+          detail: 'Saisir l’adresse e-mail où le salon reçoit ses factures fournisseurs/notifications et le mot de passe d’application. Expliquer que l’IA scrute la boîte toutes les 2 minutes.'
+        },
+        {
+          id: 'p6_2',
+          label: 'Montrer le fonctionnement des Popups IA (RDV, Stock, Absence, Facture)',
+          detail: 'Expliquer comment l’IA pré-remplit les RDV, les livraisons de stock, les arrêts maladie (avec déclenchement du Robot SMS d’annulation/reprogrammation des clients en conflit) et l’écran Split-Screen des factures fournisseurs (contrôle HT+TVA=TTC, affectation PCG 607/6028/613 et entrée directe en stock).'
+        }
+      ]
+    },
+    {
+      phase: 'Phase 7',
+      titre: 'Prise en Main Quotidienne : Pointeuse, Agenda & Caisse',
+      duree: '15 min',
+      resume: 'Connecter les appareils de l’équipe et simuler le parcours d’un client.',
+      etapes: [
+        {
+          id: 'p7_1',
+          label: 'Connecter la Tablette « Salon » et les Smartphones « Employé »',
+          detail: 'Sur la tablette d’accueil : onglet « Salon » + ID Salon + PIN Salon. Sur les téléphones : onglet « Employé » + ID Salon + Prénom + PIN à 4 chiffres. Faire pointer une « Arrivée » dans Agenda > Pointeuse pour déverrouiller le collaborateur en caisse.'
+        },
+        {
+          id: 'p7_2',
+          label: 'Tester un RDV dans l’Agenda & ouvrir sa Recette Académie',
+          detail: 'Créer un RDV, cliquer dessus et montrer le bouton « Voir le Protocole (Recette) » qui affiche aux coiffeurs les étapes à cocher, les dosages labo et le minuteur intégré.'
+        },
+        {
+          id: 'p7_3',
+          label: 'Former à l’encaissement Caisse, Fidélité, Pourboire & Reçu SMS',
+          detail: 'Montrer : 1) Sélection du vendeur, 2) Suggestion automatique du client tout juste coiffé selon l’agenda, 3) Ajout Prestation + Produit, 4) Application d’une remise Fidélité ou Offre de pardon Winback, 5) Ajout d’un pourboire (isolé en compte 426 hors CA), 6) Paiement TPE/Espèces et envoi du ticket dématérialisé par SMS/Mail.'
+        }
+      ]
+    },
+    {
+      phase: 'Phase 8',
+      titre: 'Comptabilité NF525, Clôture Z & Signature de la Liasse',
+      duree: '15 min',
+      resume: 'Maîtriser la Petite Caisse, le Blind Close du soir et la signature mensuelle.',
+      etapes: [
+        {
+          id: 'p8_1',
+          label: '1. Petite Caisse (Mouvements d’espèces) & Factures manuelles/IA',
+          detail: 'Dans l’onglet « Compta », montrer le bouton « + Mouvement » (avec calculatrice de billets/pièces) pour déclarer chaque dépôt banque (580), retrait monnaie ou achat café en espèces. Montrer aussi les boutons « Saisie Manuelle » et « Scan Facture (IA) ».'
+        },
+        {
+          id: 'p8_2',
+          label: '2. Clôture Journalière Z (Blind Close NF525) & Régularisation matinale',
+          detail: 'Ouvrir « Clôturer la caisse (Z) » : saisir le fond de caisse du matin, compter les billets/pièces, justifier tout écart éventuel et sceller avec le code PIN. Expliquer que si le Z est oublié le soir, le robot ferme la caisse la nuit et demande une régularisation obligatoire à l’ouverture le lendemain matin.'
+        },
+        {
+          id: 'p8_3',
+          label: '3. Signature Manuscrite de la Liasse Mensuelle, FEC & Audit NF525',
+          detail: 'Montrer comment prévisualiser le Brouillon PDF du mois écoulé, puis cliquer sur « Valider & Signer » : cocher les 3 contrôles, dessiner sa signature manuscrite au doigt/souris (imprimée sur le PDF définitif avec le sceau SHA-256) et valider avec le PIN gérant pour l’envoyer au comptable. Montrer enfin l’export FEC (.txt) et l’Audit NF525.'
+        }
+      ]
+    },
+    {
+      phase: 'Phase 9',
+      titre: 'Validation Finale des 5 Verrous Go-Live',
+      duree: '2 min',
+      resume: 'Déverrouiller officiellement la caisse pour le premier encaissement réel.',
+      etapes: [
+        {
+          id: 'p9_1',
+          label: 'Cocher les 5 attestations Go-Live sur l’onglet « Caisse »',
+          detail: '1) Matériel & Imprimante connectés, 2) Catalogue prestations paramétré, 3) Collaborateurs & PIN créés, 4) Terminal TPE relié, 5) Formation Clôture Z NF525 effectuée. La caisse se déverrouille immédiatement : l’installation est terminée !'
+        }
+      ]
+    }
+  ];
+
+  const totalPlaybookSteps = PLAYBOOK_ONBOARDING.reduce((acc, p) => acc + p.etapes.length, 0);
+  const completedPlaybookSteps = PLAYBOOK_ONBOARDING.reduce(
+    (acc, p) => acc + p.etapes.filter(e => playbookChecks[e.id]).length,
+    0
+  );
+  const playbookProgressPct = Math.round((completedPlaybookSteps / totalPlaybookSteps) * 100);
 
   const [tutorialsList, setTutorialsList] = useState(() => {
     const saved = localStorage.getItem('stack_partner_videos_v1');
@@ -2210,14 +2446,17 @@ export default function Dashboard() {
           </>
         )}
 
-        {/* ONGLET 5 : ACADÉMIE & SIMULATEURS (ENVIRONNEMENTS ASSUJETTIS & SCELLÉS NF525) */}
+        {/* ONGLET 5 : ACADÉMIE, SIMULATEURS LIVE & PLAYBOOK D'ONBOARDING INTERACTIF */}
         {activeTab === 'academie' && (
           <>
-            <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', gap: '12px', marginBottom: '20px' }}>
+            {/* En-tête épuré */}
+            <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', gap: '12px', marginBottom: '18px' }}>
               <div>
-                <h1 style={{ fontSize: isMobile ? '22px' : '26px', fontWeight: '700', margin: '0 0 4px 0' }}>Académie STACK & Simulateurs Live</h1>
-                <span style={{ fontSize: '13.5px', color: '#6b7280' }}>
-                  Environnements <strong>100 % Assujettis & Scellés NF525</strong> (Chaînage SHA-256 actif, Audit NF525, Bilans Z et Liasse Comptable fonctionnels).
+                <h1 style={{ fontSize: isMobile ? '22px' : '26px', fontWeight: '800', margin: '0 0 4px 0', letterSpacing: '-0.02em' }}>
+                  Académie, Simulateurs & Playbook Terrain
+                </h1>
+                <span style={{ fontSize: '13px', color: '#6b7280' }}>
+                  Bacs à sable 100 % scellés NF525 et protocole officiel d’installation client étape par étape.
                 </span>
               </div>
               <button
@@ -2232,163 +2471,415 @@ export default function Dashboard() {
                     notify("Erreur lors de la purge.", true);
                   }
                 }}
-                style={{ ...secondaryBtn, color: '#dc2626', borderColor: '#fecaca', backgroundColor: '#fef2f2' }}
+                style={{ ...secondaryBtn, color: '#dc2626', borderColor: '#fecaca', backgroundColor: '#fef2f2', padding: '8px 12px', fontSize: '12px' }}
               >
-                <Icon.Shield /> Purger les salons de test (Sécurité NF525)
+                <Icon.Shield /> Purger les salons de test
               </button>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '16px', marginBottom: '20px' }}>
-              <div style={{ ...cardStyle, marginBottom: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            {/* 1. LES 3 CARTES SIMULATEURS LIVE (DESIGN COMPACT & MODERNE) */}
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '12px', marginBottom: '20px' }}>
+              {/* Simulateur 1 : Salon Vide */}
+              <div style={{ ...cardStyle, padding: '16px 18px', marginBottom: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                 <div>
-                  <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '11.5px', fontWeight: '700', backgroundColor: '#f3f4f6', color: '#374151' }}>Assujetti NF525 • Slot Unique</span>
-                  <h3 style={{ fontSize: '17px', fontWeight: '700', margin: '12px 0 8px 0' }}>Créer un Salon Vide</h3>
-                  <p style={{ fontSize: '13px', color: '#6b7280', lineHeight: 1.5, margin: '0 0 18px 0' }}>Instance unique réinitialisable (ne crée aucun doublon en base) pour vous exercer à paramétrer un salon de A à Z.</p>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <span style={{ padding: '3px 8px', borderRadius: '6px', fontSize: '10.5px', fontWeight: '700', backgroundColor: '#f3f4f6', color: '#374151' }}>
+                      Entraînement A à Z
+                    </span>
+                    <span style={{ fontSize: '11px', color: '#9ca3af', fontWeight: '600' }}>Slot unique</span>
+                  </div>
+                  <h3 style={{ fontSize: '15.5px', fontWeight: '800', margin: '0 0 4px 0' }}>Salon Vide</h3>
+                  <p style={{ fontSize: '12px', color: '#6b7280', lineHeight: 1.45, margin: '0 0 14px 0' }}>
+                    Exercez-vous à créer le catalogue, les contrats RH et les paramètres sur une base vierge.
+                  </p>
                 </div>
-                <button type="button" disabled={!!sandboxLoading} onClick={() => handleLaunchSandbox('VIDE', 'LAUNCH')} style={{ ...primaryBtn, width: '100%' }}>
-                  <Icon.ArrowUpRight /> {sandboxLoading === 'VIDE_LAUNCH' ? 'Ouverture...' : 'Lancer mon salon vide'}
+                <button type="button" disabled={!!sandboxLoading} onClick={() => handleLaunchSandbox('VIDE', 'LAUNCH')} style={{ ...primaryBtn, width: '100%', padding: '10px 14px', fontSize: '12.5px' }}>
+                  <Icon.ArrowUpRight /> {sandboxLoading === 'VIDE_LAUNCH' ? 'Ouverture...' : 'Ouvrir mon salon vide'}
                 </button>
               </div>
 
-              <div style={{ ...cardStyle, marginBottom: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', border: '1.5px solid #111827' }}>
+              {/* Simulateur 2 : Salon Démo Pré-rempli */}
+              <div style={{ ...cardStyle, padding: '16px 18px', marginBottom: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', border: '1.5px solid #111827' }}>
                 <div>
-                  <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '11.5px', fontWeight: '700', backgroundColor: '#dcfce7', color: '#166534' }}>Complet : Bilan + Stock + Arrêt Maladie + Winback</span>
-                  <h3 style={{ fontSize: '17px', fontWeight: '700', margin: '12px 0 8px 0' }}>Salon Démo Pré-rempli</h3>
-                  <p style={{ fontSize: '13px', color: '#6b7280', lineHeight: 1.5, margin: '0 0 14px 0' }}>
-                    Inclut Liasse comptable (+4 820 € net), 11 articles & alertes rupture, planning avec arrêt maladie (Chloé) et avis Google 2★ déclenchant un sauvetage client.
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <span style={{ padding: '3px 8px', borderRadius: '6px', fontSize: '10.5px', fontWeight: '800', backgroundColor: '#dcfce7', color: '#166534' }}>
+                      RDV Client • Simulateur IA inclus
+                    </span>
+                    <span style={{ fontSize: '11px', color: '#111827', fontWeight: '700' }}>PIN : 0000</span>
+                  </div>
+                  <h3 style={{ fontSize: '15.5px', fontWeight: '800', margin: '0 0 4px 0' }}>Salon Démo Pré-rempli</h3>
+                  <p style={{ fontSize: '12px', color: '#6b7280', lineHeight: 1.45, margin: '0 0 12px 0' }}>
+                    Maison Éclat : CA +4 820 € net, stocks, équipe, avis Winback et bouton « Simulateur IA » en direct.
                   </p>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <button type="button" disabled={!!sandboxLoading} onClick={() => handleLaunchSandbox('DEMO', 'LAUNCH')} style={{ ...primaryBtn, width: '100%' }}>
-                    <Icon.ArrowUpRight /> Ouvrir mon salon Démo
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <button type="button" disabled={!!sandboxLoading} onClick={() => handleLaunchSandbox('DEMO', 'LAUNCH')} style={{ ...primaryBtn, width: '100%', padding: '10px 14px', fontSize: '12.5px' }}>
+                    <Icon.ArrowUpRight /> Ouvrir le Salon Démo
                   </button>
-                  <button type="button" disabled={!!sandboxLoading} onClick={() => handleLaunchSandbox('DEMO', 'SAVE_CUSTOM')} style={{ ...secondaryBtn, width: '100%' }}>
-                    <Icon.Check /> Enregistrer ma config
-                  </button>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                    <button type="button" disabled={!!sandboxLoading} onClick={() => handleLaunchSandbox('DEMO', 'RESET_CUSTOM')} style={secondaryBtn}>Réinitialiser</button>
-                    <button type="button" disabled={!!sandboxLoading} onClick={() => handleLaunchSandbox('DEMO', 'RESET_DEFAULT')} style={{ ...secondaryBtn, color: '#dc2626', borderColor: '#fecaca', backgroundColor: '#fef2f2' }}>Recharger pack riche</button>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px' }}>
+                    <button type="button" disabled={!!sandboxLoading} onClick={() => handleLaunchSandbox('DEMO', 'SAVE_CUSTOM')} style={{ ...secondaryBtn, padding: '6px 8px', fontSize: '11px' }} title="Sauvegarder ma configuration actuelle">
+                      Sauver
+                    </button>
+                    <button type="button" disabled={!!sandboxLoading} onClick={() => handleLaunchSandbox('DEMO', 'RESET_CUSTOM')} style={{ ...secondaryBtn, padding: '6px 8px', fontSize: '11px' }} title="Restaurer ma sauvegarde">
+                      Restaurer
+                    </button>
+                    <button type="button" disabled={!!sandboxLoading} onClick={() => handleLaunchSandbox('DEMO', 'RESET_DEFAULT')} style={{ ...secondaryBtn, padding: '6px 8px', fontSize: '11px', color: '#dc2626', borderColor: '#fecaca', backgroundColor: '#fef2f2' }} title="Remettre les données d'usine STACK">
+                      Usine
+                    </button>
                   </div>
                 </div>
               </div>
 
-              <div style={{ ...cardStyle, marginBottom: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              {/* Simulateur 3 : Tunnel d'Onboarding */}
+              <div style={{ ...cardStyle, padding: '16px 18px', marginBottom: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                 <div>
-                  <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '11.5px', fontWeight: '700', backgroundColor: '#dbeafe', color: '#1e40af' }}>Tunnel Légal + Checklist</span>
-                  <h3 style={{ fontSize: '17px', fontWeight: '700', margin: '12px 0 8px 0' }}>Simulateur d'Onboarding</h3>
-                  <p style={{ fontSize: '13px', color: '#6b7280', lineHeight: 1.5, margin: '0 0 18px 0' }}>Réplique de la 1ère connexion : signature CGV, code partenaire ({agent.code}) et checklist Go-Live.</p>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <span style={{ padding: '3px 8px', borderRadius: '6px', fontSize: '10.5px', fontWeight: '700', backgroundColor: '#dbeafe', color: '#1e40af' }}>
+                      Tunnel Légal + Go-Live
+                    </span>
+                    <span style={{ fontSize: '11px', color: '#6b7280', fontFamily: 'monospace', fontWeight: '700' }}>{agent.code}</span>
+                  </div>
+                  <h3 style={{ fontSize: '15.5px', fontWeight: '800', margin: '0 0 4px 0' }}>Simulateur d'Onboarding</h3>
+                  <p style={{ fontSize: '12px', color: '#6b7280', lineHeight: 1.45, margin: '0 0 14px 0' }}>
+                    Simule la 1ère connexion d’un gérant : signature du Popup Légal et déblocage des 5 verrous Caisse.
+                  </p>
                 </div>
-                <button type="button" disabled={!!sandboxLoading} onClick={() => handleLaunchSandbox('ONBOARDING', 'LAUNCH')} style={{ ...primaryBtn, width: '100%' }}>
-                  <Icon.ArrowUpRight /> S'exercer à l'onboarding
+                <button type="button" disabled={!!sandboxLoading} onClick={() => handleLaunchSandbox('ONBOARDING', 'LAUNCH')} style={{ ...primaryBtn, width: '100%', padding: '10px 14px', fontSize: '12.5px' }}>
+                  <Icon.ArrowUpRight /> Simuler 1ère connexion
                 </button>
               </div>
             </div>
 
-            {/* DOSSIER DE DÉMONSTRATION PRÉ-CHARGÉ (SCÉNARIOS TERRAIN POUR L'AGENT) */}
-            <div style={{ ...cardStyle, border: '1px solid #e5e7eb', backgroundColor: '#ffffff', marginBottom: '24px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '14px' }}>
-                <div>
-                  <div style={{ fontSize: '11px', fontWeight: '800', color: '#166534', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    Données pré-embarquées dans « Maison Éclat — Salon Démo » (100 % Assujetti & Scellé NF525)
-                  </div>
-                  </div>
-                  <div style={{ fontSize: '15.5px', fontWeight: '800', color: '#111827', marginTop: '2px' }}>
-                    Les 4 scénarios clés à montrer au gérant pendant votre démonstration
-                  </div>
-                </div>
-                <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '11.5px', fontWeight: '700', backgroundColor: '#f3f4f6', color: '#111827' }}>
-                  Code PIN Pointeuse : 0000
-                </span>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '12px' }}>
-                <div style={{ padding: '14px', borderRadius: '14px', backgroundColor: '#f9fafb', border: '1px solid #e5e7eb' }}>
-                  <div style={{ fontSize: '12px', fontWeight: '800', color: '#111827', marginBottom: '6px' }}>
-                    1. Bilan, Liasse Comptable (2033-A/B) & Scan Factures IA
-                  </div>
-                  <div style={{ fontSize: '12.5px', color: '#4b5563', lineHeight: 1.5 }}>
-                    • <strong>CA Mensuel simulé :</strong> 18 450 € HT (22 140 € TTC) • Marge brute : 86,2%<br/>
-                    • <strong>Résultat Net Comptable :</strong> <span style={{ color: '#16a34a', fontWeight: '700' }}>+4 820 €</span> (TVA à décaisser : 3 048 €)<br/>
-                    • <strong>5 Factures Fournisseurs scannées par IA :</strong> L'Oréal (640 € HT), Wella (310 € HT), Loyer SCI (1 250 € HT), EDF Pro (185 € HT), DSN URSSAF (2 450 €).
-                  </div>
-                </div>
-
-                <div style={{ padding: '14px', borderRadius: '14px', backgroundColor: '#f9fafb', border: '1px solid #e5e7eb' }}>
-                  <div style={{ fontSize: '12px', fontWeight: '800', color: '#111827', marginBottom: '6px' }}>
-                    2. Planning Rempli, Arrêt Maladie Cerfa & Réassignation
-                  </div>
-                  <div style={{ fontSize: '12.5px', color: '#4b5563', lineHeight: 1.5 }}>
-                    • <strong>Chloé (Coiffeuse Mixte) :</strong> En <span style={{ color: '#dc2626', fontWeight: '700' }}>Arrêt Maladie (J-2 à J+5)</span> avec justificatif Cerfa.<br/>
-                    • <strong>Continuité planning :</strong> Ses 4 RDV ont été automatiquement réassignés à Camille et Sarah.<br/>
-                    • <strong>Lucas (Maître Barbier) :</strong> Congé payé posé et validé pour vendredi.
-                  </div>
-                </div>
-
-                <div style={{ padding: '14px', borderRadius: '14px', backgroundColor: '#f9fafb', border: '1px solid #e5e7eb' }}>
-                  <div style={{ fontSize: '12px', fontWeight: '800', color: '#111827', marginBottom: '6px' }}>
-                    3. Avis Google (4,8/5) & Sauvetage Client Automatique (Winback)
-                  </div>
-                  <div style={{ fontSize: '12.5px', color: '#4b5563', lineHeight: 1.5 }}>
-                    • <strong>Avis Négatif 2★ détecté (Marine Lefèvre) :</strong> <em>« 25 min d'attente et brushing qui n'a pas tenu »</em>.<br/>
-                    • <strong>Sauvetage Client déclenché :</strong> Réponse d'excuse IA + Bon de rattrapage (Soin profond Kératine offert) + RDV de sauvetage positionné à 14h00 avec Camille.
-                  </div>
-                </div>
-
-                <div style={{ padding: '14px', borderRadius: '14px', backgroundColor: '#f9fafb', border: '1px solid #e5e7eb' }}>
-                  <div style={{ fontSize: '12px', fontWeight: '800', color: '#111827', marginBottom: '6px' }}>
-                    4. Gestion des Stocks & Alertes Rupture Fournisseur
-                  </div>
-                  <div style={{ fontSize: '12.5px', color: '#4b5563', lineHeight: 1.5 }}>
-                    • <strong>11 Prestations & Produits :</strong> Prix d'achat HT, TVA 20% et durées configurés.<br/>
-                    • <strong>2 Alertes Stock Critique :</strong> <em>Huile Élixir 100ml</em> (reste <strong>2</strong> en stock, seuil à 6) et <em>Spray Thermo-Protecteur</em> (reste <strong>1</strong> en stock).
-                  </div>
-                </div>
-              </div>
-         
-
-            <div style={{ ...cardStyle, padding: '12px 18px' }}>
+            {/* 2. BARRE DE NAVIGATION INTERNE COMPACTE (3 ONGLETS) */}
+            <div style={{
+              display: 'flex',
+              gap: '6px',
+              backgroundColor: '#e5e7eb',
+              padding: '4px',
+              borderRadius: '14px',
+              marginBottom: '18px',
+              overflowX: 'auto'
+            }}>
               {[
-                { q: "« C'est trop cher, je paie moins cher ailleurs (ou j'ai un cahier papier). »", a: "STACK est rentabilisé dès la 1ère semaine grâce au Winback automatique, à la pointeuse PIN et au scan IA des factures. De plus, un cahier papier expose à 7 500 € d'amende NF525." },
-                { q: "« Je suis déjà chez Planity / Treatwell / Wavy, c'est compliqué de changer. »", a: "Mes 99 € HT incluent l'importation intégrale de votre catalogue, la création de votre équipe et votre formation sur place en 45 minutes, avec 30 jours d'essai gratuit." },
-                { q: "« Pourquoi payer 99 € HT de frais d'installation aujourd'hui ? »", a: "Ils rémunèrent mon intervention physique en salon : paramétrage TVA, création des collaborateurs, test matériel et formation à la clôture journalière certifiée NF525." },
-                { q: "« Et si internet coupe en plein samedi après-midi ? »", a: "STACK intègre un mode Hors-Ligne natif : vous encaissez normalement et tout est synchronisé dès le retour de la connexion." }
-              ].map((item, idx) => {
-                const isOpen = openObjectionIdx === idx;
+                { id: 'playbook', label: `Playbook d'Onboarding Client (${completedPlaybookSteps}/${totalPlaybookSteps})` },
+                { id: 'scenarios', label: 'Scénarios Démo & Objections' },
+                { id: 'videos', label: `Vidéos Terrain (${tutorialsList.length})` }
+              ].map(tab => {
+                const active = academieSubTab === tab.id;
                 return (
-                  <div key={idx} style={{ borderBottom: idx < 3 ? '1px solid #f3f4f6' : 'none', padding: '12px 0' }}>
-                    <button type="button" onClick={() => setOpenObjectionIdx(isOpen ? null : idx)} style={{ width: '100%', background: 'none', border: 'none', padding: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', textAlign: 'left', gap: '10px' }}>
-                      <span style={{ fontSize: '14px', fontWeight: '700', color: '#111827' }}>{item.q}</span>
-                      <span style={{ fontSize: '18px', fontWeight: '700', color: '#6b7280' }}>{isOpen ? '−' : '+'}</span>
-                    </button>
-                    {isOpen && (
-                      <div style={{ marginTop: '10px', padding: '12px 14px', backgroundColor: '#f9fafb', borderRadius: '12px', fontSize: '13px', color: '#374151', lineHeight: 1.55, borderLeft: '3px solid #111827' }}>
-                        {item.a}
-                      </div>
-                    )}
-                  </div>
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setAcademieSubTab(tab.id)}
+                    style={{
+                      flex: 1,
+                      whiteSpace: 'nowrap',
+                      padding: '10px 14px',
+                      borderRadius: '10px',
+                      border: 'none',
+                      backgroundColor: active ? '#ffffff' : 'transparent',
+                      color: active ? '#111827' : '#4b5563',
+                      fontWeight: active ? '800' : '600',
+                      fontSize: '12.5px',
+                      cursor: 'pointer',
+                      boxShadow: active ? '0 2px 8px rgba(0,0,0,0.06)' : 'none',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    {tab.label}
+                  </button>
                 );
               })}
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '16px' }}>
-              {tutorialsList.map((vid) => (
-                <div key={vid.id} style={{ ...cardStyle, marginBottom: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                  <div>
-                    <div onClick={() => setActiveVideoModal(vid)} style={{ height: '140px', borderRadius: '14px', background: 'linear-gradient(135deg, #111827 0%, #1f2937 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', marginBottom: '12px', cursor: 'pointer' }}>
-                      <div style={{ width: '46px', height: '46px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>▶</div>
-                      <span style={{ position: 'absolute', bottom: '10px', right: '10px', backgroundColor: 'rgba(0,0,0,0.7)', color: '#fff', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: '600' }}>{vid.duree}</span>
+            {/* =================================================================== */}
+            {/* SOUS-ONGLET A : PLAYBOOK D'ONBOARDING INTERACTIF (9 PHASES)          */}
+            {/* =================================================================== */}
+            {academieSubTab === 'playbook' && (
+              <div style={{ ...cardStyle, padding: isMobile ? '16px' : '22px' }}>
+                {/* Barre de progression globale de l'installation en cours */}
+                <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'stretch' : 'center', gap: '12px', paddingBottom: '16px', marginBottom: '16px', borderBottom: '1px solid #f3f4f6' }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: '15.5px', fontWeight: '800', color: '#111827' }}>
+                        Feuille de route d’installation en salon (Ordre chronologique optimal)
+                      </span>
+                      <span style={{ padding: '3px 9px', borderRadius: '999px', fontSize: '11px', fontWeight: '800', backgroundColor: playbookProgressPct === 100 ? '#dcfce7' : '#f3f4f6', color: playbookProgressPct === 100 ? '#166534' : '#111827' }}>
+                        {playbookProgressPct}% complété ({completedPlaybookSteps}/{totalPlaybookSteps})
+                      </span>
                     </div>
-                    <div style={{ fontSize: '11px', fontWeight: '700', color: '#863bff', textTransform: 'uppercase' }}>{vid.cat}</div>
-                    <div style={{ fontSize: '14.5px', fontWeight: '700', margin: '4px 0 6px 0' }}>{vid.titre}</div>
-                    <div style={{ fontSize: '12.5px', color: '#6b7280', lineHeight: 1.45, marginBottom: '14px' }}>{vid.desc}</div>
+                    <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '3px' }}>
+                      Suivez cet ordre précis devant le gérant : chaque étape prépare les données nécessaires à la suivante.
+                    </div>
+                    <div style={{ height: '6px', backgroundColor: '#f3f4f6', borderRadius: '999px', overflow: 'hidden', marginTop: '10px' }}>
+                      <div style={{ width: `${playbookProgressPct}%`, height: '100%', backgroundColor: playbookProgressPct === 100 ? '#16a34a' : '#111827', borderRadius: '999px', transition: 'width 0.3s ease' }} />
+                    </div>
                   </div>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <button type="button" onClick={() => setActiveVideoModal(vid)} style={{ ...primaryBtn, flex: 1, padding: '10px' }}>Regarder</button>
-                    {isSuperAdmin && <button type="button" onClick={() => handleUpdateVideoUrl(vid.id)} style={secondaryBtn}>Lien</button>}
+
+                  {completedPlaybookSteps > 0 && (
+                    <button
+                      type="button"
+                      onClick={resetPlaybookChecks}
+                      style={{ ...secondaryBtn, alignSelf: isMobile ? 'flex-start' : 'center', flexShrink: 0 }}
+                    >
+                      Réinitialiser pour un nouveau client
+                    </button>
+                  )}
+                </div>
+
+                {/* Liste accordéon des 9 phases (une seule ouverte à la fois pour rester ultra-compact) */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {PLAYBOOK_ONBOARDING.map((bloc, idx) => {
+                    const isOpen = openPlaybookPhase === idx;
+                    const nbDonePhase = bloc.etapes.filter(e => playbookChecks[e.id]).length;
+                    const isPhaseComplete = nbDonePhase === bloc.etapes.length;
+
+                    return (
+                      <div
+                        key={bloc.phase}
+                        style={{
+                          borderRadius: '14px',
+                          border: isOpen ? '1.5px solid #111827' : isPhaseComplete ? '1px solid #bbf7d0' : '1px solid #e5e7eb',
+                          backgroundColor: isOpen ? '#ffffff' : isPhaseComplete ? '#f0fdf4' : '#f9fafb',
+                          overflow: 'hidden',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        {/* En-tête cliquable de la Phase */}
+                        <button
+                          type="button"
+                          onClick={() => setOpenPlaybookPhase(isOpen ? null : idx)}
+                          style={{
+                            width: '100%',
+                            background: 'none',
+                            border: 'none',
+                            padding: isMobile ? '12px 14px' : '14px 18px',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            gap: '12px',
+                            cursor: 'pointer',
+                            textAlign: 'left'
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+                            <span style={{
+                              width: '28px', height: '28px', borderRadius: '8px', flexShrink: 0,
+                              backgroundColor: isPhaseComplete ? '#16a34a' : isOpen ? '#111827' : '#e5e7eb',
+                              color: isPhaseComplete || isOpen ? '#ffffff' : '#374151',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontSize: '12px', fontWeight: '800'
+                            }}>
+                              {isPhaseComplete ? '✓' : idx + 1}
+                            </span>
+                            <div style={{ minWidth: 0 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                <span style={{ fontSize: '13.5px', fontWeight: '800', color: '#111827' }}>
+                                  {bloc.phase} — {bloc.titre}
+                                </span>
+                                <span style={{ fontSize: '11px', fontWeight: '600', color: '#6b7280', backgroundColor: 'rgba(0,0,0,0.04)', padding: '2px 7px', borderRadius: '6px' }}>
+                                  {bloc.duree}
+                                </span>
+                              </div>
+                              <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '2px', whiteSpace: isOpen ? 'normal' : 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                {bloc.resume}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+                            <span style={{
+                              fontSize: '11.5px', fontWeight: '700',
+                              color: isPhaseComplete ? '#166534' : '#6b7280'
+                            }}>
+                              {nbDonePhase}/{bloc.etapes.length}
+                            </span>
+                            <span style={{ fontSize: '16px', fontWeight: '700', color: '#6b7280' }}>
+                              {isOpen ? '−' : '+'}
+                            </span>
+                          </div>
+                        </button>
+
+                        {/* Contenu détaillé de la Phase (Cases à cocher + Questions à poser) */}
+                        {isOpen && (
+                          <div style={{ padding: isMobile ? '0 14px 14px 14px' : '0 18px 18px 18px', borderTop: '1px solid #f3f4f6', display: 'flex', flexDirection: 'column', gap: '8px', paddingTop: '12px' }}>
+                            {bloc.etapes.map(etape => {
+                              const checked = !!playbookChecks[etape.id];
+                              return (
+                                <label
+                                  key={etape.id}
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'flex-start',
+                                    gap: '12px',
+                                    padding: '12px 14px',
+                                    borderRadius: '11px',
+                                    border: checked ? '1px solid #bbf7d0' : '1px solid #e5e7eb',
+                                    backgroundColor: checked ? '#f0fdf4' : '#f9fafb',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.15s ease'
+                                  }}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={checked}
+                                    onChange={() => togglePlaybookStep(etape.id)}
+                                    style={{ width: '17px', height: '17px', marginTop: '2px', accentColor: '#111827', cursor: 'pointer', flexShrink: 0 }}
+                                  />
+                                  <div style={{ flex: 1 }}>
+                                    <div style={{
+                                      fontSize: '13px',
+                                      fontWeight: '700',
+                                      color: checked ? '#166534' : '#111827',
+                                      textDecoration: checked ? 'line-through' : 'none'
+                                    }}>
+                                      {etape.label}
+                                    </div>
+                                    <div style={{ fontSize: '12px', color: '#4b5563', lineHeight: 1.5, marginTop: '4px' }}>
+                                      {etape.detail}
+                                    </div>
+                                  </div>
+                                </label>
+                              );
+                            })}
+
+                            {idx < PLAYBOOK_ONBOARDING.length - 1 && (
+                              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '4px' }}>
+                                <button
+                                  type="button"
+                                  onClick={() => setOpenPlaybookPhase(idx + 1)}
+                                  style={{ ...secondaryBtn, padding: '7px 12px', fontSize: '12px' }}
+                                >
+                                  Passer à la {PLAYBOOK_ONBOARDING[idx + 1].phase} →
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* =================================================================== */}
+            {/* SOUS-ONGLET B : SCÉNARIOS DU SALON DÉMO & RÉPONSES AUX OBJECTIONS     */}
+            {/* =================================================================== */}
+            {academieSubTab === 'scenarios' && (
+              <>
+                <div style={{ ...cardStyle, marginBottom: '16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '14px' }}>
+                    <div>
+                      <div style={{ fontSize: '11px', fontWeight: '800', color: '#166534', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        Données pré-embarquées dans « Maison Éclat — Salon Démo »
+                      </div>
+                      <div style={{ fontSize: '15.5px', fontWeight: '800', color: '#111827', marginTop: '2px' }}>
+                        Les 4 scénarios clés à montrer au gérant + Bouton « Simulateur IA »
+                      </div>
+                    </div>
+                    <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '11.5px', fontWeight: '700', backgroundColor: '#f3f4f6', color: '#111827' }}>
+                      Code PIN Pointeuse : 0000
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '12px' }}>
+                    <div style={{ padding: '14px', borderRadius: '14px', backgroundColor: '#f9fafb', border: '1px solid #e5e7eb' }}>
+                      <div style={{ fontSize: '12.5px', fontWeight: '800', color: '#111827', marginBottom: '6px' }}>
+                        1. Bilan, Liasse Comptable Signée & Scan Factures IA
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#4b5563', lineHeight: 1.5 }}>
+                        • <strong>CA Mensuel simulé :</strong> 18 450 € HT (22 140 € TTC) • Résultat Net : <span style={{ color: '#16a34a', fontWeight: '700' }}>+4 820 €</span><br/>
+                        • <strong>Simulateur IA en bas à droite :</strong> Cliquez dessus pendant la démo pour faire apparaître en direct une facture L’Oréal Professionnel en Split-Screen, un RDV ou un arrêt maladie.
+                      </div>
+                    </div>
+
+                    <div style={{ padding: '14px', borderRadius: '14px', backgroundColor: '#f9fafb', border: '1px solid #e5e7eb' }}>
+                      <div style={{ fontSize: '12.5px', fontWeight: '800', color: '#111827', marginBottom: '6px' }}>
+                        2. Planning, Arrêt Maladie & Robot SMS d’Annulation
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#4b5563', lineHeight: 1.5 }}>
+                        • <strong>Chloé (Coiffeuse Mixte) :</strong> En <span style={{ color: '#dc2626', fontWeight: '700' }}>Arrêt Maladie</span> avec justificatif.<br/>
+                        • <strong>Robot de reprogrammation :</strong> Détecte automatiquement les RDV en conflit et envoie un SMS personnalisé aux clients concernés.
+                      </div>
+                    </div>
+
+                    <div style={{ padding: '14px', borderRadius: '14px', backgroundColor: '#f9fafb', border: '1px solid #e5e7eb' }}>
+                      <div style={{ fontSize: '12.5px', fontWeight: '800', color: '#111827', marginBottom: '6px' }}>
+                        3. Avis Clients (NPS) & Sauvetage Automatique (Winback)
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#4b5563', lineHeight: 1.5 }}>
+                        • <strong>Avis 2★ détecté (Marine) :</strong> Bouton rouge « Sauver ce client » sur le Tableau de bord.<br/>
+                        • <strong>Rappel en Caisse :</strong> L’offre (-20 % ou Soin offert) s’affiche automatiquement sur le ticket lors du prochain passage de la cliente.
+                      </div>
+                    </div>
+
+                    <div style={{ padding: '14px', borderRadius: '14px', backgroundColor: '#f9fafb', border: '1px solid #e5e7eb' }}>
+                      <div style={{ fontSize: '12.5px', fontWeight: '800', color: '#111827', marginBottom: '6px' }}>
+                        4. Tutoriels Académie & Prédiction de Rupture de Stock
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#4b5563', lineHeight: 1.5 }}>
+                        • <strong>Recettes étape par étape :</strong> Photos, proportions labo (grammes/doses) et calcul de marge brute.<br/>
+                        • <strong>2 Alertes Stock Critique :</strong> <em>Huile Élixir 100ml</em> (reste 2) et <em>Spray Thermo-Protecteur</em> (reste 1).
+                      </div>
+                    </div>
                   </div>
                 </div>
-              ))}
-            </div>
+
+                {/* Traitement des objections */}
+                <div style={{ ...cardStyle, padding: '12px 18px', marginBottom: 0 }}>
+                  <div style={{ fontSize: '12px', fontWeight: '800', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.04em', padding: '4px 0 8px 0', borderBottom: '1px solid #f3f4f6' }}>
+                    Réponses aux 4 objections les plus fréquentes en salon
+                  </div>
+                  {[
+                    { q: "« C'est trop cher, je paie moins cher ailleurs (ou j'ai un cahier papier). »", a: "STACK est rentabilisé dès la 1ère semaine grâce au Winback automatique, à la pointeuse PIN et au scan IA des factures. De plus, un cahier papier expose à 7 500 € d'amende NF525." },
+                    { q: "« Je suis déjà chez Planity / Treatwell / Wavy, c'est compliqué de changer. »", a: "Mes 99 € HT incluent l'importation intégrale de votre catalogue, la synchronisation iCal Planity, la création de votre équipe et votre formation sur place, avec 30 jours d'essai gratuit." },
+                    { q: "« Pourquoi payer 99 € HT de frais d'installation aujourd'hui ? »", a: "Ils rémunèrent mon intervention physique en salon : paramétrage TVA/FEC, création des contrats RH, recettes Académie et formation à la clôture journalière certifiée NF525." },
+                    { q: "« Et si internet coupe en plein samedi après-midi ? »", a: "STACK intègre un mode Hors-Ligne natif : vous encaissez normalement en espèces et tout est synchronisé et scellé dès le retour de la connexion." }
+                  ].map((item, idx) => {
+                    const isOpen = openObjectionIdx === idx;
+                    return (
+                      <div key={idx} style={{ borderBottom: idx < 3 ? '1px solid #f3f4f6' : 'none', padding: '12px 0' }}>
+                        <button type="button" onClick={() => setOpenObjectionIdx(isOpen ? null : idx)} style={{ width: '100%', background: 'none', border: 'none', padding: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', textAlign: 'left', gap: '10px' }}>
+                          <span style={{ fontSize: '13.5px', fontWeight: '700', color: '#111827' }}>{item.q}</span>
+                          <span style={{ fontSize: '18px', fontWeight: '700', color: '#6b7280' }}>{isOpen ? '−' : '+'}</span>
+                        </button>
+                        {isOpen && (
+                          <div style={{ marginTop: '10px', padding: '12px 14px', backgroundColor: '#f9fafb', borderRadius: '12px', fontSize: '12.5px', color: '#374151', lineHeight: 1.55, borderLeft: '3px solid #111827' }}>
+                            {item.a}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+
+            {/* =================================================================== */}
+            {/* SOUS-ONGLET C : VIDÉOS DE FORMATION TERRAIN                          */}
+            {/* =================================================================== */}
+            {academieSubTab === 'videos' && (
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '16px' }}>
+                {tutorialsList.map((vid) => (
+                  <div key={vid.id} style={{ ...cardStyle, marginBottom: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                    <div>
+                      <div onClick={() => setActiveVideoModal(vid)} style={{ height: '130px', borderRadius: '14px', background: 'linear-gradient(135deg, #111827 0%, #1f2937 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', marginBottom: '12px', cursor: 'pointer' }}>
+                        <div style={{ width: '44px', height: '44px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>▶</div>
+                        <span style={{ position: 'absolute', bottom: '10px', right: '10px', backgroundColor: 'rgba(0,0,0,0.7)', color: '#fff', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: '600' }}>{vid.duree}</span>
+                      </div>
+                      <div style={{ fontSize: '11px', fontWeight: '700', color: '#863bff', textTransform: 'uppercase' }}>{vid.cat}</div>
+                      <div style={{ fontSize: '14.5px', fontWeight: '700', margin: '4px 0 6px 0' }}>{vid.titre}</div>
+                      <div style={{ fontSize: '12px', color: '#6b7280', lineHeight: 1.45, marginBottom: '14px' }}>{vid.desc}</div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button type="button" onClick={() => setActiveVideoModal(vid)} style={{ ...primaryBtn, flex: 1, padding: '10px' }}>Regarder</button>
+                      {isSuperAdmin && <button type="button" onClick={() => handleUpdateVideoUrl(vid.id)} style={secondaryBtn}>Lien</button>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {activeVideoModal && (
               <div onClick={() => setActiveVideoModal(null)} style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(17,24,39,0.75)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
