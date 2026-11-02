@@ -126,209 +126,92 @@ export default function Dashboard() {
   const PLAYBOOK_ONBOARDING = [
     {
       phase: 'Phase 1',
-      titre: 'Facturation 99 € HT & Création du Compte',
-      duree: '10 min',
-      resume: 'Sécuriser les frais de mise en service et créer l’accès Gérant avec affiliation.',
+      titre: 'Facturation 99 € & Compte',
+      duree: '5 min',
       etapes: [
-        {
-          id: 'p1_1',
-          label: 'Émettre et faire régler la facture d’installation (99 € HT)',
-          detail: 'Dans l’onglet « Factures Onboarding », saisir le Nom du salon, l’Adresse et le SIRET. Préciser au gérant : les 99 € HT rémunèrent votre prestation d’installation sur place ; l’abonnement STACK est offert pendant 30 jours (Reverse Trial Premium sans engagement).'
-        },
-        {
-          id: 'p1_2',
-          label: 'Inscrire le gérant avec votre Code Partenaire',
-          detail: `Ouvrir l’application de caisse avec votre lien affilié ou saisir votre code (${agent.code || 'PARTNER-...'}). Faire saisir Prénom ET Nom de famille, Nom du salon, E-mail et un mot de passe d’au moins 8 caractères (sans suite simple type 1234 ou azerty).`
-        },
-        {
-          id: 'p1_3',
-          label: 'Noter l’ID unique du Salon (#ID)',
-          detail: 'Dès l’arrivée sur le Tableau de bord, relever l’ID du Salon affiché à côté du titre (et dans Paramètres). Il servira à connecter la tablette commune du comptoir et les smartphones des employés.'
-        }
+        { id: 'p1_1', label: 'Générer et encaisser la facture 99 € HT', tag: 'Onglet Factures' },
+        { id: 'p1_2', label: `Créer le compte gérant avec le code ${agent.code || 'PARTNER'}`, tag: 'Inscription' },
+        { id: 'p1_3', label: 'Noter l’ID unique du salon (#ID)', tag: 'Tableau de bord' }
       ]
     },
     {
       phase: 'Phase 2',
-      titre: 'Contrat Légal & Attestation NF525 (PopupLegal)',
-      duree: '5 min',
-      resume: 'Accompagner le gérant sur les 3 volets contractuels avant sa signature électronique.',
+      titre: 'Signature Légale NF525',
+      duree: '3 min',
       etapes: [
-        {
-          id: 'p2_1',
-          label: 'Expliquer le Volet 1 : CGUV, Conformité NF525 & Mode Hors-Ligne',
-          detail: '1) Essai 30j 100 % Premium sans engagement. 2) NF525 : STACK scelle cryptographiquement (SHA-256) les écritures, mais le gérant doit effectuer son Z chaque soir. 3) Mode Hors-Ligne : en cas de coupure internet, la caisse stocke les tickets en mémoire locale (ne jamais vider le cache navigateur avant synchronisation).'
-        },
-        {
-          id: 'p2_2',
-          label: 'Expliquer le Volet 2 (RGPD) & le Volet 3 (Stripe)',
-          detail: 'Le gérant reste propriétaire exclusif de son fichier client (STACK est sous-traitant). L’IA traite les factures/mails sans entraîner de modèles publics. Conservation légale : 6 ans pour les pièces fiscales (Art. L. 102 B LPF).'
-        },
-        {
-          id: 'p2_3',
-          label: 'Faire valider le Popup Légal par le gérant',
-          detail: 'Le gérant coche et signe lui-même. Un certificat PDF horodaté avec IP et empreinte SHA-256 (valeur probante eIDAS / Art. 1367 C. civ.) est généré.'
-        }
+        { id: 'p2_1', label: 'Présenter l’essai 30j sans engagement & le mode Hors-Ligne', tag: 'Volet 1' },
+        { id: 'p2_2', label: 'Rappeler la propriété des données RGPD & conservation 6 ans', tag: 'Volets 2 & 3' },
+        { id: 'p2_3', label: 'Faire signer électroniquement le Popup Légal au gérant', tag: 'Certificat SHA-256' }
       ]
     },
     {
       phase: 'Phase 3',
-      titre: 'Audit & Réglage des Paramètres (Questions Clés)',
-      duree: '15 min',
-      resume: 'Configurer les 7 sous-menus de Paramètres dans l’ordre des dépendances fiscales.',
+      titre: 'Paramètres Essentiels du Salon',
+      duree: '10 min',
       etapes: [
-        {
-          id: 'p3_1',
-          label: '1. Identité & Légal (NF525) — Obligatoire en premier',
-          detail: 'Questions : « Quelle est votre forme juridique (SARL, SASU, EI...), votre SIRET (14 chiffres), votre capital social et ville RCS ? Êtes-vous assujetti à la TVA ou en Franchise en base (Art. 293 B) ? » -> Si franchise de TVA, laisser la case N° TVA Intracom. VIDE (STACK appliquera 0 % et activera le suivi des seuils). Télécharger ensuite le Dossier Technique & Attestation NF525 (PDF).'
-        },
-        {
-          id: 'p3_2',
-          label: '2. Horaires de l’agenda & 3. Suivi des heures RH',
-          detail: 'Questions : « Quelles sont vos heures d’ouverture/fermeture au plus large (ex: 8h-20h) ? Préférez-vous la Pointeuse Numérique par code PIN (recommandé : bloque la caisse tant que l’employé n’a pas pointé) ou le Mode Semi-Automatique sur base contrat ? »'
-        },
-        {
-          id: 'p3_3',
-          label: '4. Sécurité & Codes PIN (Poste Salon + Actions sensibles)',
-          detail: 'Questions : « Quel code PIN (4 à 10 chiffres, hors 0000/1234) voulez-vous pour ouvrir la tablette commune le matin ? » Laisser actif le switch « Code PIN sur les actions sensibles » (oblige chaque employé à signer de son PIN personnel les clôtures Z, mouvements d’espèces et pointages).'
-        },
-        {
-          id: 'p3_4',
-          label: '5. Programme de fidélité & Relance automatique',
-          detail: 'Questions : « Récompensez-vous par Points (1 € = 1 pt, ex: 100 pts = 10 €) ou par Tampons (ex: 10 visites = -20 % ou Soin offert) ? Après combien de jours sans visite relancer automatiquement le client par SMS (ex: 60 jours) ? »'
-        },
-        {
-          id: 'p3_5',
-          label: '6. Fidélisation SMS, Google Maps & Alertes Gérant',
-          detail: 'Questions : « Quel nom d’expéditeur SMS (11 caract. max) ? Avez-vous votre lien Google Maps ? Utilisez-vous déjà Planity ? » -> Si Planity est utilisé, laisser DÉSACTIVÉ le rappel SMS 2h avant RDV pour éviter les doublons. Dans « Alertes urgences », activer les notifications Push sur le téléphone du gérant.'
-        },
-        {
-          id: 'p3_6',
-          label: '7. Export Comptable, Codes PCG (FEC) & TPE Stripe',
-          detail: 'Questions : « Quel est l’e-mail de votre expert-comptable et quel jour du mois (1 à 31) envoyer le bilan ? Avez-vous une clé API Pennylane/Tiime ou un lecteur Stripe Terminal (tmr_...) ? »'
-        }
+        { id: 'p3_1', label: 'Renseigner Forme juridique, SIRET & TVA (vide si Franchise 293B)', tag: 'Identité & Légal' },
+        { id: 'p3_2', label: 'Régler les horaires d’ouverture et activer la Pointeuse PIN', tag: 'Agenda & RH' },
+        { id: 'p3_3', label: 'Définir le PIN Tablette Salon et activer le PIN actions sensibles', tag: 'Sécurité' },
+        { id: 'p3_4', label: 'Configurer la Fidélité (Points/Tampons) & relance SMS (60j)', tag: 'Fidélité' },
+        { id: 'p3_5', label: 'Ajouter le lien Google Maps & activer les notifications Push', tag: 'SMS & Alertes' },
+        { id: 'p3_6', label: 'Saisir l’e-mail de l’expert-comptable et le jour d’envoi auto', tag: 'Compta & FEC' }
       ]
     },
     {
       phase: 'Phase 4',
-      titre: 'Création de l’Équipe, Contrats RH & Liens Planity',
-      duree: '10 min',
-      resume: 'Enregistrer les collaborateurs, leurs commissions HT et leurs bases horaires.',
+      titre: 'Équipe, Contrats RH & Planity',
+      duree: '8 min',
       etapes: [
-        {
-          id: 'p4_1',
-          label: 'Créer chaque collaborateur dans l’onglet « Équipe »',
-          detail: 'Pour chaque salarié : Prénom + Nom, Code PIN personnel (4 chiffres non triviaux), % Commission Prestations et % Commission Produits (calculés automatiquement sur le HT), et Contrat (35H = 151.67h/mois, 39H = 169h/mois, Temps partiel ou Apprenti).'
-        },
-        {
-          id: 'p4_2',
-          label: 'Expliquer l’ajustement des heures & le déblocage PIN',
-          detail: 'Montrer au gérant comment saisir un ajustement manuel (+2h ou -1.5h) qui ira directement sur la Liasse Comptable, comment arbitrer un congé en attente, et comment débloquer un PIN verrouillé après 3 erreurs.'
-        },
-        {
-          id: 'p4_3',
-          label: 'Relier les agendas iCal à Planity / Treatwell (si utilisé)',
-          detail: 'Retourner dans Paramètres > Synchronisation Planity (iCal) : copier le lien .ics généré pour chaque employé créé et le coller dans Planity PRO > Réglages > Gestion des agendas > Importer.'
-        }
+        { id: 'p4_1', label: 'Créer les employés (PIN 4 chiffres, % primes HT, contrat 35h/39h)', tag: 'Onglet Équipe' },
+        { id: 'p4_2', label: 'Montrer l’ajout d’heures supp (+/-) et la validation des congés', tag: 'Suivi RH' },
+        { id: 'p4_3', label: 'Copier les liens iCal (.ics) vers Planity PRO si utilisé', tag: 'Synchro iCal' }
       ]
     },
     {
       phase: 'Phase 5',
-      titre: 'Stocks, Catalogue Prestations & Tutoriels Académie',
-      duree: '15 min',
-      resume: 'Respecter l’ordre : 1. Stocks -> 2. Prestations -> 3. Recettes étape par étape.',
+      titre: 'Stocks, Catalogue & Académie',
+      duree: '10 min',
       etapes: [
-        {
-          id: 'p5_1',
-          label: '1. Renseigner les Produits Revente & Labo (Onglet « Stocks »)',
-          detail: 'Cliquer sur « + » : saisir le Nom, Prix TTC, Référence (obligatoirement 4 caractères min, ex: KER-250), Stock actuel et Délai livraison (jours). Montrer la prédiction de rupture (~X j restants) et l’outil de fusion des doublons.'
-        },
-        {
-          id: 'p5_2',
-          label: '2. Créer les Prestations (Onglet « L’Académie » -> Bouton « + »)',
-          detail: 'Créer les services (Coupe, Balayage, Couleur, Soin...) avec leur Durée estimée (min) et leur Prix TTC (€).'
-        },
-        {
-          id: 'p5_3',
-          label: '3. Créer 1 Tutoriel Pas-à-Pas complet (« Créer un Tutoriel »)',
-          detail: 'Sélectionner la prestation cible, activer le temps de nettoyage agenda (ex: +5 min), choisir les Tags, puis ajouter chaque étape avec : Titre, Durée (minuteur), Instructions, Photo d’illustration et Produits du stock liés avec leur Proportion exacte (ex: 30g, 1:1.5) et la Dose déstockée. Montrer le calcul automatique de Marge Brute en bas de fiche.'
-        }
+        { id: 'p5_1', label: 'Créer les produits revente/labo (Réf. 4 caract. min + stock)', tag: '1. Stocks' },
+        { id: 'p5_2', label: 'Créer les prestations (Durée min + Tarif TTC)', tag: '2. Prestations' },
+        { id: 'p5_3', label: 'Créer 1 recette Académie type (Étapes + Doses g/ml + Marge)', tag: '3. Tutoriel' }
       ]
     },
     {
       phase: 'Phase 6',
-      titre: 'Branchement Boîtes Mail & Démonstration de l’IA',
-      duree: '10 min',
-      resume: 'Connecter les e-mails du salon et montrer les 4 détections automatiques.',
+      titre: 'Connexion E-mail & Cerveau IA',
+      duree: '5 min',
       etapes: [
-        {
-          id: 'p6_1',
-          label: 'Connecter jusqu’à 5 boîtes mail (Paramètres > Boîtes mail)',
-          detail: 'Saisir l’adresse e-mail où le salon reçoit ses factures fournisseurs/notifications et le mot de passe d’application. Expliquer que l’IA scrute la boîte toutes les 2 minutes.'
-        },
-        {
-          id: 'p6_2',
-          label: 'Montrer le fonctionnement des Popups IA (RDV, Stock, Absence, Facture)',
-          detail: 'Expliquer comment l’IA pré-remplit les RDV, les livraisons de stock, les arrêts maladie (avec déclenchement du Robot SMS d’annulation/reprogrammation des clients en conflit) et l’écran Split-Screen des factures fournisseurs (contrôle HT+TVA=TTC, affectation PCG 607/6028/613 et entrée directe en stock).'
-        }
+        { id: 'p6_1', label: 'Connecter la boîte mail du salon (factures & notifications)', tag: 'Paramètres Mail' },
+        { id: 'p6_2', label: 'Montrer la validation Split-Screen d’une facture fournisseur IA', tag: 'Centre d’Action' }
       ]
     },
     {
       phase: 'Phase 7',
-      titre: 'Prise en Main Quotidienne : Pointeuse, Agenda & Caisse',
-      duree: '15 min',
-      resume: 'Connecter les appareils de l’équipe et simuler le parcours d’un client.',
+      titre: 'Formation Caisse & Pointeuse',
+      duree: '10 min',
       etapes: [
-        {
-          id: 'p7_1',
-          label: 'Connecter la Tablette « Salon » et les Smartphones « Employé »',
-          detail: 'Sur la tablette d’accueil : onglet « Salon » + ID Salon + PIN Salon. Sur les téléphones : onglet « Employé » + ID Salon + Prénom + PIN à 4 chiffres. Faire pointer une « Arrivée » dans Agenda > Pointeuse pour déverrouiller le collaborateur en caisse.'
-        },
-        {
-          id: 'p7_2',
-          label: 'Tester un RDV dans l’Agenda & ouvrir sa Recette Académie',
-          detail: 'Créer un RDV, cliquer dessus et montrer le bouton « Voir le Protocole (Recette) » qui affiche aux coiffeurs les étapes à cocher, les dosages labo et le minuteur intégré.'
-        },
-        {
-          id: 'p7_3',
-          label: 'Former à l’encaissement Caisse, Fidélité, Pourboire & Reçu SMS',
-          detail: 'Montrer : 1) Sélection du vendeur, 2) Suggestion automatique du client tout juste coiffé selon l’agenda, 3) Ajout Prestation + Produit, 4) Application d’une remise Fidélité ou Offre de pardon Winback, 5) Ajout d’un pourboire (isolé en compte 426 hors CA), 6) Paiement TPE/Espèces et envoi du ticket dématérialisé par SMS/Mail.'
-        }
+        { id: 'p7_1', label: 'Connecter la Tablette « Salon » et faire pointer une arrivée PIN', tag: 'Pointeuse' },
+        { id: 'p7_2', label: 'Ouvrir un RDV Agenda et afficher son protocole Académie', tag: 'Agenda' },
+        { id: 'p7_3', label: 'Simuler un encaissement (Client auto, remise, pourboire, reçu)', tag: 'Caisse' }
       ]
     },
     {
       phase: 'Phase 8',
-      titre: 'Comptabilité NF525, Clôture Z & Signature de la Liasse',
-      duree: '15 min',
-      resume: 'Maîtriser la Petite Caisse, le Blind Close du soir et la signature mensuelle.',
+      titre: 'Clôture Z & Liasse Comptable',
+      duree: '5 min',
       etapes: [
-        {
-          id: 'p8_1',
-          label: '1. Petite Caisse (Mouvements d’espèces) & Factures manuelles/IA',
-          detail: 'Dans l’onglet « Compta », montrer le bouton « + Mouvement » (avec calculatrice de billets/pièces) pour déclarer chaque dépôt banque (580), retrait monnaie ou achat café en espèces. Montrer aussi les boutons « Saisie Manuelle » et « Scan Facture (IA) ».'
-        },
-        {
-          id: 'p8_2',
-          label: '2. Clôture Journalière Z (Blind Close NF525) & Régularisation matinale',
-          detail: 'Ouvrir « Clôturer la caisse (Z) » : saisir le fond de caisse du matin, compter les billets/pièces, justifier tout écart éventuel et sceller avec le code PIN. Expliquer que si le Z est oublié le soir, le robot ferme la caisse la nuit et demande une régularisation obligatoire à l’ouverture le lendemain matin.'
-        },
-        {
-          id: 'p8_3',
-          label: '3. Signature Manuscrite de la Liasse Mensuelle, FEC & Audit NF525',
-          detail: 'Montrer comment prévisualiser le Brouillon PDF du mois écoulé, puis cliquer sur « Valider & Signer » : cocher les 3 contrôles, dessiner sa signature manuscrite au doigt/souris (imprimée sur le PDF définitif avec le sceau SHA-256) et valider avec le PIN gérant pour l’envoyer au comptable. Montrer enfin l’export FEC (.txt) et l’Audit NF525.'
-        }
+        { id: 'p8_1', label: 'Montrer les mouvements d’espèces (dépôt banque / retrait)', tag: 'Petite Caisse' },
+        { id: 'p8_2', label: 'Expliquer la Clôture Z du soir (comptage billets + PIN)', tag: 'Blind Close Z' },
+        { id: 'p8_3', label: 'Montrer la signature manuscrite de la Liasse PDF & export FEC', tag: 'Bilan Mensuel' }
       ]
     },
     {
       phase: 'Phase 9',
-      titre: 'Validation Finale des 5 Verrous Go-Live',
+      titre: 'Empreinte Stripe & Go-Live',
       duree: '2 min',
-      resume: 'Déverrouiller officiellement la caisse pour le premier encaissement réel.',
       etapes: [
-        {
-          id: 'p9_1',
-          label: 'Cocher les 5 attestations Go-Live sur l’onglet « Caisse »',
-          detail: '1) Matériel & Imprimante connectés, 2) Catalogue prestations paramétré, 3) Collaborateurs & PIN créés, 4) Terminal TPE relié, 5) Formation Clôture Z NF525 effectuée. La caisse se déverrouille immédiatement : l’installation est terminée !'
-        }
+        { id: 'p9_1', label: 'Enregistrer l’empreinte CB Stripe (0 € — 30j) & cocher les 5 verrous', tag: 'Go-Live Caisse' }
       ]
     }
   ];
@@ -2593,42 +2476,38 @@ export default function Dashboard() {
             </div>
 
             {/* =================================================================== */}
-            {/* SOUS-ONGLET A : PLAYBOOK D'ONBOARDING INTERACTIF (9 PHASES)          */}
+            {/* SOUS-ONGLET A : PLAYBOOK D'ONBOARDING ÉPURÉ (9 PHASES COMPACTES)     */}
             {/* =================================================================== */}
             {academieSubTab === 'playbook' && (
-              <div style={{ ...cardStyle, padding: isMobile ? '16px' : '22px' }}>
-                {/* Barre de progression globale de l'installation en cours */}
-                <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'stretch' : 'center', gap: '12px', paddingBottom: '16px', marginBottom: '16px', borderBottom: '1px solid #f3f4f6' }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: '15.5px', fontWeight: '800', color: '#111827' }}>
-                        Feuille de route d’installation en salon 
-                      </span>
-                      <span style={{ padding: '3px 9px', borderRadius: '999px', fontSize: '11px', fontWeight: '800', backgroundColor: playbookProgressPct === 100 ? '#dcfce7' : '#f3f4f6', color: playbookProgressPct === 100 ? '#166534' : '#111827' }}>
-                        {playbookProgressPct}% complété ({completedPlaybookSteps}/{totalPlaybookSteps})
-                      </span>
-                    </div>
-                    <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '3px' }}>
-                     
-                    </div>
-                    <div style={{ height: '6px', backgroundColor: '#f3f4f6', borderRadius: '999px', overflow: 'hidden', marginTop: '10px' }}>
-                      <div style={{ width: `${playbookProgressPct}%`, height: '100%', backgroundColor: playbookProgressPct === 100 ? '#16a34a' : '#111827', borderRadius: '999px', transition: 'width 0.3s ease' }} />
-                    </div>
+              <div style={{ ...cardStyle, padding: isMobile ? '14px' : '18px 20px' }}>
+                {/* En-tête minimaliste avec barre de progression */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '12px', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ fontSize: '14.5px', fontWeight: '800', color: '#111827' }}>
+                      Checklist d’installation terrain
+                    </span>
+                    <span style={{ padding: '3px 9px', borderRadius: '999px', fontSize: '11px', fontWeight: '800', backgroundColor: playbookProgressPct === 100 ? '#dcfce7' : '#f3f4f6', color: playbookProgressPct === 100 ? '#166534' : '#111827' }}>
+                      {completedPlaybookSteps}/{totalPlaybookSteps} ({playbookProgressPct}%)
+                    </span>
                   </div>
 
                   {completedPlaybookSteps > 0 && (
                     <button
                       type="button"
                       onClick={resetPlaybookChecks}
-                      style={{ ...secondaryBtn, alignSelf: isMobile ? 'flex-start' : 'center', flexShrink: 0 }}
+                      style={{ ...secondaryBtn, padding: '5px 10px', fontSize: '11.5px' }}
                     >
-                      Réinitialiser pour un nouveau client
+                      Réinitialiser
                     </button>
                   )}
                 </div>
 
-                {/* Liste accordéon des 9 phases (une seule ouverte à la fois pour rester ultra-compact) */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ height: '5px', backgroundColor: '#f3f4f6', borderRadius: '999px', overflow: 'hidden', marginBottom: '14px' }}>
+                  <div style={{ width: `${playbookProgressPct}%`, height: '100%', backgroundColor: playbookProgressPct === 100 ? '#16a34a' : '#111827', borderRadius: '999px', transition: 'width 0.3s ease' }} />
+                </div>
+
+                {/* Accordéon ultra-propre des 9 phases */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   {PLAYBOOK_ONBOARDING.map((bloc, idx) => {
                     const isOpen = openPlaybookPhase === idx;
                     const nbDonePhase = bloc.etapes.filter(e => playbookChecks[e.id]).length;
@@ -2638,119 +2517,100 @@ export default function Dashboard() {
                       <div
                         key={bloc.phase}
                         style={{
-                          borderRadius: '14px',
+                          borderRadius: '12px',
                           border: isOpen ? '1.5px solid #111827' : isPhaseComplete ? '1px solid #bbf7d0' : '1px solid #e5e7eb',
                           backgroundColor: isOpen ? '#ffffff' : isPhaseComplete ? '#f0fdf4' : '#f9fafb',
-                          overflow: 'hidden',
-                          transition: 'all 0.15s ease'
+                          overflow: 'hidden'
                         }}
                       >
-                        {/* En-tête cliquable de la Phase */}
                         <button
                           type="button"
                           onClick={() => setOpenPlaybookPhase(isOpen ? null : idx)}
                           style={{
-                            width: '100%',
-                            background: 'none',
-                            border: 'none',
-                            padding: isMobile ? '12px 14px' : '14px 18px',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            gap: '12px',
-                            cursor: 'pointer',
-                            textAlign: 'left'
+                            width: '100%', background: 'none', border: 'none',
+                            padding: '11px 14px',
+                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                            gap: '10px', cursor: 'pointer', textAlign: 'left'
                           }}
                         >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
                             <span style={{
-                              width: '28px', height: '28px', borderRadius: '8px', flexShrink: 0,
+                              width: '24px', height: '24px', borderRadius: '7px', flexShrink: 0,
                               backgroundColor: isPhaseComplete ? '#16a34a' : isOpen ? '#111827' : '#e5e7eb',
                               color: isPhaseComplete || isOpen ? '#ffffff' : '#374151',
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              fontSize: '12px', fontWeight: '800'
+                              fontSize: '11.5px', fontWeight: '800'
                             }}>
                               {isPhaseComplete ? '✓' : idx + 1}
                             </span>
-                            <div style={{ minWidth: 0 }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                                <span style={{ fontSize: '13.5px', fontWeight: '800', color: '#111827' }}>
-                                  {bloc.phase} — {bloc.titre}
-                                </span>
-                                <span style={{ fontSize: '11px', fontWeight: '600', color: '#6b7280', backgroundColor: 'rgba(0,0,0,0.04)', padding: '2px 7px', borderRadius: '6px' }}>
-                                  {bloc.duree}
-                                </span>
-                              </div>
-                              <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '2px', whiteSpace: isOpen ? 'normal' : 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                {bloc.resume}
-                              </div>
-                            </div>
+                            <span style={{ fontSize: '13.5px', fontWeight: '700', color: '#111827', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {bloc.titre}
+                            </span>
+                            <span style={{ fontSize: '11px', fontWeight: '600', color: '#6b7280', backgroundColor: '#f3f4f6', padding: '2px 7px', borderRadius: '6px', flexShrink: 0 }}>
+                              {bloc.duree}
+                            </span>
                           </div>
 
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
-                            <span style={{
-                              fontSize: '11.5px', fontWeight: '700',
-                              color: isPhaseComplete ? '#166534' : '#6b7280'
-                            }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                            <span style={{ fontSize: '11.5px', fontWeight: '700', color: isPhaseComplete ? '#166534' : '#6b7280' }}>
                               {nbDonePhase}/{bloc.etapes.length}
                             </span>
-                            <span style={{ fontSize: '16px', fontWeight: '700', color: '#6b7280' }}>
+                            <span style={{ fontSize: '15px', fontWeight: '700', color: '#9ca3af', width: '14px', textAlign: 'center' }}>
                               {isOpen ? '−' : '+'}
                             </span>
                           </div>
                         </button>
 
-                        {/* Contenu détaillé de la Phase (Cases à cocher + Questions à poser) */}
                         {isOpen && (
-                          <div style={{ padding: isMobile ? '0 14px 14px 14px' : '0 18px 18px 18px', borderTop: '1px solid #f3f4f6', display: 'flex', flexDirection: 'column', gap: '8px', paddingTop: '12px' }}>
+                          <div style={{ padding: '8px 14px 12px 14px', borderTop: '1px solid #f3f4f6', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                             {bloc.etapes.map(etape => {
                               const checked = !!playbookChecks[etape.id];
                               return (
                                 <label
                                   key={etape.id}
                                   style={{
-                                    display: 'flex',
-                                    alignItems: 'flex-start',
-                                    gap: '12px',
-                                    padding: '12px 14px',
-                                    borderRadius: '11px',
-                                    border: checked ? '1px solid #bbf7d0' : '1px solid #e5e7eb',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                    gap: '10px', padding: '9px 12px', borderRadius: '9px',
+                                    border: checked ? '1px solid #bbf7d0' : '1px solid #f3f4f6',
                                     backgroundColor: checked ? '#f0fdf4' : '#f9fafb',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.15s ease'
+                                    cursor: 'pointer'
                                   }}
                                 >
-                                  <input
-                                    type="checkbox"
-                                    checked={checked}
-                                    onChange={() => togglePlaybookStep(etape.id)}
-                                    style={{ width: '17px', height: '17px', marginTop: '2px', accentColor: '#111827', cursor: 'pointer', flexShrink: 0 }}
-                                  />
-                                  <div style={{ flex: 1 }}>
-                                    <div style={{
-                                      fontSize: '13px',
-                                      fontWeight: '700',
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                                    <input
+                                      type="checkbox"
+                                      checked={checked}
+                                      onChange={() => togglePlaybookStep(etape.id)}
+                                      style={{ width: '16px', height: '16px', accentColor: '#111827', cursor: 'pointer', flexShrink: 0 }}
+                                    />
+                                    <span style={{
+                                      fontSize: '12.5px', fontWeight: '600',
                                       color: checked ? '#166534' : '#111827',
                                       textDecoration: checked ? 'line-through' : 'none'
                                     }}>
                                       {etape.label}
-                                    </div>
-                                    <div style={{ fontSize: '12px', color: '#4b5563', lineHeight: 1.5, marginTop: '4px' }}>
-                                      {etape.detail}
-                                    </div>
+                                    </span>
                                   </div>
+                                  {etape.tag && (
+                                    <span style={{
+                                      fontSize: '10.5px', fontWeight: '700', padding: '2px 8px', borderRadius: '6px',
+                                      backgroundColor: '#ffffff', color: '#4b5563', border: '1px solid #e5e7eb', flexShrink: 0
+                                    }}>
+                                      {etape.tag}
+                                    </span>
+                                  )}
                                 </label>
                               );
                             })}
 
                             {idx < PLAYBOOK_ONBOARDING.length - 1 && (
-                              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '4px' }}>
+                              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '2px' }}>
                                 <button
                                   type="button"
                                   onClick={() => setOpenPlaybookPhase(idx + 1)}
-                                  style={{ ...secondaryBtn, padding: '7px 12px', fontSize: '12px' }}
+                                  style={{ ...secondaryBtn, padding: '5px 10px', fontSize: '11.5px' }}
                                 >
-                                  Passer à la {PLAYBOOK_ONBOARDING[idx + 1].phase} →
+                                  Suivant : {PLAYBOOK_ONBOARDING[idx + 1].titre} →
                                 </button>
                               </div>
                             )}
@@ -2764,88 +2624,99 @@ export default function Dashboard() {
             )}
 
             {/* =================================================================== */}
-            {/* SOUS-ONGLET B : SCÉNARIOS DU SALON DÉMO & RÉPONSES AUX OBJECTIONS     */}
+            {/* SOUS-ONGLET B : SCÉNARIOS DÉMO & OBJECTIONS (CARTES VISUELLES)       */}
             {/* =================================================================== */}
             {academieSubTab === 'scenarios' && (
               <>
-                <div style={{ ...cardStyle, marginBottom: '16px' }}>
+                <div style={{ ...cardStyle, padding: isMobile ? '16px' : '20px', marginBottom: '14px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '14px' }}>
-                    <div>
-                      <div style={{ fontSize: '11px', fontWeight: '800', color: '#166534', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                        Données pré-embarquées dans « Maison Éclat — Salon Démo »
-                      </div>
-                      <div style={{ fontSize: '15.5px', fontWeight: '800', color: '#111827', marginTop: '2px' }}>
-                        Les 4 scénarios clés à montrer au gérant + Bouton « Simulateur IA »
-                      </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: '15px', fontWeight: '800', color: '#111827' }}>
+                        4 Scénarios Démo (« Maison Éclat »)
+                      </span>
+                      <span style={{ padding: '2px 8px', borderRadius: '999px', fontSize: '10.5px', fontWeight: '800', backgroundColor: '#dcfce7', color: '#166534' }}>
+                        Bouton « Simulateur IA » en bas à droite
+                      </span>
                     </div>
-                    <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '11.5px', fontWeight: '700', backgroundColor: '#f3f4f6', color: '#111827' }}>
-                      Code PIN Pointeuse : 0000
+                    <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '11px', fontWeight: '800', backgroundColor: '#111827', color: '#ffffff' }}>
+                      PIN Pointeuse : 0000
                     </span>
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '12px' }}>
-                    <div style={{ padding: '14px', borderRadius: '14px', backgroundColor: '#f9fafb', border: '1px solid #e5e7eb' }}>
-                      <div style={{ fontSize: '12.5px', fontWeight: '800', color: '#111827', marginBottom: '6px' }}>
-                        1. Bilan, Liasse Comptable Signée & Scan Factures IA
+                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)', gap: '10px' }}>
+                    {[
+                      {
+                        num: '01',
+                        titre: 'Compta & Scan IA',
+                        kpi: '+4 820 € net',
+                        kpiColor: '#16a34a',
+                        tags: ['CA : 18 450 € HT', '5 factures IA (Split-Screen)', 'Liasse PDF signée']
+                      },
+                      {
+                        num: '02',
+                        titre: 'Urgence RH & SMS',
+                        kpi: 'Chloé absente',
+                        kpiColor: '#dc2626',
+                        tags: ['Arrêt maladie Cerfa', 'Détection RDV en conflit', 'Robot SMS reprogrammation']
+                      },
+                      {
+                        num: '03',
+                        titre: 'Avis & Winback',
+                        kpi: 'Avis 2★ Marine',
+                        kpiColor: '#d97706',
+                        tags: ['Alerte Tableau de bord', 'Offre pardon en 1 clic', 'Rappel auto en Caisse']
+                      },
+                      {
+                        num: '04',
+                        titre: 'Académie & Stocks',
+                        kpi: '2 ruptures',
+                        kpiColor: '#111827',
+                        tags: ['Recettes & doses au gramme', 'Calcul de marge brute', 'Huile Élixir (reste 2)']
+                      }
+                    ].map(sc => (
+                      <div key={sc.num} style={{ padding: '14px', borderRadius: '14px', backgroundColor: '#f9fafb', border: '1px solid #e5e7eb', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '10px' }}>
+                        <div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                            <span style={{ fontSize: '10.5px', fontWeight: '800', color: '#9ca3af' }}>SCÉNARIO {sc.num}</span>
+                            <span style={{ fontSize: '11.5px', fontWeight: '800', color: sc.kpiColor }}>{sc.kpi}</span>
+                          </div>
+                          <div style={{ fontSize: '13.5px', fontWeight: '800', color: '#111827', marginBottom: '8px' }}>
+                            {sc.titre}
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            {sc.tags.map((t, i) => (
+                              <div key={i} style={{ fontSize: '11.5px', color: '#4b5563', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: '#9ca3af', flexShrink: 0 }} />
+                                <span>{t}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
                       </div>
-                      <div style={{ fontSize: '12px', color: '#4b5563', lineHeight: 1.5 }}>
-                        • <strong>CA Mensuel simulé :</strong> 18 450 € HT (22 140 € TTC) • Résultat Net : <span style={{ color: '#16a34a', fontWeight: '700' }}>+4 820 €</span><br/>
-                        • <strong>Simulateur IA en bas à droite :</strong> Cliquez dessus pendant la démo pour faire apparaître en direct une facture L’Oréal Professionnel en Split-Screen, un RDV ou un arrêt maladie.
-                      </div>
-                    </div>
-
-                    <div style={{ padding: '14px', borderRadius: '14px', backgroundColor: '#f9fafb', border: '1px solid #e5e7eb' }}>
-                      <div style={{ fontSize: '12.5px', fontWeight: '800', color: '#111827', marginBottom: '6px' }}>
-                        2. Planning, Arrêt Maladie & Robot SMS d’Annulation
-                      </div>
-                      <div style={{ fontSize: '12px', color: '#4b5563', lineHeight: 1.5 }}>
-                        • <strong>Chloé (Coiffeuse Mixte) :</strong> En <span style={{ color: '#dc2626', fontWeight: '700' }}>Arrêt Maladie</span> avec justificatif.<br/>
-                        • <strong>Robot de reprogrammation :</strong> Détecte automatiquement les RDV en conflit et envoie un SMS personnalisé aux clients concernés.
-                      </div>
-                    </div>
-
-                    <div style={{ padding: '14px', borderRadius: '14px', backgroundColor: '#f9fafb', border: '1px solid #e5e7eb' }}>
-                      <div style={{ fontSize: '12.5px', fontWeight: '800', color: '#111827', marginBottom: '6px' }}>
-                        3. Avis Clients (NPS) & Sauvetage Automatique (Winback)
-                      </div>
-                      <div style={{ fontSize: '12px', color: '#4b5563', lineHeight: 1.5 }}>
-                        • <strong>Avis 2★ détecté (Marine) :</strong> Bouton rouge « Sauver ce client » sur le Tableau de bord.<br/>
-                        • <strong>Rappel en Caisse :</strong> L’offre (-20 % ou Soin offert) s’affiche automatiquement sur le ticket lors du prochain passage de la cliente.
-                      </div>
-                    </div>
-
-                    <div style={{ padding: '14px', borderRadius: '14px', backgroundColor: '#f9fafb', border: '1px solid #e5e7eb' }}>
-                      <div style={{ fontSize: '12.5px', fontWeight: '800', color: '#111827', marginBottom: '6px' }}>
-                        4. Tutoriels Académie & Prédiction de Rupture de Stock
-                      </div>
-                      <div style={{ fontSize: '12px', color: '#4b5563', lineHeight: 1.5 }}>
-                        • <strong>Recettes étape par étape :</strong> Photos, proportions labo (grammes/doses) et calcul de marge brute.<br/>
-                        • <strong>2 Alertes Stock Critique :</strong> <em>Huile Élixir 100ml</em> (reste 2) et <em>Spray Thermo-Protecteur</em> (reste 1).
-                      </div>
-                    </div>
+                    ))}
                   </div>
                 </div>
 
-                {/* Traitement des objections */}
-                <div style={{ ...cardStyle, padding: '12px 18px', marginBottom: 0 }}>
-                  <div style={{ fontSize: '12px', fontWeight: '800', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.04em', padding: '4px 0 8px 0', borderBottom: '1px solid #f3f4f6' }}>
-                    Réponses aux 4 objections les plus fréquentes en salon
+                {/* Traitement des objections condensé */}
+                <div style={{ ...cardStyle, padding: '14px 18px', marginBottom: 0 }}>
+                  <div style={{ fontSize: '11.5px', fontWeight: '800', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '6px' }}>
+                    4 Réponses flash aux objections
                   </div>
                   {[
-                    { q: "« C'est trop cher, je paie moins cher ailleurs (ou j'ai un cahier papier). »", a: "STACK est rentabilisé dès la 1ère semaine grâce au Winback automatique, à la pointeuse PIN et au scan IA des factures. De plus, un cahier papier expose à 7 500 € d'amende NF525." },
-                    { q: "« Je suis déjà chez Planity / Treatwell / Wavy, c'est compliqué de changer. »", a: "Mes 99 € HT incluent l'importation intégrale de votre catalogue, la synchronisation iCal Planity, la création de votre équipe et votre formation sur place, avec 30 jours d'essai gratuit." },
-                    { q: "« Pourquoi payer 99 € HT de frais d'installation aujourd'hui ? »", a: "Ils rémunèrent mon intervention physique en salon : paramétrage TVA/FEC, création des contrats RH, recettes Académie et formation à la clôture journalière certifiée NF525." },
-                    { q: "« Et si internet coupe en plein samedi après-midi ? »", a: "STACK intègre un mode Hors-Ligne natif : vous encaissez normalement en espèces et tout est synchronisé et scellé dès le retour de la connexion." }
+                    { q: "« C'est trop cher / J'ai un cahier papier. »", a: "1 seule cliente sauvée via le Winback (120 €) rembourse l'abonnement. Et le cahier papier expose à 7 500 € d'amende NF525." },
+                    { q: "« Je suis déjà sur Planity / Treatwell. »", a: "On ne remplace pas votre visibilité Planity : on s'y synchronise en iCal et on automatise vos factures IA, vos stocks et votre compta." },
+                    { q: "« Pourquoi payer 99 € HT d'installation ? »", a: "Je paramètre tout sur place maintenant (SIRET, catalogue, équipe, IA) et vous avez 30 jours d'essai 100 % gratuits derrière." },
+                    { q: "« Et si internet coupe le samedi ? »", a: "Mode Hors-Ligne natif : vous encaissez normalement et tout est scellé automatiquement dès le retour du réseau." }
                   ].map((item, idx) => {
                     const isOpen = openObjectionIdx === idx;
                     return (
-                      <div key={idx} style={{ borderBottom: idx < 3 ? '1px solid #f3f4f6' : 'none', padding: '12px 0' }}>
+                      <div key={idx} style={{ borderBottom: idx < 3 ? '1px solid #f3f4f6' : 'none', padding: '10px 0' }}>
                         <button type="button" onClick={() => setOpenObjectionIdx(isOpen ? null : idx)} style={{ width: '100%', background: 'none', border: 'none', padding: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', textAlign: 'left', gap: '10px' }}>
-                          <span style={{ fontSize: '13.5px', fontWeight: '700', color: '#111827' }}>{item.q}</span>
-                          <span style={{ fontSize: '18px', fontWeight: '700', color: '#6b7280' }}>{isOpen ? '−' : '+'}</span>
+                          <span style={{ fontSize: '13px', fontWeight: '700', color: '#111827' }}>{item.q}</span>
+                          <span style={{ fontSize: '16px', fontWeight: '700', color: '#9ca3af' }}>{isOpen ? '−' : '+'}</span>
                         </button>
                         {isOpen && (
-                          <div style={{ marginTop: '10px', padding: '12px 14px', backgroundColor: '#f9fafb', borderRadius: '12px', fontSize: '12.5px', color: '#374151', lineHeight: 1.55, borderLeft: '3px solid #111827' }}>
+                          <div style={{ marginTop: '8px', padding: '10px 12px', backgroundColor: '#f9fafb', borderRadius: '10px', fontSize: '12px', color: '#374151', lineHeight: 1.45, borderLeft: '3px solid #111827' }}>
                             {item.a}
                           </div>
                         )}
