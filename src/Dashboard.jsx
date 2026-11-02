@@ -174,7 +174,7 @@ export default function Dashboard() {
       etapes: [
         { id: 'p5_1', label: 'Créer les produits revente/labo (Réf. 4 caract. min + stock)', tag: '1. Stocks' },
         { id: 'p5_2', label: 'Créer les prestations (Durée min + Tarif TTC)', tag: '2. Prestations' },
-        { id: 'p5_3', label: 'Créer 1 recette Académie type (Étapes + Doses g/ml + Marge)', tag: '3. Tutoriel' }
+        { id: 'p5_3', label: 'Créer une recette Académie type (Étapes + Doses g/ml + Marge)', tag: '3. Tutoriel' }
       ]
     },
     {
