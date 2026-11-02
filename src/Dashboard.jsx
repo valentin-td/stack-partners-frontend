@@ -1576,7 +1576,7 @@ export default function Dashboard() {
             <div style={{ marginBottom: isMobile ? '20px' : '32px' }}>
               <h1 style={{ fontSize: isMobile ? '22px' : '26px', fontWeight: '700', margin: '0 0 6px 0', letterSpacing: '-0.02em' }}>Tableau de Bord</h1>
               <span style={{ fontSize: '13.5px', color: '#6b7280' }}>
-                Suivi en temps réel de vos vrais salons affiliés (hors salons de simulation et hors essai gratuit de 30 jours)
+                
               </span>
             </div>
 
@@ -1587,7 +1587,7 @@ export default function Dashboard() {
                   <div style={{ fontSize: '12.5px', color: '#6b7280', marginTop: '2px' }}>
                     {stats.kpis.nb_salons_actifs >= stats.kpis.seuil_deblocage
                       ? "Palier atteint : toutes vos commissions présentes et passées sont débloquées et payables."
-                      : "Les salons bénéficient d'un 1er mois gratuit. Ils comptent dans ce palier dès leur 1er abonnement payant."}
+                      : "Les salons comptent dans ce palier dès leur 1er abonnement payant."}
                   </div>
                 </div>
                 <span style={{ fontSize: '15px', fontWeight: '700', color: '#111827', whiteSpace: 'nowrap' }}>
@@ -1705,7 +1705,7 @@ export default function Dashboard() {
             <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'stretch' : 'center', gap: '12px', marginBottom: '24px' }}>
               <div>
                 <h1 style={{ fontSize: isMobile ? '22px' : '26px', fontWeight: '700', margin: '0 0 4px 0' }}>Mes Prospects</h1>
-                <span style={{ fontSize: '13.5px', color: '#6b7280' }}>Exclusivité de prospection de 45 jours par salon réservé</span>
+                <span style={{ fontSize: '13.5px', color: '#6b7280' }}></span>
               </div>
               <button onClick={() => setShowProspectForm(!showProspectForm)} style={primaryBtn}>
                 <Icon.Plus /> Réserver un Lead
@@ -1775,7 +1775,7 @@ export default function Dashboard() {
               <div>
                 <h1 style={{ fontSize: isMobile ? '22px' : '26px', fontWeight: '700', margin: '0 0 4px 0' }}>Carte de Prospection</h1>
                 <span style={{ fontSize: '13.5px', color: '#6b7280' }}>
-                  Couverture multi-sources (INSEE 96.02A/B + OpenStreetMap). Verrouillez vos prospects en un clic.
+                 
                 </span>
               </div>
               <button type="button" onClick={handleGeolocateAgent} style={{ ...primaryBtn, backgroundColor: '#ffffff', color: '#111827', border: '1px solid #e5e7eb' }}>
@@ -1899,7 +1899,7 @@ export default function Dashboard() {
                 <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', gap: '10px', marginBottom: '16px' }}>
                   <div>
                     <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: '800', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                      <Icon.Map /> Algorithme OSRM • Optimisation Terrain
+                      <Icon.Map /> 
                     </div>
                     <h3 style={{ fontSize: '17px', fontWeight: '800', margin: '2px 0 0 0', color: '#111827' }}>
                       Construisez votre feuille de route optimale
@@ -2393,7 +2393,7 @@ export default function Dashboard() {
             <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'stretch' : 'center', gap: '12px', marginBottom: '24px' }}>
               <div>
                 <h1 style={{ fontSize: isMobile ? '22px' : '26px', fontWeight: '700', margin: '0 0 4px 0' }}>Factures d'Installation (99 € HT)</h1>
-                <span style={{ fontSize: '13.5px', color: '#6b7280' }}>Émettez vos factures de mise en service et validez leur règlement</span>
+                <span style={{ fontSize: '13.5px', color: '#6b7280' }}></span>
               </div>
               <button onClick={() => setShowFactureForm(!showFactureForm)} style={primaryBtn}>
                 <Icon.Plus /> Nouvelle Facture
@@ -2456,7 +2456,7 @@ export default function Dashboard() {
                   Académie, Simulateurs & Playbook Terrain
                 </h1>
                 <span style={{ fontSize: '13px', color: '#6b7280' }}>
-                  Bacs à sable 100 % scellés NF525 et protocole officiel d’installation client étape par étape.
+                  
                 </span>
               </div>
               <button
