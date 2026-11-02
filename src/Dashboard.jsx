@@ -2490,7 +2490,7 @@ export default function Dashboard() {
                   </div>
                   <h3 style={{ fontSize: '15.5px', fontWeight: '800', margin: '0 0 4px 0' }}>Salon Vide</h3>
                   <p style={{ fontSize: '12px', color: '#6b7280', lineHeight: 1.45, margin: '0 0 14px 0' }}>
-                    Exercez-vous à créer le catalogue, les contrats RH et les paramètres sur une base vierge.
+                  
                   </p>
                 </div>
                 <button type="button" disabled={!!sandboxLoading} onClick={() => handleLaunchSandbox('VIDE', 'LAUNCH')} style={{ ...primaryBtn, width: '100%', padding: '10px 14px', fontSize: '12.5px' }}>
@@ -2509,7 +2509,7 @@ export default function Dashboard() {
                   </div>
                   <h3 style={{ fontSize: '15.5px', fontWeight: '800', margin: '0 0 4px 0' }}>Salon Démo Pré-rempli</h3>
                   <p style={{ fontSize: '12px', color: '#6b7280', lineHeight: 1.45, margin: '0 0 12px 0' }}>
-                    Maison Éclat : CA +4 820 € net, stocks, équipe, avis Winback et bouton « Simulateur IA » en direct.
+                    
                   </p>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -2541,7 +2541,7 @@ export default function Dashboard() {
                   </div>
                   <h3 style={{ fontSize: '15.5px', fontWeight: '800', margin: '0 0 4px 0' }}>Simulateur d'Onboarding</h3>
                   <p style={{ fontSize: '12px', color: '#6b7280', lineHeight: 1.45, margin: '0 0 14px 0' }}>
-                    Simule la 1ère connexion d’un gérant : signature du Popup Légal et déblocage des 5 verrous Caisse.
+                    
                   </p>
                 </div>
                 <button type="button" disabled={!!sandboxLoading} onClick={() => handleLaunchSandbox('ONBOARDING', 'LAUNCH')} style={{ ...primaryBtn, width: '100%', padding: '10px 14px', fontSize: '12.5px' }}>
