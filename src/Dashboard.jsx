@@ -2602,14 +2602,14 @@ export default function Dashboard() {
                   <div style={{ flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                       <span style={{ fontSize: '15.5px', fontWeight: '800', color: '#111827' }}>
-                        Feuille de route d’installation en salon (Ordre chronologique optimal)
+                        Feuille de route d’installation en salon 
                       </span>
                       <span style={{ padding: '3px 9px', borderRadius: '999px', fontSize: '11px', fontWeight: '800', backgroundColor: playbookProgressPct === 100 ? '#dcfce7' : '#f3f4f6', color: playbookProgressPct === 100 ? '#166534' : '#111827' }}>
                         {playbookProgressPct}% complété ({completedPlaybookSteps}/{totalPlaybookSteps})
                       </span>
                     </div>
                     <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '3px' }}>
-                      Suivez cet ordre précis devant le gérant : chaque étape prépare les données nécessaires à la suivante.
+                     
                     </div>
                     <div style={{ height: '6px', backgroundColor: '#f3f4f6', borderRadius: '999px', overflow: 'hidden', marginTop: '10px' }}>
                       <div style={{ width: `${playbookProgressPct}%`, height: '100%', backgroundColor: playbookProgressPct === 100 ? '#16a34a' : '#111827', borderRadius: '999px', transition: 'width 0.3s ease' }} />
