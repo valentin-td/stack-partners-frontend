@@ -2442,7 +2442,7 @@ export default function Dashboard() {
                   ))}
                 </tbody>
               </table>
-            </div>
+            </div> 
           </>
         )}
 
@@ -2453,7 +2453,7 @@ export default function Dashboard() {
             <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', gap: '12px', marginBottom: '18px' }}>
               <div>
                 <h1 style={{ fontSize: isMobile ? '22px' : '26px', fontWeight: '800', margin: '0 0 4px 0', letterSpacing: '-0.02em' }}>
-                  Académie, Simulateurs & Playbook Terrain
+                  Académie
                 </h1>
                 <span style={{ fontSize: '13px', color: '#6b7280' }}>
                   
