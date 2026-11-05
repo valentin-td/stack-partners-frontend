@@ -3515,6 +3515,50 @@ export default function Dashboard() {
                 </tbody>
               </table>
             </div>
+            {/* Tableau des commandes TPE (Logistique) */}
+            <div style={{ fontSize: '12.5px', fontWeight: '700', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.04em', margin: '28px 0 10px 0' }}>
+              Logistique : Commandes TPE à Expédier ({adminTpeCommandes.filter(c => c.statut === 'EN_ATTENTE').length})
+            </div>
+            <div style={{ ...cardStyle, padding: 0, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+              <table style={{ width: '100%', minWidth: '600px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13.5px' }}>
+                <thead style={{ backgroundColor: '#f9fafb', borderBottom: '1px solid #e5e7eb', color: '#6b7280', fontSize: '11.5px', textTransform: 'uppercase' }}>
+                  <tr>
+                    <th style={{ padding: '14px 18px' }}>Agent</th>
+                    <th style={{ padding: '14px 18px' }}>Date</th>
+                    <th style={{ padding: '14px 18px' }}>Quantité & Adresse</th>
+                    <th style={{ padding: '14px 18px' }}>Statut</th>
+                    <th style={{ padding: '14px 18px' }}>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {adminTpeCommandes.length === 0 ? (
+                    <tr><td colSpan="5" style={{ padding: '24px', textAlign: 'center', color: '#6b7280' }}>Aucune commande TPE en attente.</td></tr>
+                  ) : adminTpeCommandes.map(c => (
+                    <tr key={c.id_commande} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                      <td style={{ padding: '14px 18px', fontWeight: '700' }}>{c.prenom} {c.nom}</td>
+                      <td style={{ padding: '14px 18px', color: '#6b7280' }}>{new Date(c.date_commande).toLocaleDateString('fr-FR')}</td>
+                      <td style={{ padding: '14px 18px' }}>
+                        <strong style={{ color: '#111827' }}>{c.quantite} TPE Stripe</strong><br/>
+                        <span style={{ fontSize: '12.5px', color: '#4b5563' }}>{c.adresse_livraison}</span>
+                        {c.note && <div style={{ fontSize: '12px', color: '#d97706', marginTop: '2px' }}>Note: {c.note}</div>}
+                      </td>
+                      <td style={{ padding: '14px 18px' }}>
+                        <span style={{ padding: '5px 10px', borderRadius: '8px', fontSize: '12px', fontWeight: '600', backgroundColor: c.statut === 'EXPEDIEE' ? '#dcfce7' : '#fef3c7', color: c.statut === 'EXPEDIEE' ? '#166534' : '#92400e' }}>
+                          {c.statut === 'EXPEDIEE' ? 'Expédiée' : 'En attente'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '14px 18px' }}>
+                        {c.statut !== 'EXPEDIEE' && (
+                          <button onClick={() => handleExpedierTpe(c.id_commande)} style={{ ...primaryBtn, padding: '8px 14px', fontSize: '12px' }}>
+                            <Icon.Check /> Expédier
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </>
         )}
 
