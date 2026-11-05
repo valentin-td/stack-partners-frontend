@@ -235,6 +235,7 @@ export default function Dashboard() {
 
   const [adminAgents, setAdminAgents] = useState([]);
   const [adminCommissions, setAdminCommissions] = useState([]);
+  const [adminTpeCommandes, setAdminTpeCommandes] = useState([]);
   const [adminSearch, setAdminSearch] = useState('');
   const [adminStatusFilter, setAdminStatusFilter] = useState('TOUS');
   const [expandedAgentIds, setExpandedAgentIds] = useState({});
@@ -807,6 +808,11 @@ export default function Dashboard() {
       if (resMarket.ok) {
         setAdminMarketStats(await resMarket.json());
       }
+      const resTpe = await fetch(`${API_URL}/admin/tpe-commandes`, { headers: { 'Authorization': `Bearer ${token}` } });
+      if (resTpe.ok) {
+        const dataTpe = await resTpe.json();
+        setAdminTpeCommandes(Array.isArray(dataTpe) ? dataTpe : []);
+      }
     } catch (err) {
       console.error("Erreur chargement God Mode:", err);
     }
@@ -975,6 +981,23 @@ export default function Dashboard() {
       notify("Commission marquée comme payée.");
     } else {
       notify(data.error || "Paiement bloqué", true);
+    }
+  };
+  const handleExpedierTpe = async (id) => {
+    try {
+      const res = await fetch(`${API_URL}/admin/tpe-commandes/${id}/expedier`, {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        notify("Commande expédiée ! Le stock de l'agent a été automatiquement crédité.");
+        fetchAdminData();
+      } else {
+        const data = await res.json();
+        notify(data.error || "Erreur lors de l'expédition", true);
+      }
+    } catch (e) {
+      notify("Erreur réseau.", true);
     }
   };
 
