@@ -1319,6 +1319,34 @@ export default function Dashboard() {
     window.location.href = '/login';
   };
 
+  useEffect(() => {
+    const verifierSessionPartner = () => {
+      const tok = localStorage.getItem('partner_token');
+      if (!tok) {
+        logout();
+        return;
+      }
+      try {
+        const payload = JSON.parse(atob(tok.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+        if (payload.exp && payload.exp * 1000 <= Date.now()) {
+          logout();
+        }
+      } catch (e) {
+        logout();
+      }
+    };
+
+    window.addEventListener('focus', verifierSessionPartner);
+    document.addEventListener('visibilitychange', verifierSessionPartner);
+    const interval = setInterval(verifierSessionPartner, 30000);
+
+    return () => {
+      window.removeEventListener('focus', verifierSessionPartner);
+      document.removeEventListener('visibilitychange', verifierSessionPartner);
+      clearInterval(interval);
+    };
+  }, []);
+
   const Icon = {
     Bord: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
     Prospects: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>,
