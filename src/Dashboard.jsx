@@ -1485,9 +1485,7 @@ export default function Dashboard() {
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ width: '30px', height: '30px', borderRadius: '8px', background: 'linear-gradient(135deg, #863bff 0%, #47bfff 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: '800', fontSize: '15px' }}>
-              S
-            </div>
+            <img src="/logo-stack.png" alt="STACK" style={{ width: '30px', height: '30px', objectFit: 'contain' }} />
             <div>
               <div style={{ fontSize: '15px', fontWeight: '800', lineHeight: 1 }}>STACK</div>
               <div style={{ fontSize: '10px', fontWeight: '600', color: '#6b7280' }}>Partners</div>
@@ -1526,9 +1524,7 @@ export default function Dashboard() {
       {!isMobile && (
         <div style={{ width: '260px', backgroundColor: '#ffffff', borderRight: '1px solid #e5e7eb', padding: '28px 20px', display: 'flex', flexDirection: 'column', flexShrink: 0, position: 'sticky', top: 0, height: '100vh', boxSizing: 'border-box' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '24px', paddingLeft: '6px' }}>
-            <div style={{ width: '32px', height: '32px', borderRadius: '9px', background: 'linear-gradient(135deg, #863bff 0%, #47bfff 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: '800', fontSize: '16px' }}>
-              S
-            </div>
+            <img src="/logo-stack.png" alt="STACK" style={{ width: '32px', height: '32px', objectFit: 'contain' }} />
             <div>
               <div style={{ fontSize: '17px', fontWeight: '800', letterSpacing: '0.03em', color: '#111827', lineHeight: 1.1 }}>STACK</div>
               <div style={{ fontSize: '11px', fontWeight: '600', color: '#6b7280' }}>Portail Partenaires</div>

@@ -75,9 +75,7 @@ export default function Auth() {
         
         {/* En-tête Logo STACK Partners */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginBottom: '28px' }}>
-          <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'linear-gradient(135deg, #863bff 0%, #47bfff 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: '800', fontSize: '18px' }}>
-            S
-          </div>
+          <img src="/logo-stack.png" alt="STACK" style={{ width: '36px', height: '36px', objectFit: 'contain' }} />
           <span style={{ fontSize: '22px', fontWeight: '800', letterSpacing: '0.04em', color: '#111827' }}>STACK</span>
           <span style={{ fontSize: '11px', fontWeight: '700', backgroundColor: '#f3f4f6', color: '#4b5563', padding: '3px 8px', borderRadius: '6px', textTransform: 'uppercase' }}>Partners</span>
         </div>
