@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { API_URL } from './api/config';
 
 // Composant épuré et autonome pour la vue du Stock TPE
 function StockTpeView({ apiBaseUrl, token }) {
@@ -144,7 +145,6 @@ function StockTpeView({ apiBaseUrl, token }) {
 export default function Dashboard() {
   const agent = JSON.parse(localStorage.getItem('partner_data') || '{}');
   const token = localStorage.getItem('partner_token');
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/partners';
 
   const [activeTab, setActiveTab] = useState('bord');
   const [toastMsg, setToastMsg] = useState(null);

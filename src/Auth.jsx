@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { API_URL } from './api/config';
 
 export default function Auth() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -8,8 +9,6 @@ export default function Auth() {
   const [formData, setFormData] = useState({ nom: '', prenom: '', email: '', telephone: '', mot_de_passe: '', siret_agent: '', numero_rsac: '', iban: '' });
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
-
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/partners';
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
