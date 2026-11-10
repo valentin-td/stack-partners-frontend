@@ -1512,12 +1512,17 @@ export default function Dashboard() {
           borderBottom: '1px solid #e5e7eb', padding: '12px 16px',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <img src="/logo-stack.png" alt="STACK" style={{ width: '30px', height: '30px', objectFit: 'contain' }} />
-            <div>
-              <div style={{ fontSize: '15px', fontWeight: '800', lineHeight: 1 }}>STACK</div>
-              <div style={{ fontSize: '10px', fontWeight: '600', color: '#6b7280' }}>Partners</div>
-            </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <img
+              src="/stack-logo-light.png"
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = "/IMG_6804.png";
+              }}
+              alt="STACK"
+              style={{ height: '22px', width: 'auto', objectFit: 'contain', display: 'block' }}
+            />
+            <div style={{ fontSize: '10px', fontWeight: '700', color: '#6b7280', letterSpacing: '0.02em' }}>Portail Partenaires</div>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1551,11 +1556,18 @@ export default function Dashboard() {
       {/* BANDEAU LATÉRAL GAUCHE (DESKTOP UNIQUEMENT) */}
       {!isMobile && (
         <div style={{ width: '260px', backgroundColor: '#ffffff', borderRight: '1px solid #e5e7eb', padding: '28px 20px', display: 'flex', flexDirection: 'column', flexShrink: 0, position: 'sticky', top: 0, height: '100vh', boxSizing: 'border-box' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '24px', paddingLeft: '6px' }}>
-            <img src="/logo-stack.png" alt="STACK" style={{ width: '32px', height: '32px', objectFit: 'contain' }} />
-            <div>
-              <div style={{ fontSize: '17px', fontWeight: '800', letterSpacing: '0.03em', color: '#111827', lineHeight: 1.1 }}>STACK</div>
-              <div style={{ fontSize: '11px', fontWeight: '600', color: '#6b7280' }}>Portail Partenaires</div>
+          <div style={{ marginBottom: '24px', paddingLeft: '6px' }}>
+            <img
+              src="/stack-logo-light.png"
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = "/IMG_6804.png";
+              }}
+              alt="STACK"
+              style={{ height: '28px', width: 'auto', objectFit: 'contain', display: 'block' }}
+            />
+            <div style={{ fontSize: '11px', fontWeight: '700', color: '#6b7280', marginTop: '6px', letterSpacing: '0.02em' }}>
+              Portail Partenaires
             </div>
           </div>
 

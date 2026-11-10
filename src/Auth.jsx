@@ -74,9 +74,18 @@ export default function Auth() {
         
         {/* En-tête Logo STACK Partners */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginBottom: '28px' }}>
-          <img src="/logo-stack.png" alt="STACK" style={{ width: '36px', height: '36px', objectFit: 'contain' }} />
-          <span style={{ fontSize: '22px', fontWeight: '800', letterSpacing: '0.04em', color: '#111827' }}>STACK</span>
-          <span style={{ fontSize: '11px', fontWeight: '700', backgroundColor: '#f3f4f6', color: '#4b5563', padding: '3px 8px', borderRadius: '6px', textTransform: 'uppercase' }}>Partners</span>
+          <img
+            src="/stack-logo-light.png"
+            onError={(e) => {
+              e.currentTarget.onerror = null;
+              e.currentTarget.src = "/IMG_6804.png";
+            }}
+            alt="STACK"
+            style={{ height: '34px', width: 'auto', objectFit: 'contain' }}
+          />
+          <span style={{ fontSize: '11px', fontWeight: '800', backgroundColor: '#f3f4f6', color: '#4b5563', padding: '4px 8px', borderRadius: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Partners
+          </span>
         </div>
 
         {/* Sélecteur Connexion / Inscription façon pilule */}
