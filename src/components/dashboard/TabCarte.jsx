@@ -518,7 +518,7 @@ export default function TabCarte({
                   onClick={() => setMapAddressQuery('')}
                   style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: '12px', padding: 0 }}
                 >
-                  ✕
+                  X
                 </button>
               )}
             </div>
@@ -652,7 +652,7 @@ export default function TabCarte({
                 color: hideVisitedSalons ? '#059669' : '#475569'
               }}
             >
-              {hideVisitedSalons ? '✓ Visités masqués' : 'Masquer les visités'}
+              {hideVisitedSalons ? 'OK Visités masqués' : 'Masquer les visités'}
             </button>
 
             <select
@@ -752,7 +752,7 @@ export default function TabCarte({
                 className="sp-glass-pill"
                 style={{ padding: '7px 13px', borderRadius: '999px', fontSize: '12px', fontWeight: '700', color: '#475569', cursor: 'pointer' }}
               >
-                Fermer ✕
+                Fermer X
               </button>
             </div>
           </div>
@@ -1003,7 +1003,7 @@ export default function TabCarte({
                       }}
                       style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', display: 'flex', padding: 0 }}
                     >
-                      ✕
+                      X
                     </button>
                   </div>
                 ))}
@@ -1174,7 +1174,7 @@ export default function TabCarte({
                     color: '#ffffff'
                   }}
                 >
-                  {routeSalons.some((r) => r.siret === selectedSalonMap.siret) ? '✓ Dans ma tournée' : '+ Ajouter à la tournée'}
+                  {routeSalons.some((r) => r.siret === selectedSalonMap.siret) ? 'OK Dans ma tournée' : '+ Ajouter à la tournée'}
                 </button>
               </div>
 
@@ -1235,7 +1235,7 @@ export default function TabCarte({
                         color: selectedSalonMap.etoiles ? '#b45309' : '#64748b'
                       }}
                     >
-                      ★ {selectedSalonMap.etoiles ? `${selectedSalonMap.etoiles} / 5` : 'N/A'}
+                      Note: {selectedSalonMap.etoiles ? `${selectedSalonMap.etoiles} / 5` : 'N/A'}
                     </span>
                     <span style={{ padding: '3px 9px', borderRadius: '999px', fontSize: '11.5px', fontWeight: '700', background: 'rgba(15, 23, 42, 0.06)', color: '#334155' }}>
                       {selectedSalonMap.distance_km} km
@@ -1581,7 +1581,7 @@ export default function TabCarte({
                     onClick={() => setRechercheLocaleListe('')}
                     style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: '11px', padding: 0 }}
                   >
-                    ✕
+                    X
                   </button>
                 )}
               </div>
@@ -1685,7 +1685,7 @@ export default function TabCarte({
                                     color: '#b45309'
                                   }}
                                 >
-                                  ★ {s.etoiles}
+                                  Note: {s.etoiles}
                                 </span>
                               )}
                               {s.visite_info && (
@@ -1721,7 +1721,7 @@ export default function TabCarte({
                               padding: 0
                             }}
                           >
-                            {inRoute ? '✓' : '+'}
+                            {inRoute ? 'OK' : '+'}
                           </button>
 
                           <span

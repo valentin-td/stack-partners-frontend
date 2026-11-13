@@ -78,7 +78,7 @@ export default function TabProfil({
   }, [profilData, quizAnswers]);
 
   // Détermination automatique de la première étape nécessitant une action
-  const premiereEtape Prioritaire = useMemo(() => {
+  const premiereEtapePrioritaire = useMemo(() => {
     for (let i = 1; i <= 5; i++) {
       if (statutsEtapes[i].expire || !statutsEtapes[i].ok) return i;
     }
@@ -459,7 +459,7 @@ export default function TabProfil({
                       flexShrink: 0
                     }}
                   >
-                    {st.ok && !st.expire && !isSelected ? '✓' : item.num}
+                    {st.ok && !st.expire && !isSelected ? 'OK' : item.num}
                   </div>
 
                   <div style={{ minWidth: 0, flex: 1 }}>

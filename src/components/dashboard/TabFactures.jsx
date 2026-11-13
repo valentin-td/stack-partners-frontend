@@ -505,7 +505,7 @@ export default function TabFactures({
                   onClick={() => setRechercheFacture('')}
                   style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: '11px', padding: 0 }}
                 >
-                  ✕
+                  X
                 </button>
               )}
             </div>
@@ -931,7 +931,7 @@ export default function TabFactures({
                   flexShrink: 0
                 }}
               >
-                ✕
+                X
               </button>
             </div>
 

@@ -601,7 +601,7 @@ export default function TabAcademie({
                           fontWeight: '800'
                         }}
                       >
-                        {isPhaseComplete ? '✓' : idx + 1}
+                        {isPhaseComplete ? 'OK' : idx + 1}
                       </span>
 
                       <div style={{ minWidth: 0, flex: 1 }}>
@@ -1229,7 +1229,7 @@ export default function TabAcademie({
                   cursor: 'pointer'
                 }}
               >
-                ✕
+                X
               </button>
             </div>
             <div style={{ position: 'relative', paddingTop: '56.25%', backgroundColor: '#0f172a', borderRadius: '18px', overflow: 'hidden' }}>

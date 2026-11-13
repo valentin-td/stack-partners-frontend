@@ -502,7 +502,7 @@ export default function TabProspects({
                   onClick={() => setRechercheLead('')}
                   style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: '11px', padding: 0 }}
                 >
-                  ✕
+                  X
                 </button>
               )}
             </div>
@@ -695,7 +695,7 @@ export default function TabProspects({
                               fontVariantNumeric: 'tabular-nums'
                             }}
                           >
-                            {estSigne ? 'Converti ✓' : estProtege ? `${joursRestants}j restants` : 'Protection échue'}
+                            {estSigne ? 'Converti OK' : estProtege ? `${joursRestants}j restants` : 'Protection échue'}
                           </div>
                           <div style={{ height: '5px', width: '105px', background: 'rgba(148, 163, 184, 0.2)', borderRadius: '999px', overflow: 'hidden' }}>
                             <div
@@ -931,7 +931,7 @@ export default function TabProspects({
                   flexShrink: 0
                 }}
               >
-                ✕
+                X
               </button>
             </div>
 

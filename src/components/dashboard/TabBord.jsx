@@ -189,7 +189,7 @@ export default function TabBord({
                 color: '#64748b',
                 flexShrink: 0
               }}>
-                {afficherDetailPalier ? '✕' : 'i'}
+                {afficherDetailPalier ? 'X' : 'i'}
               </span>
             </button>
 
