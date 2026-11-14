@@ -299,7 +299,7 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
                 <input
                   type="text"
                   inputMode="numeric"
-                  placeholder="Ex: 842 915 ou 842915"
+                  placeholder="Ex: 842 915"
                   value={codeAcces}
                   onChange={e => setCodeAcces(e.target.value.replace(/[^0-9 ]/g, ''))}
                   maxLength={12}
