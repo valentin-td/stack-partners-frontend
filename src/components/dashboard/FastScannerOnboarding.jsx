@@ -648,25 +648,46 @@ export default function FastScannerOnboarding({ apiBaseUrl, token, session, onTe
             ))}
           </div>
 
-          {/* Gros bouton principal : Valider & Scanner suivant */}
-          <button
-            type="submit"
-            disabled={savingProduit}
-            style={{
-              width: '100%',
-              padding: '11px',
-              borderRadius: '12px',
-              border: 'none',
-              background: '#16a34a',
-              color: '#ffffff',
-              fontSize: '13.5px',
-              fontWeight: '900',
-              cursor: savingProduit ? 'not-allowed' : 'pointer',
-              boxShadow: '0 6px 16px -4px rgba(22, 163, 74, 0.4)'
-            }}
-          >
-            {savingProduit ? 'Enregistrement...' : 'Valider & scanner suivant'}
-          </button>
+          {/* Actions : Annuler & Valider / scanner suivant */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.6fr', gap: '8px' }}>
+            <button
+              type="button"
+              onClick={() => {
+                setProduitDetecte(null);
+                setCodeManuel('');
+                demarrerCamera();
+              }}
+              style={{
+                padding: '11px',
+                borderRadius: '12px',
+                border: '1.5px solid #cbd5e1',
+                background: '#ffffff',
+                color: '#475569',
+                fontSize: '13px',
+                fontWeight: '700',
+                cursor: 'pointer'
+              }}
+            >
+              Annuler
+            </button>
+            <button
+              type="submit"
+              disabled={savingProduit}
+              style={{
+                padding: '11px',
+                borderRadius: '12px',
+                border: 'none',
+                background: '#16a34a',
+                color: '#ffffff',
+                fontSize: '13px',
+                fontWeight: '900',
+                cursor: savingProduit ? 'not-allowed' : 'pointer',
+                boxShadow: '0 6px 16px -4px rgba(22, 163, 74, 0.4)'
+              }}
+            >
+              {savingProduit ? 'Enregistrement...' : 'Valider & suivant'}
+            </button>
+          </div>
         </form>
       )}
     </div>
