@@ -494,6 +494,49 @@ export default function FastScannerOnboarding({ apiBaseUrl, token, session, onTe
             </div>
           </div>
 
+          {/* Selecteur Type : Revente caisse vs Labo / Technique */}
+          <div style={{
+            background: '#e2e8f0',
+            padding: '2px',
+            borderRadius: '999px',
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '2px'
+          }}>
+            <button
+              type="button"
+              onClick={() => setProduitDetecte({ ...produitDetecte, type_article: 'PRODUIT_REVENTE' })}
+              style={{
+                height: '26px',
+                borderRadius: '999px',
+                border: 'none',
+                fontSize: '10.5px',
+                fontWeight: '800',
+                cursor: 'pointer',
+                background: produitDetecte.type_article !== 'CONSOMMABLE' ? '#0f172a' : 'transparent',
+                color: produitDetecte.type_article !== 'CONSOMMABLE' ? '#ffffff' : '#64748b'
+              }}
+            >
+              Revente caisse
+            </button>
+            <button
+              type="button"
+              onClick={() => setProduitDetecte({ ...produitDetecte, type_article: 'CONSOMMABLE' })}
+              style={{
+                height: '26px',
+                borderRadius: '999px',
+                border: 'none',
+                fontSize: '10.5px',
+                fontWeight: '800',
+                cursor: 'pointer',
+                background: produitDetecte.type_article === 'CONSOMMABLE' ? '#0f172a' : 'transparent',
+                color: produitDetecte.type_article === 'CONSOMMABLE' ? '#ffffff' : '#64748b'
+              }}
+            >
+              Labo / Technique
+            </button>
+          </div>
+
           {/* Ligne 2 : Prix Achat HT, Prix Vente TTC, Quantite sur une seule ligne compacte */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.2fr', gap: '8px' }}>
             <div>
