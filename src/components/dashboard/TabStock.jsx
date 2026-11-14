@@ -21,7 +21,7 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState(null);
 
-  const [subTab, setSubTab] = useState('onboarding'); // 'onboarding' | 'tpe'
+  const [subTab, setSubTab] = useState('tpe'); // 'tpe' | 'onboarding' (arrivee sur TPE par defaut)
   const [codeAcces, setCodeAcces] = useState('');
   const [onboardingSession, setOnboardingSession] = useState(null);
   const [joiningSession, setJoiningSession] = useState(false);
@@ -209,7 +209,7 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
             transition: 'all 0.15s ease'
           }}
         >
-          Saisie Stock Salon (Onboarding)
+          Saisie Stock Salon
         </button>
 
         <button
@@ -228,7 +228,7 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
             transition: 'all 0.15s ease'
           }}
         >
-          Mes Terminaux TPE ({nbStock})
+          Mes TPE ({nbStock})
         </button>
       </div>
 
@@ -290,7 +290,7 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
               </div>
             )}
 
-            <form onSubmit={rejoindreOnboarding} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <form noValidate onSubmit={rejoindreOnboarding} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: '#0f172a', marginBottom: '6px' }}>
                   Code a 6 chiffres du gerant
@@ -298,11 +298,10 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
                 <input
                   type="text"
                   inputMode="numeric"
-                  pattern="[0-9]*"
-                  placeholder="Ex: 842 915"
+                  placeholder="Ex: 842 915 ou 842915"
                   value={codeAcces}
-                  onChange={e => setCodeAcces(e.target.value)}
-                  maxLength={10}
+                  onChange={e => setCodeAcces(e.target.value.replace(/[^0-9 ]/g, ''))}
+                  maxLength={12}
                   autoFocus
                   style={{
                     width: '100%',
