@@ -17,6 +17,8 @@ export default function TabProfil({
   profilData = {},
   setProfilData,
   submitEtapeConformite,
+  onOuvrirSignatureContrat,
+  onTelechargerContratPdf,
   handleYousignSignature,
   handleCheckYousign,
   isYousignLoading,
@@ -543,86 +545,86 @@ export default function TabProfil({
                 </span>
               </div>
 
-              <div className="sp-glass-pill" style={{ padding: '18px', borderRadius: '18px', marginBottom: '20px' }}>
-                <p style={{ fontSize: '13.5px', color: '#334155', lineHeight: 1.6, margin: '0 0 12px 0' }}>
-                  Ce contrat de mandat commercial indépendant est conclu sous condition suspensive d'immatriculation au Registre Spécial des Agents Commerciaux (RSAC). Il fixe votre commission récurrente de <strong>20 % HT pendant 24 mois</strong> sur chaque salon affilié ainsi que vos frais de mise en service de <strong>99 € HT</strong>.
+              <div className="sp-glass-pill" style={{ padding: '20px', borderRadius: '18px', marginBottom: '20px' }}>
+                <p style={{ fontSize: '13.5px', color: '#334155', lineHeight: 1.6, margin: '0 0 14px 0' }}>
+                  Ce contrat de mandat commercial indépendant est conclu sous condition suspensive d'immatriculation au Registre Spécial des Agents Commerciaux (RSAC). Il régit votre mission de prospection, fixe votre commission récurrente de <strong>20 % HT pendant 24 mois</strong> sur chaque abonnement de salon affilié, ainsi que votre forfait de mise en service terrain de <strong>99 € HT</strong> par établissement.
                 </p>
 
                 {profilData.contrat_signe && profilData.statut_contrat === 'VALIDE' ? (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', paddingTop: '12px', borderTop: '1px solid rgba(148, 163, 184, 0.2)' }}>
-                    <div style={{ fontSize: '13.5px', fontWeight: '800', color: '#059669', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <Icon.Check /> Contrat signé électroniquement et archivé.
+                  <div style={{ backgroundColor: '#f0fdf4', border: '1px solid #86efac', borderRadius: '14px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+                      <div style={{ fontSize: '13.5px', fontWeight: '800', color: '#059669', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Icon.Check /> Contrat de mandat signé électroniquement et scellé.
+                      </div>
+                      <span style={{ fontSize: '11px', fontWeight: '700', color: '#15803d', backgroundColor: '#dcfce7', padding: '3px 9px', borderRadius: '999px' }}>
+                        eIDAS • Art. 1366 & 1367 C. Civ.
+                      </span>
+                    </div>
+
+                    <div style={{ fontSize: '12px', color: '#166534', lineHeight: 1.6, display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '6px' }}>
+                      <div><strong>Référence :</strong> {profilData.certificat_contrat_ref || 'STACK-MANDAT-VALIDE'}</div>
+                      <div><strong>Date :</strong> {profilData.date_signature_contrat ? new Date(profilData.date_signature_contrat).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }) : 'Certifiée'}</div>
+                      <div style={{ gridColumn: isMobile ? '1' : '1 / -1' }}>
+                        <strong>Empreinte SHA-256 :</strong> <code style={{ fontSize: '11px' }}>{profilData.hash_contrat ? `${profilData.hash_contrat.substring(0, 32)}...` : 'Scellement cryptographique actif'}</code>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', paddingTop: '8px', borderTop: '1px solid #bbf7d0' }}>
+                      <button
+                        type="button"
+                        onClick={onTelechargerContratPdf}
+                        style={{
+                          padding: '9px 18px',
+                          borderRadius: '999px',
+                          border: 'none',
+                          backgroundColor: '#059669',
+                          color: '#ffffff',
+                          fontSize: '12.5px',
+                          fontWeight: '800',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <Icon.FileDownload /> Télécharger mon contrat signé (PDF)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={onOuvrirSignatureContrat || handleYousignSignature}
+                        className="sp-glass-pill"
+                        style={{ padding: '9px 16px', borderRadius: '999px', fontSize: '12.5px', fontWeight: '700', color: '#166534', cursor: 'pointer', backgroundColor: '#ffffff' }}
+                      >
+                        Revoir les 10 articles du contrat
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '14px', paddingTop: '10px', borderTop: '1px solid rgba(148, 163, 184, 0.2)' }}>
+                    <div style={{ fontSize: '12.5px', color: '#64748b' }}>
+                      Signature manuscrite et scellement d'intégrité intégrés directement dans STACK Partners.
                     </div>
                     <button
                       type="button"
-                      onClick={handleYousignSignature}
-                      disabled={isYousignLoading}
-                      className="sp-glass-pill"
-                      style={{ padding: '8px 14px', borderRadius: '999px', fontSize: '12px', fontWeight: '700', color: '#475569', cursor: 'pointer' }}
-                    >
-                      {isYousignLoading ? 'Génération...' : 'Relancer un test de signature Yousign'}
-                    </button>
-                  </div>
-                ) : profilData.statut_contrat === 'EN_ATTENTE_SIGNATURE' ? (
-                  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', paddingTop: '10px' }}>
-                    <button
-                      type="button"
-                      onClick={handleCheckYousign}
-                      disabled={isYousignLoading}
+                      onClick={onOuvrirSignatureContrat || handleYousignSignature}
                       style={{
-                        padding: '11px 20px',
+                        padding: '12px 24px',
                         borderRadius: '999px',
                         border: 'none',
-                        backgroundColor: '#059669',
+                        backgroundColor: '#0f172a',
                         color: '#ffffff',
-                        fontSize: '13px',
+                        fontSize: '13.5px',
                         fontWeight: '800',
                         display: 'inline-flex',
                         alignItems: 'center',
                         gap: '8px',
-                        cursor: 'pointer'
+                        cursor: 'pointer',
+                        boxShadow: '0 8px 20px -4px rgba(15, 23, 42, 0.25)'
                       }}
                     >
-                      <Icon.Check /> {isYousignLoading ? 'Vérification...' : "J'ai signé, vérifier mon contrat"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (profilData.url_yousign_contrat) {
-                          window.location.assign(profilData.url_yousign_contrat);
-                        } else {
-                          handleYousignSignature();
-                        }
-                      }}
-                      disabled={isYousignLoading}
-                      className="sp-glass-pill"
-                      style={{ padding: '11px 18px', borderRadius: '999px', fontSize: '13px', fontWeight: '700', color: '#0f172a', cursor: 'pointer' }}
-                    >
-                      {isYousignLoading ? 'Ouverture...' : 'Ouvrir à nouveau le lien Yousign'}
+                      <Icon.Check /> Consulter et signer mon contrat de mandat
                     </button>
                   </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={handleYousignSignature}
-                    disabled={isYousignLoading}
-                    style={{
-                      padding: '12px 22px',
-                      borderRadius: '999px',
-                      border: 'none',
-                      backgroundColor: '#111827',
-                      color: '#ffffff',
-                      fontSize: '13.5px',
-                      fontWeight: '800',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      cursor: 'pointer',
-                      boxShadow: '0 8px 20px -4px rgba(17, 24, 39, 0.22)'
-                    }}
-                  >
-                    <Icon.Check /> {isYousignLoading ? 'Génération...' : 'Signer électroniquement le contrat de mandat'}
-                  </button>
                 )}
               </div>
 

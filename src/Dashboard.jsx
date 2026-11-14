@@ -15,6 +15,8 @@ import TabStock from './components/dashboard/TabStock';
 import TabAcademie from './components/dashboard/TabAcademie';
 import TabProfil from './components/dashboard/TabProfil';
 import TabGodMode from './components/dashboard/TabGodMode';
+import ModalSignatureContrat from './components/dashboard/ModalSignatureContrat';
+import { partnersApi } from './api/partnersApi';
 import { DEFAULT_TUTORIALS } from './constants/tutorials';
 
 export default function Dashboard() {
@@ -169,6 +171,9 @@ export default function Dashboard() {
   const [openObjectionIdx, setOpenObjectionIdx] = useState(0);
   const [sandboxLoading, setSandboxLoading] = useState(null);
   const [activeVideoModal, setActiveVideoModal] = useState(null);
+  const [showModalSignatureContrat, setShowModalSignatureContrat] = useState(false);
+  const [contratData, setContratData] = useState(null);
+  const [isSigningContrat, setIsSigningContrat] = useState(false);
   const [tutorialsList, setTutorialsList] = useState(() => {
     const saved = localStorage.getItem('stack_partner_videos_v1');
     if (saved) {
@@ -830,77 +835,47 @@ export default function Dashboard() {
     }
   };
 
-  const handleYousignSignature = async () => {
-    setIsYousignLoading(true);
+  const handleOuvrirSignatureContrat = async () => {
+    setShowModalSignatureContrat(true);
     try {
-      const res = await fetch(`${API_URL}/profil/yousign/initiate`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const text = await res.text();
-      let data;
-      try {
-        data = JSON.parse(text);
-      } catch (e) {
-        alert(`CRASH DU SERVEUR (HTTP ${res.status}) :\n\n` + text.substring(0, 300));
-        return;
-      }
-
-      if (res.ok) {
-        const targetUrl = data.redirect_url || data.signatureLink;
-        if (targetUrl) {
-          await fetchProfil();
-          window.location.assign(targetUrl);
-          return;
-        } else {
-          alert(
-            "ERREUR : Le serveur a répondu OK mais aucun lien Yousign n'a été trouvé dans la réponse :\n\n" +
-              JSON.stringify(data)
-          );
-        }
-      } else {
-        alert(
-          `YOUSIGN A REJETÉ LA DEMANDE (HTTP ${res.status}) :\n\n` +
-            (data.error || JSON.stringify(data))
-        );
-      }
+      const data = await partnersApi.getContrat(token);
+      setContratData(data);
     } catch (e) {
-      alert('ERREUR RÉSEAU OU SERVEUR INJOIGNABLE :\n\n' + e.message);
-    } finally {
-      setIsYousignLoading(false);
+      console.error("Erreur chargement données contrat:", e);
     }
   };
 
-  const handleCheckYousign = async () => {
-    setIsYousignLoading(true);
+  const handleSignerContratNative = async ({ signature_base64, consentement_lu }) => {
+    setIsSigningContrat(true);
     try {
-      const res = await fetch(`${API_URL}/profil/yousign/check`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const text = await res.text();
-      let data;
-      try {
-        data = JSON.parse(text);
-      } catch (e) {
-        alert(`ERREUR SERVEUR CHECK (HTTP ${res.status}) :\n\n` + text.substring(0, 300));
-        return;
-      }
-      if (res.ok && data.status === 'done') {
-        notify(data.message || 'Félicitations, contrat validé !');
-        fetchProfil();
-      } else {
-        alert(
-          `STATUT ACTUEL SUR YOUSIGN : "${data.status || 'inconnu'}"\n\n` +
-            (data.message ||
-              data.error ||
-              "Vous n'avez pas encore terminé la signature sur la page Yousign.")
-        );
-      }
+      const res = await partnersApi.signContratNative(token, { signature_base64, consentement_lu });
+      notify(res.message || "Contrat de mandat signé et scellé électroniquement avec succès !");
+      await fetchProfil();
+      setShowModalSignatureContrat(false);
     } catch (e) {
-      alert('Erreur réseau lors de la vérification : ' + e.message);
+      alert("Erreur lors de la signature : " + (e.message || "Veuillez réessayer."));
     } finally {
-      setIsYousignLoading(false);
+      setIsSigningContrat(false);
     }
+  };
+
+  const handleTelechargerContratPdf = async () => {
+    try {
+      const nom = `${profilData.prenom || ''}_${profilData.nom || 'AGENT'}`.trim();
+      await partnersApi.downloadContratPdf(token, nom);
+    } catch (e) {
+      alert("Erreur de téléchargement : " + (e.message || "Impossible de télécharger le contrat PDF."));
+    }
+  };
+
+  // Stubs conservés pour rétrocompatibilité interne
+  const handleYousignSignature = () => {
+    handleOuvrirSignatureContrat();
+  };
+
+  const handleCheckYousign = async () => {
+    await fetchProfil();
+    notify("Statut du contrat actualisé.");
   };
 
   const submitEtapeConformite = async (etape, customPayload = null) => {
@@ -1505,9 +1480,11 @@ export default function Dashboard() {
             profilData={profilData}
             setProfilData={setProfilData}
             submitEtapeConformite={submitEtapeConformite}
-            handleYousignSignature={handleYousignSignature}
+            onOuvrirSignatureContrat={handleOuvrirSignatureContrat}
+            onTelechargerContratPdf={handleTelechargerContratPdf}
+            handleYousignSignature={handleOuvrirSignatureContrat}
             handleCheckYousign={handleCheckYousign}
-            isYousignLoading={isYousignLoading}
+            isYousignLoading={isSigningContrat}
             handleFileUpload={handleFileUpload}
             renderFilePreviewBadge={renderFilePreviewBadge}
             quizAnswers={quizAnswers}
@@ -1552,6 +1529,18 @@ export default function Dashboard() {
           />
         )}
       </div>
+
+      {/* Modal Signature Electronique Native Contrat Mandat */}
+      <ModalSignatureContrat
+        isOpen={showModalSignatureContrat}
+        onClose={() => setShowModalSignatureContrat(false)}
+        profilData={profilData}
+        contratData={contratData}
+        onSignerContrat={handleSignerContratNative}
+        onTelechargerPdf={handleTelechargerContratPdf}
+        isSigning={isSigningContrat}
+        isMobile={isMobile}
+      />
     </div>
   );
 }

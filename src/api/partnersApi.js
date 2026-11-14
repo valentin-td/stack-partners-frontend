@@ -108,6 +108,59 @@ export const partnersApi = {
     return handleResponse(res);
   },
 
+  // Contrat de mandat commercial electronique natif
+  async getContrat(token) {
+    const res = await fetch(`${API_URL}/profil/contrat`, { headers: getHeaders(token) });
+    return handleResponse(res);
+  },
+
+  async signContratNative(token, { signature_base64, consentement_lu }) {
+    const res = await fetch(`${API_URL}/profil/contrat/signer`, {
+      method: 'POST',
+      headers: getHeaders(token),
+      body: JSON.stringify({ signature_base64, consentement_lu })
+    });
+    return handleResponse(res);
+  },
+
+  async downloadContratPdf(token, agentNom = 'AGENT') {
+    const res = await fetch(`${API_URL}/profil/contrat/telecharger-pdf`, {
+      headers: getHeaders(token)
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Erreur lors du téléchargement du contrat PDF.');
+    }
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Contrat_Mandat_STACK_${agentNom.toUpperCase().replace(/\s+/g, '_')}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  },
+
+  async adminDownloadContratPdf(token, idAgent, agentNom = 'AGENT') {
+    const res = await fetch(`${API_URL}/admin/agents/${idAgent}/contrat-pdf`, {
+      headers: getHeaders(token)
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Erreur lors du téléchargement du contrat PDF agent.');
+    }
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Contrat_Mandat_STACK_${agentNom.toUpperCase().replace(/\s+/g, '_')}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  },
+
   async initiateYousign(token) {
     const res = await fetch(`${API_URL}/profil/yousign/initiate`, {
       method: 'POST',
