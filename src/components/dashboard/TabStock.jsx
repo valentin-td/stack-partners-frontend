@@ -4,6 +4,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Icon } from '../common/Icons';
 import { formatDate } from '../../utils/formatters';
+import FastScannerOnboarding from './FastScannerOnboarding';
 
 export default function TabStock({ apiBaseUrl, token, isMobile }) {
   const [data, setData] = useState({
@@ -19,6 +20,43 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState(null);
+
+  const [subTab, setSubTab] = useState('onboarding'); // 'onboarding' | 'tpe'
+  const [codeAcces, setCodeAcces] = useState('');
+  const [onboardingSession, setOnboardingSession] = useState(null);
+  const [joiningSession, setJoiningSession] = useState(false);
+  const [joinError, setJoinError] = useState(null);
+
+  const rejoindreOnboarding = async (e) => {
+    if (e) e.preventDefault();
+    const cleanCode = codeAcces.trim().replace(/\s+/g, '');
+    if (!cleanCode || cleanCode.length < 4) {
+      setJoinError("Code invalide (6 chiffres requis).");
+      return;
+    }
+    setJoiningSession(true);
+    setJoinError(null);
+    try {
+      const res = await fetch(`${apiBaseUrl}/onboarding-stock/rejoindre`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ code_acces: cleanCode })
+      });
+      const data = await res.json();
+      if (res.ok && data.session) {
+        setOnboardingSession(data.session);
+      } else {
+        setJoinError(data.error || "Code introuvable ou expire.");
+      }
+    } catch (err) {
+      setJoinError("Erreur reseau.");
+    } finally {
+      setJoiningSession(false);
+    }
+  };
 
   const chargerStock = async () => {
     try {
@@ -144,10 +182,175 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
         }
       `}</style>
 
-      {/* =================================================================== */}
-      {/* 1. EN-TÊTE LOGISTIQUE & STOCK TPE                                   */}
-      {/* =================================================================== */}
-      <header
+      {/* Selecteur SubTab : Saisie Stock Salon (Onboarding) vs Suivi TPE */}
+      <div style={{
+        display: 'flex',
+        gap: '6px',
+        padding: '5px',
+        background: 'rgba(15, 23, 42, 0.06)',
+        borderRadius: '16px',
+        marginBottom: '20px',
+        maxWidth: '520px',
+        margin: '0 auto 20px auto'
+      }}>
+        <button
+          type="button"
+          onClick={() => setSubTab('onboarding')}
+          style={{
+            flex: 1,
+            padding: '10px 14px',
+            borderRadius: '12px',
+            border: 'none',
+            background: subTab === 'onboarding' ? '#0f172a' : 'transparent',
+            color: subTab === 'onboarding' ? '#ffffff' : '#64748b',
+            fontSize: '12.5px',
+            fontWeight: '800',
+            cursor: 'pointer',
+            transition: 'all 0.15s ease'
+          }}
+        >
+          Saisie Stock Salon (Onboarding)
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setSubTab('tpe')}
+          style={{
+            flex: 1,
+            padding: '10px 14px',
+            borderRadius: '12px',
+            border: 'none',
+            background: subTab === 'tpe' ? '#0f172a' : 'transparent',
+            color: subTab === 'tpe' ? '#ffffff' : '#64748b',
+            fontSize: '12.5px',
+            fontWeight: '800',
+            cursor: 'pointer',
+            transition: 'all 0.15s ease'
+          }}
+        >
+          Mes Terminaux TPE ({nbStock})
+        </button>
+      </div>
+
+      {subTab === 'onboarding' && (
+        onboardingSession ? (
+          <FastScannerOnboarding
+            apiBaseUrl={apiBaseUrl}
+            token={token}
+            session={onboardingSession}
+            onTerminer={() => {
+              setOnboardingSession(null);
+              setCodeAcces('');
+            }}
+            isMobile={isMobile}
+          />
+        ) : (
+          <div style={{
+            maxWidth: '520px',
+            margin: '0 auto',
+            background: '#ffffff',
+            border: '1.5px solid #e2e8f0',
+            borderRadius: '22px',
+            padding: isMobile ? '22px 18px' : '32px 28px',
+            boxShadow: '0 12px 32px -8px rgba(15, 23, 42, 0.08)'
+          }}>
+            <div style={{
+              display: 'inline-flex',
+              padding: '4px 10px',
+              borderRadius: '999px',
+              background: 'rgba(37, 99, 235, 0.1)',
+              color: '#2563eb',
+              fontSize: '11px',
+              fontWeight: '800',
+              textTransform: 'uppercase',
+              letterSpacing: '0.04em',
+              marginBottom: '10px'
+            }}>
+              Onboarding Terrain
+            </div>
+
+            <h2 style={{ margin: '0 0 6px 0', fontSize: '20px', fontWeight: '900', color: '#0f172a' }}>
+              Saisie d Inventaire Salon
+            </h2>
+            <p style={{ margin: '0 0 20px 0', fontSize: '13.5px', color: '#64748b', lineHeight: 1.5 }}>
+              Demandez au gerant du salon d ouvrir l onglet Stock et de cliquer sur <strong>« Deleguer Onboarding (Code Agent) »</strong> pour obtenir son code d acces a 6 chiffres.
+            </p>
+
+            {joinError && (
+              <div style={{
+                padding: '10px 14px',
+                borderRadius: '12px',
+                background: '#fee2e2',
+                color: '#b91c1c',
+                fontSize: '12.5px',
+                fontWeight: '700',
+                marginBottom: '16px'
+              }}>
+                {joinError}
+              </div>
+            )}
+
+            <form onSubmit={rejoindreOnboarding} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: '#0f172a', marginBottom: '6px' }}>
+                  Code a 6 chiffres du gerant
+                </label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  placeholder="Ex: 842 915"
+                  value={codeAcces}
+                  onChange={e => setCodeAcces(e.target.value)}
+                  maxLength={10}
+                  autoFocus
+                  style={{
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    height: '52px',
+                    borderRadius: '14px',
+                    border: '2px solid #cbd5e1',
+                    fontSize: '26px',
+                    fontWeight: '900',
+                    textAlign: 'center',
+                    letterSpacing: '0.15em',
+                    color: '#0f172a',
+                    outline: 'none',
+                    background: '#f8fafc',
+                    fontFamily: 'monospace'
+                  }}
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={joiningSession || !codeAcces.trim()}
+                style={{
+                  width: '100%',
+                  height: '46px',
+                  borderRadius: '14px',
+                  border: 'none',
+                  background: '#0f172a',
+                  color: '#ffffff',
+                  fontSize: '14px',
+                  fontWeight: '800',
+                  cursor: (joiningSession || !codeAcces.trim()) ? 'not-allowed' : 'pointer',
+                  boxShadow: '0 8px 20px -4px rgba(15, 23, 42, 0.2)'
+                }}
+              >
+                {joiningSession ? 'Connexion au salon...' : 'Rejoindre l inventaire du salon'}
+              </button>
+            </form>
+          </div>
+        )
+      )}
+
+      {subTab === 'tpe' && (
+        <>
+        {/* =================================================================== */}
+        {/* 1. EN-TÊTE LOGISTIQUE & STOCK TPE                                   */}
+        {/* =================================================================== */}
+        <header
         style={{
           display: 'flex',
           flexDirection: isMobile ? 'column' : 'row',
@@ -881,6 +1084,8 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
           </div>
         </div>
       </div>
+        </>
+      )}
     </div>
   );
 }
