@@ -733,63 +733,7 @@ export default function TabBord({
         </div>
       </div>
 
-      {/* =================================================================== */}
-      {/* 4. BANDEAU BAS DE PAGE (COMME SUR LA MAQUETTE)                      */}
-      {/* =================================================================== */}
-      <div
-        className="sp-glass-panel"
-        style={{
-          padding: isMobile ? '16px' : '18px 24px',
-          display: 'flex',
-          flexDirection: isMobile ? 'column' : 'row',
-          alignItems: isMobile ? 'flex-start' : 'center',
-          justifyContent: 'space-between',
-          gap: '14px'
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div
-            style={{
-              width: '38px',
-              height: '38px',
-              borderRadius: '50%',
-              background: 'rgba(99, 102, 241, 0.14)',
-              color: '#4f46e5',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0
-            }}
-          >
-            <svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor">
-              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-            </svg>
-          </div>
-          <div>
-            <strong style={{ display: 'block', fontSize: '14.5px', fontWeight: '800', color: '#0f172a' }}>
-              Développez votre portefeuille partenaires
-            </strong>
-            <span style={{ fontSize: '12.5px', color: '#64748b' }}>
-              Chaque salon affilié vous génère 20 % HT de commission récurrente pendant 24 mois dès son premier abonnement payant.
-            </span>
-          </div>
-        </div>
 
-        <span
-          className="sp-glass-pill"
-          style={{
-            padding: '8px 15px',
-            borderRadius: '999px',
-            fontSize: '12px',
-            fontWeight: '800',
-            color: '#0f172a',
-            whiteSpace: 'nowrap',
-            flexShrink: 0
-          }}
-        >
-          Commission 20 % HT • 24 mois
-        </span>
-      </div>
     </div>
   );
 }
