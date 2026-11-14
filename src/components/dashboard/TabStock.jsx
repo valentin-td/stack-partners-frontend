@@ -799,7 +799,7 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
                     )}
                   </div>
                   <span style={{ fontSize: '11.5px', color: '#64748b', lineHeight: 1.4, display: 'block' }}>
-                    Grand écran tactile 8" paysage avec pourboires dynamiques (secteur / Wi-Fi).
+                    Grand écran tactile 8" paysage avec pourboires dynamiques.
                   </span>
                 </button>
 
@@ -823,7 +823,7 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
                     )}
                   </div>
                   <span style={{ fontSize: '11.5px', color: '#64748b', lineHeight: 1.4, display: 'block' }}>
-                    Terminal sans fil tout-en-un avec imprimante ticket thermique intégrée (4G / Wi-Fi).
+                    Terminal sans fil tout-en-un avec imprimante ticket thermique intégrée.
                   </span>
                 </button>
               </div>
@@ -922,69 +922,11 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
               </div>
             )}
           </form>
-
-          {/* Carte 2 : Protocole logistique TPE Stripe */}
-          <div className="sp-glass-panel" style={{ padding: '20px 22px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-              <Icon.Shield />
-              <h3 style={{ margin: 0, fontSize: '15.5px', fontWeight: '800', color: '#0f172a' }}>
-                Protocole Logistique TPE
-              </h3>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {[
-                {
-                  num: '1',
-                  titre: 'Stock tampon recommandé (2 TPE)',
-                  desc: "Conservez toujours au moins 2 terminaux d'avance pour pouvoir équiper un salon dès la signature."
-                },
-                {
-                  num: '2',
-                  titre: 'Appairage Wi-Fi / 4G & Stripe Terminal',
-                  desc: "Lors du Go-Live, connectez le TPE au Wi-Fi du salon et saisissez le code d'appairage dans l'onglet Paramètres."
-                },
-                {
-                  num: '3',
-                  titre: 'Décompte automatique',
-                  desc: "Ajustez d'une unité votre stock via les boutons − / + dès que le terminal est remis au gérant."
-                }
-              ].map((step) => (
-                <div key={step.num} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-                  <span
-                    style={{
-                      width: '22px',
-                      height: '22px',
-                      borderRadius: '50%',
-                      background: '#111827',
-                      color: '#ffffff',
-                      fontSize: '11px',
-                      fontWeight: '800',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                      marginTop: '1px'
-                    }}
-                  >
-                    {step.num}
-                  </span>
-                  <div>
-                    <strong style={{ display: 'block', fontSize: '12.5px', color: '#0f172a', marginBottom: '2px' }}>
-                      {step.titre}
-                    </strong>
-                    <span style={{ fontSize: '11.5px', color: '#64748b', lineHeight: 1.45, display: 'block' }}>
-                      {step.desc}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
 
-        {/* COLONNE DROITE : SUIVI DES EXPÉDITIONS (UTILISATION OPTIMALE DE L'ESPACE) */}
-        <div className="sp-glass-panel" style={{ padding: isMobile ? '18px 16px' : '22px 24px' }}>
+        {/* COLONNE DROITE : SUIVI DES EXPÉDITIONS + PROTOCOLE LOGISTIQUE */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div className="sp-glass-panel" style={{ padding: isMobile ? '18px 16px' : '22px 24px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Icon.Stock />
@@ -1072,7 +1014,67 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
             </div>
           )}
         </div>
+
+        {/* Carte 2 : Protocole logistique TPE */}
+        <div className="sp-glass-panel" style={{ padding: '20px 22px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+            <Icon.Shield />
+            <h3 style={{ margin: 0, fontSize: '15.5px', fontWeight: '800', color: '#0f172a' }}>
+              Protocole Logistique TPE
+            </h3>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {[
+              {
+                num: '1',
+                titre: 'Stock tampon recommandé (2 TPE)',
+                desc: "Conservez toujours au moins 2 terminaux d'avance pour pouvoir équiper un salon dès la signature."
+              },
+              {
+                num: '2',
+                titre: 'Appairage Wi-Fi / 4G & Stripe Terminal',
+                desc: "Lors du Go-Live, connectez le TPE au Wi-Fi du salon et saisissez le code d'appairage dans l'onglet Paramètres."
+              },
+              {
+                num: '3',
+                titre: 'Décompte automatique',
+                desc: "Ajustez d'une unité votre stock via les boutons − / + dès que le terminal est remis au gérant."
+              }
+            ].map((step) => (
+              <div key={step.num} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                <span
+                  style={{
+                    width: '22px',
+                    height: '22px',
+                    borderRadius: '50%',
+                    background: '#111827',
+                    color: '#ffffff',
+                    fontSize: '11px',
+                    fontWeight: '800',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                    marginTop: '1px'
+                  }}
+                >
+                  {step.num}
+                </span>
+                <div>
+                  <strong style={{ display: 'block', fontSize: '12.5px', color: '#0f172a', marginBottom: '2px' }}>
+                    {step.titre}
+                  </strong>
+                  <span style={{ fontSize: '11.5px', color: '#64748b', lineHeight: 1.45, display: 'block' }}>
+                    {step.desc}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
+    </div>
         </>
       )}
     </div>
