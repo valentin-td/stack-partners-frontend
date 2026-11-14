@@ -22,6 +22,7 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
   const [feedback, setFeedback] = useState(null);
 
   const [subTab, setSubTab] = useState('tpe'); // 'tpe' | 'onboarding' (arrivee sur TPE par defaut)
+  const [modeleTpe, setModeleTpe] = useState('STRIPE_T600'); // 'STRIPE_T600' | 'STRIPE_S700'
   const [codeAcces, setCodeAcces] = useState('');
   const [onboardingSession, setOnboardingSession] = useState(null);
   const [joiningSession, setJoiningSession] = useState(false);
@@ -85,7 +86,7 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
       const res = await fetch(`${apiBaseUrl}/tpe-stock/commander`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ quantite, adresse_livraison: adresse })
+        body: JSON.stringify({ quantite, adresse_livraison: adresse, modele_tpe: modeleTpe })
       });
       const out = await res.json();
       if (res.ok) {
@@ -418,7 +419,7 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
           />
           <span>
             {data.alerte_penurie
-              ? `${nbManquant} terminal${nbManquant > 1 ? 'aux' : ''} manquant${nbManquant > 1 ? 's' : ''}`
+              ? `Réassort requis (${nbManquant} TPE)`
               : 'Couverture matérielle optimale'}
           </span>
         </span>
@@ -465,14 +466,10 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
             </div>
             <div style={{ fontSize: '13px', color: '#7f1d1d', lineHeight: 1.45 }}>
               <strong style={{ color: '#991b1b', display: 'block', fontSize: '13.5px' }}>
-                Stock TPE insuffisant pour vos prochains onboardings
+                Réassort TPE requis
               </strong>
               <span>
-                Vous avez <strong>{nbPrevus} salon{nbPrevus > 1 ? 's' : ''}</strong> en cours pour{' '}
-                <strong>
-                  {nbStock} {nbStock > 1 ? 'terminaux disponibles' : 'terminal disponible'}
-                </strong>
-                . Il vous manque <strong>{nbManquant} TPE</strong>.
+                {nbManquant} terminal{nbManquant > 1 ? 'aux' : ''} manquant{nbManquant > 1 ? 's' : ''} pour couvrir vos {nbPrevus} installations en cours (Stock disponible : {nbStock} TPE).
               </span>
             </div>
           </div>
@@ -744,17 +741,17 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
       </div>
 
       {/* =================================================================== */}
-      {/* 4. GRILLE BENTO 2 COLONNES (COMMANDE & SUIVI | GUIDE LOGISTIQUE)    */}
+      {/* 4. GRILLE BENTO 2 COLONNES (COMMANDE & PROTOCOLE | SUIVI LOGISTIQUE)*/}
       {/* =================================================================== */}
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr' : '1.42fr 1fr',
+          gridTemplateColumns: isMobile ? '1fr' : '1.15fr 1fr',
           gap: '20px',
           alignItems: 'start'
         }}
       >
-        {/* COLONNE GAUCHE : FORMULAIRE DE COMMANDE + SUIVI DES EXPÉDITIONS */}
+        {/* COLONNE GAUCHE : FORMULAIRE DE COMMANDE + PROTOCOLE LOGISTIQUE */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {/* Carte 1 : Commander des terminaux TPE */}
           <form
@@ -772,8 +769,64 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
                 </span>
               </div>
               <span className="sp-glass-pill" style={{ padding: '4px 10px', borderRadius: '999px', fontSize: '11px', fontWeight: '800', color: '#0f172a' }}>
-                Stripe WisePOS E
+                {modeleTpe === 'STRIPE_S700' ? 'Stripe Reader S700' : 'Stripe Reader T600'}
               </span>
+            </div>
+
+            {/* Sélecteur du modèle TPE : Stripe T600 vs Stripe S700 */}
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', fontSize: '11.5px', fontWeight: '800', color: '#334155', marginBottom: '8px' }}>
+                Modèle de terminal
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '10px' }}>
+                <button
+                  type="button"
+                  onClick={() => setModeleTpe('STRIPE_T600')}
+                  style={{
+                    padding: '12px 14px',
+                    borderRadius: '14px',
+                    border: modeleTpe === 'STRIPE_T600' ? '2px solid #0f172a' : '1px solid rgba(148, 163, 184, 0.35)',
+                    background: modeleTpe === 'STRIPE_T600' ? 'rgba(15, 23, 42, 0.05)' : 'rgba(255, 255, 255, 0.7)',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                    <strong style={{ fontSize: '13px', color: '#0f172a' }}>Stripe Reader T600</strong>
+                    {modeleTpe === 'STRIPE_T600' && (
+                      <span style={{ fontSize: '10px', fontWeight: '800', padding: '2px 7px', borderRadius: '999px', background: '#0f172a', color: '#ffffff' }}>Comptoir</span>
+                    )}
+                  </div>
+                  <span style={{ fontSize: '11.5px', color: '#64748b', lineHeight: 1.4, display: 'block' }}>
+                    Grand écran tactile 8" paysage avec pourboires dynamiques (secteur / Wi-Fi).
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setModeleTpe('STRIPE_S700')}
+                  style={{
+                    padding: '12px 14px',
+                    borderRadius: '14px',
+                    border: modeleTpe === 'STRIPE_S700' ? '2px solid #0f172a' : '1px solid rgba(148, 163, 184, 0.35)',
+                    background: modeleTpe === 'STRIPE_S700' ? 'rgba(15, 23, 42, 0.05)' : 'rgba(255, 255, 255, 0.7)',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                    <strong style={{ fontSize: '13px', color: '#0f172a' }}>Stripe Reader S700</strong>
+                    {modeleTpe === 'STRIPE_S700' && (
+                      <span style={{ fontSize: '10px', fontWeight: '800', padding: '2px 7px', borderRadius: '999px', background: '#0f172a', color: '#ffffff' }}>Mobile</span>
+                    )}
+                  </div>
+                  <span style={{ fontSize: '11.5px', color: '#64748b', lineHeight: 1.4, display: 'block' }}>
+                    Terminal sans fil tout-en-un avec imprimante ticket thermique intégrée (4G / Wi-Fi).
+                  </span>
+                </button>
+              </div>
             </div>
 
             {/* Sélection rapide de la quantité en pilules */}
@@ -847,7 +900,7 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
                   }}
                 >
                   <Icon.Check />
-                  <span>{submitting ? 'Envoi...' : `Commander (${quantite} TPE)`}</span>
+                  <span>{submitting ? 'Envoi...' : `Commander (${quantite}x ${modeleTpe === 'STRIPE_S700' ? 'S700' : 'T600'})`}</span>
                 </button>
               </div>
             </div>
@@ -870,159 +923,6 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
             )}
           </form>
 
-          {/* Carte 2 : Suivi des expéditions */}
-          <div className="sp-glass-panel" style={{ padding: isMobile ? '18px 16px' : '22px 24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Icon.Stock />
-                <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '800', color: '#0f172a' }}>
-                  Suivi des expéditions ({(data.commandes || []).length})
-                </h3>
-              </div>
-              <span style={{ fontSize: '11.5px', fontWeight: '700', color: '#64748b' }}>
-                Historique des envois
-              </span>
-            </div>
-
-            {!data.commandes || data.commandes.length === 0 ? (
-              <div
-                className="sp-glass-pill"
-                style={{
-                  padding: '28px 16px',
-                  borderRadius: '16px',
-                  textAlign: 'center',
-                  color: '#64748b',
-                  fontSize: '13px'
-                }}
-              >
-                Aucune commande de terminal enregistrée pour le moment.
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {data.commandes.map((cmd) => {
-                  const estExpediee = cmd.statut === 'EXPEDIEE';
-                  return (
-                    <div key={cmd.id_commande} className="sp-stock-row">
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
-                        <div
-                          style={{
-                            width: '38px',
-                            height: '38px',
-                            borderRadius: '12px',
-                            background: estExpediee ? 'rgba(16, 185, 129, 0.14)' : 'rgba(99, 102, 241, 0.12)',
-                            color: estExpediee ? '#059669' : '#4f46e5',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            flexShrink: 0
-                          }}
-                        >
-                          <Icon.Stock />
-                        </div>
-
-                        <div style={{ minWidth: 0 }}>
-                          <strong style={{ display: 'block', fontSize: '14px', fontWeight: '800', color: '#0f172a' }}>
-                            {cmd.quantite} TPE Stripe
-                          </strong>
-                          <span
-                            style={{
-                              display: 'block',
-                              fontSize: '12px',
-                              color: '#64748b',
-                              whiteSpace: 'nowrap',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis'
-                            }}
-                          >
-                            {formatDate(cmd.date_commande)} • {cmd.adresse_livraison}
-                          </span>
-                        </div>
-                      </div>
-
-                      <span
-                        style={{
-                          padding: '5px 11px',
-                          borderRadius: '999px',
-                          fontSize: '11px',
-                          fontWeight: '800',
-                          backgroundColor: estExpediee ? 'rgba(16, 185, 129, 0.14)' : 'rgba(245, 158, 11, 0.16)',
-                          color: estExpediee ? '#059669' : '#b45309',
-                          flexShrink: 0
-                        }}
-                      >
-                        {estExpediee ? 'Expédié' : 'En préparation'}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* COLONNE DROITE : GESTION DU STOCK TAMPON & PROTOCOLE D'INSTALLATION */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-          {/* Carte 1 : Ajustement rapide sur le terrain */}
-          <div className="sp-glass-panel" style={{ padding: '20px 22px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Icon.Zap />
-                <h3 style={{ margin: 0, fontSize: '15.5px', fontWeight: '800', color: '#0f172a' }}>
-                  Pointage rapide du stock
-                </h3>
-              </div>
-              <span className="sp-glass-pill" style={{ padding: '3px 9px', borderRadius: '999px', fontSize: '11px', fontWeight: '800', color: '#0f172a' }}>
-                {nbStock} u.
-              </span>
-            </div>
-
-            <p style={{ margin: '0 0 14px 0', fontSize: '12.5px', color: '#64748b', lineHeight: 1.5 }}>
-              Mettez à jour votre inventaire immédiatement après chaque installation en salon ou réception d'un colis.
-            </p>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-              <button
-                type="button"
-                onClick={() => ajusterStock(-1)}
-                className="sp-glass-pill"
-                style={{
-                  padding: '10px 12px',
-                  borderRadius: '14px',
-                  fontSize: '12px',
-                  fontWeight: '800',
-                  color: '#0f172a',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '6px'
-                }}
-              >
-                <span>− 1 TPE posé</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => ajusterStock(1)}
-                style={{
-                  padding: '10px 12px',
-                  borderRadius: '14px',
-                  border: 'none',
-                  backgroundColor: '#111827',
-                  color: '#ffffff',
-                  fontSize: '12px',
-                  fontWeight: '800',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '6px'
-                }}
-              >
-                <span>+ 1 TPE reçu</span>
-              </button>
-            </div>
-          </div>
-
           {/* Carte 2 : Protocole logistique TPE Stripe */}
           <div className="sp-glass-panel" style={{ padding: '20px 22px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
@@ -1041,13 +941,13 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
                 },
                 {
                   num: '2',
-                  titre: 'Appairage Wi-Fi & Stripe Terminal',
+                  titre: 'Appairage Wi-Fi / 4G & Stripe Terminal',
                   desc: "Lors du Go-Live, connectez le TPE au Wi-Fi du salon et saisissez le code d'appairage dans l'onglet Paramètres."
                 },
                 {
                   num: '3',
                   titre: 'Décompte automatique',
-                  desc: "Retirez 1 unité de votre stock dès que le terminal est remis au gérant pour maintenir votre alerte logistique à jour."
+                  desc: "Ajustez d'une unité votre stock via les boutons − / + dès que le terminal est remis au gérant."
                 }
               ].map((step) => (
                 <div key={step.num} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
@@ -1081,6 +981,96 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
               ))}
             </div>
           </div>
+        </div>
+
+        {/* COLONNE DROITE : SUIVI DES EXPÉDITIONS (UTILISATION OPTIMALE DE L'ESPACE) */}
+        <div className="sp-glass-panel" style={{ padding: isMobile ? '18px 16px' : '22px 24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Icon.Stock />
+              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '800', color: '#0f172a' }}>
+                Suivi des expéditions ({(data.commandes || []).length})
+              </h3>
+            </div>
+            <span style={{ fontSize: '11.5px', fontWeight: '700', color: '#64748b' }}>
+              Historique des envois
+            </span>
+          </div>
+
+          {!data.commandes || data.commandes.length === 0 ? (
+            <div
+              className="sp-glass-pill"
+              style={{
+                padding: '36px 16px',
+                borderRadius: '16px',
+                textAlign: 'center',
+                color: '#64748b',
+                fontSize: '13px'
+              }}
+            >
+              Aucune commande de terminal enregistrée pour le moment.
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {data.commandes.map((cmd) => {
+                const estExpediee = cmd.statut === 'EXPEDIEE';
+                const modeleLabel = cmd.modele_tpe === 'STRIPE_S700' ? 'Stripe Reader S700' : 'Stripe Reader T600';
+                return (
+                  <div key={cmd.id_commande} className="sp-stock-row">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+                      <div
+                        style={{
+                          width: '38px',
+                          height: '38px',
+                          borderRadius: '12px',
+                          background: estExpediee ? 'rgba(16, 185, 129, 0.14)' : 'rgba(99, 102, 241, 0.12)',
+                          color: estExpediee ? '#059669' : '#4f46e5',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0
+                        }}
+                      >
+                        <Icon.Stock />
+                      </div>
+
+                      <div style={{ minWidth: 0 }}>
+                        <strong style={{ display: 'block', fontSize: '14px', fontWeight: '800', color: '#0f172a' }}>
+                          {cmd.quantite}x {modeleLabel}
+                        </strong>
+                        <span
+                          style={{
+                            display: 'block',
+                            fontSize: '12px',
+                            color: '#64748b',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                          }}
+                        >
+                          {formatDate(cmd.date_commande)} • {cmd.adresse_livraison}
+                        </span>
+                      </div>
+                    </div>
+
+                    <span
+                      style={{
+                        padding: '5px 11px',
+                        borderRadius: '999px',
+                        fontSize: '11px',
+                        fontWeight: '800',
+                        backgroundColor: estExpediee ? 'rgba(16, 185, 129, 0.14)' : 'rgba(245, 158, 11, 0.16)',
+                        color: estExpediee ? '#059669' : '#b45309',
+                        flexShrink: 0
+                      }}
+                    >
+                      {estExpediee ? 'Expédié' : 'En préparation'}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
         </>
