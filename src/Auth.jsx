@@ -69,8 +69,9 @@ export default function Auth() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f6f6f7', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
-      <div style={{ width: '100%', maxWidth: '420px', backgroundColor: '#ffffff', borderRadius: '24px', padding: '36px 32px', boxShadow: '0 10px 30px rgba(0, 0, 0, 0.05)', border: '1px solid #e5e7eb', boxSizing: 'border-box' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: 'transparent', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
+      <div className="sp-ambient-bg" />
+      <div style={{ width: '100%', maxWidth: '420px', backgroundColor: 'rgba(255, 255, 255, 0.92)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', borderRadius: '24px', padding: '36px 32px', boxShadow: '0 10px 30px rgba(0, 0, 0, 0.05)', border: '1px solid rgba(255, 255, 255, 0.95)', boxSizing: 'border-box' }}>
         
         {/* En-tête Logo STACK Partners */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginBottom: '28px' }}>

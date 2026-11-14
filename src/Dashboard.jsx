@@ -1348,8 +1348,9 @@ export default function Dashboard() {
       <div
         style={{
           flex: 1,
-          padding: isMobile ? '18px 14px' : '40px 48px',
-          maxWidth: '1180px',
+          minWidth: 0,
+          padding: isMobile ? '18px 14px' : '36px 40px',
+          maxWidth: '1280px',
           width: '100%',
           boxSizing: 'border-box',
           overflowX: 'hidden'
