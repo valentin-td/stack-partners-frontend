@@ -446,11 +446,20 @@ export default function FastScannerOnboarding({ apiBaseUrl, token, session, onTe
                 <img
                   src={produitDetecte.photo_url}
                   alt={produitDetecte.nom}
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    const fallback = e.currentTarget.parentElement?.querySelector('.fallback-badge');
+                    if (fallback) fallback.style.display = 'inline';
+                  }}
                   style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '2px' }}
                 />
-              ) : (
-                <span style={{ fontSize: '10px', color: '#94a3b8', fontWeight: '800' }}>PHOTO</span>
-              )}
+              ) : null}
+              <span
+                className="fallback-badge"
+                style={{ fontSize: '10px', color: '#94a3b8', fontWeight: '800', display: produitDetecte.photo_url ? 'none' : 'inline' }}
+              >
+                PHOTO
+              </span>
             </div>
 
             <div style={{ flex: 1, minWidth: 0 }}>
