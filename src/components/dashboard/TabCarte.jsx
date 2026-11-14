@@ -335,46 +335,6 @@ export default function TabCarte({
 
   return (
     <div style={{ paddingBottom: isMobile ? '90px' : '24px' }}>
-      <style>{`
-        .sp-salon-card {
-          background: linear-gradient(145deg, rgba(255, 255, 255, 0.92) 0%, rgba(255, 255, 255, 0.68) 100%);
-          border: 1px solid rgba(255, 255, 255, 0.96);
-          box-shadow: 0 4px 12px -4px rgba(15, 23, 42, 0.04), inset 0 1px 0 #ffffff;
-          border-radius: 16px;
-          padding: 11px 13px;
-          cursor: pointer;
-          transition: transform 0.14s ease, box-shadow 0.14s ease, border-color 0.14s ease;
-        }
-        .sp-salon-card:hover {
-          transform: translateY(-1px);
-          background: rgba(255, 255, 255, 0.96);
-          box-shadow: 0 8px 20px -6px rgba(15, 23, 42, 0.09), inset 0 1px 0 #ffffff;
-        }
-        .sp-salon-card.in-route {
-          border: 1.5px solid #111827;
-        }
-        .sp-map-input {
-          width: 100%;
-          box-sizing: border-box;
-          height: 40px;
-          padding: 0 13px;
-          background: rgba(255, 255, 255, 0.9);
-          border: 1px solid rgba(148, 163, 184, 0.3);
-          border-radius: 12px;
-          font-size: 13px;
-          font-weight: 600;
-          color: #0f172a;
-          outline: none;
-        }
-        .sp-map-input:focus {
-          border-color: #0f172a;
-          background: #ffffff;
-        }
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
-
       {/* =================================================================== */}
       {/* 1. EN-TÊTE + ACTIONS GLOBALES (GPS & PLANIFICATEUR DE TOURNÉE)      */}
       {/* =================================================================== */}

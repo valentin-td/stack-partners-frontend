@@ -2,16 +2,17 @@
 // Styles communs et réutilisables pour STACK Partners — Thème Verre Cristal & Aurora
 
 export const getCardStyle = (isMobile) => ({
-  background: 'linear-gradient(145deg, rgba(255, 255, 255, 0.82) 0%, rgba(255, 255, 255, 0.54) 100%)',
-  backdropFilter: 'blur(16px)',
-  WebkitBackdropFilter: 'blur(16px)',
+  background: 'linear-gradient(145deg, rgba(255, 255, 255, 0.90) 0%, rgba(255, 255, 255, 0.72) 100%)',
+  backdropFilter: 'blur(8px)',
+  WebkitBackdropFilter: 'blur(8px)',
+  transform: 'translateZ(0)',
   borderRadius: isMobile ? '20px' : '24px',
   borderTop: '1.5px solid rgba(255, 255, 255, 0.98)',
   borderLeft: '1.5px solid rgba(255, 255, 255, 0.92)',
-  borderRight: '1px solid rgba(255, 255, 255, 0.55)',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.45)',
+  borderRight: '1px solid rgba(255, 255, 255, 0.60)',
+  borderBottom: '1px solid rgba(255, 255, 255, 0.50)',
   padding: isMobile ? '18px 16px' : '24px',
-  boxShadow: '0 12px 32px -8px rgba(15, 23, 42, 0.06), inset 0 1px 0 0 #ffffff',
+  boxShadow: '0 10px 28px -6px rgba(15, 23, 42, 0.05), inset 0 1px 0 0 #ffffff',
   marginBottom: isMobile ? '16px' : '22px',
   boxSizing: 'border-box'
 });

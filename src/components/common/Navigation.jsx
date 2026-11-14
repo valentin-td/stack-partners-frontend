@@ -15,38 +15,6 @@ export default function Navigation({
 }) {
   return (
     <>
-      <style>{`
-        html, body, #root {
-          background-color: #dce5f2 !important;
-          background-image:
-            radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.24) 0px, transparent 50%),
-            radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.2) 0px, transparent 50%),
-            radial-gradient(at 100% 100%, rgba(245, 158, 11, 0.16) 0px, transparent 50%),
-            radial-gradient(at 0% 100%, rgba(14, 165, 233, 0.2) 0px, transparent 50%) !important;
-          background-attachment: fixed !important;
-          color: #0f172a;
-        }
-        .sp-glass-panel {
-          background: linear-gradient(145deg, rgba(255, 255, 255, 0.82) 0%, rgba(255, 255, 255, 0.54) 100%);
-          backdrop-filter: blur(16px);
-          -webkit-backdrop-filter: blur(16px);
-          border-top: 1.5px solid rgba(255, 255, 255, 0.98);
-          border-left: 1.5px solid rgba(255, 255, 255, 0.92);
-          border-right: 1px solid rgba(255, 255, 255, 0.55);
-          border-bottom: 1px solid rgba(255, 255, 255, 0.45);
-          box-shadow: 0 12px 32px -8px rgba(15, 23, 42, 0.06), inset 0 1px 0 0 #ffffff;
-          border-radius: 24px;
-        }
-        .sp-glass-pill {
-          background: linear-gradient(145deg, rgba(255, 255, 255, 0.92) 0%, rgba(255, 255, 255, 0.66) 100%);
-          border: 1px solid rgba(255, 255, 255, 0.96);
-          box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04), inset 0 1px 0 #ffffff;
-        }
-        .sp-nav-btn:hover {
-          background-color: rgba(255, 255, 255, 0.55);
-        }
-      `}</style>
-
       {/* EN-TÊTE MOBILE STICKY EN VERRE */}
       {isMobile && (
         <div
@@ -54,10 +22,10 @@ export default function Navigation({
             position: 'sticky',
             top: 0,
             zIndex: 900,
-            background: 'rgba(255, 255, 255, 0.78)',
-            backdropFilter: 'blur(16px)',
-            WebkitBackdropFilter: 'blur(16px)',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.85)',
+            background: 'rgba(255, 255, 255, 0.88)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.90)',
             padding: '10px 16px',
             display: 'flex',
             alignItems: 'center',
@@ -323,9 +291,10 @@ export default function Navigation({
             left: '12px',
             right: '12px',
             zIndex: 950,
-            background: 'rgba(255, 255, 255, 0.82)',
-            backdropFilter: 'blur(22px)',
-            WebkitBackdropFilter: 'blur(22px)',
+            background: 'rgba(255, 255, 255, 0.90)',
+            backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)',
+            transform: 'translateZ(0)',
             border: '1.5px solid #ffffff',
             borderRadius: '26px',
             display: 'grid',

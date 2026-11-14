@@ -1,7 +1,7 @@
 // src/Dashboard.jsx
 // Orchestrateur principal du portail STACK Partners
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { API_URL } from './api/config';
 import { getCardStyle, inputStyle, primaryBtn, secondaryBtn } from './styles/commonStyles';
 import { Icon } from './components/common/Icons';
@@ -18,23 +18,42 @@ import TabGodMode from './components/dashboard/TabGodMode';
 import { DEFAULT_TUTORIALS } from './constants/tutorials';
 
 export default function Dashboard() {
-  const agent = JSON.parse(localStorage.getItem('partner_data') || '{}');
+  const agent = useMemo(() => {
+    try {
+      return JSON.parse(localStorage.getItem('partner_data') || '{}');
+    } catch (e) {
+      return {};
+    }
+  }, []);
   const token = localStorage.getItem('partner_token');
 
   const [activeTab, setActiveTab] = useState('bord');
   const [toastMsg, setToastMsg] = useState(null);
 
-  // Detection responsive temps reel
-  const [windowWidth, setWindowWidth] = useState(
-    typeof window !== 'undefined' ? window.innerWidth : 1200
+  // Detection responsive temps reel avec debouncing haute performance (aucun lag au scroll)
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== 'undefined' ? window.innerWidth < 860 : false
   );
-  const isMobile = windowWidth < 860;
-  const isSmall = windowWidth < 520;
+  const [isSmall, setIsSmall] = useState(
+    typeof window !== 'undefined' ? window.innerWidth < 520 : false
+  );
 
   useEffect(() => {
-    const onResize = () => setWindowWidth(window.innerWidth);
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
+    let timer = null;
+    const onResize = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        const m = window.innerWidth < 860;
+        const s = window.innerWidth < 520;
+        setIsMobile(prev => (prev !== m ? m : prev));
+        setIsSmall(prev => (prev !== s ? s : prev));
+      }, 100);
+    };
+    window.addEventListener('resize', onResize, { passive: true });
+    return () => {
+      if (timer) clearTimeout(timer);
+      window.removeEventListener('resize', onResize);
+    };
   }, []);
 
   // Etats Dashboard & Commissions
@@ -119,11 +138,14 @@ export default function Dashboard() {
   const [isOptimizingRoute, setIsOptimizingRoute] = useState(false);
 
   // Etats God Mode (Super-Admin)
-  const isSuperAdmin =
-    Number(agent?.id) === 1 ||
-    Number(agent?.id_agent) === 1 ||
-    String(agent?.email || '').toLowerCase().trim() === 'tardy.valentin04@gmail.com' ||
-    String(profilData?.email || '').toLowerCase().trim() === 'tardy.valentin04@gmail.com';
+  const isSuperAdmin = useMemo(() => {
+    return (
+      Number(agent?.id) === 1 ||
+      Number(agent?.id_agent) === 1 ||
+      String(agent?.email || '').toLowerCase().trim() === 'tardy.valentin04@gmail.com' ||
+      String(profilData?.email || '').toLowerCase().trim() === 'tardy.valentin04@gmail.com'
+    );
+  }, [agent?.id, agent?.id_agent, agent?.email, profilData?.email]);
 
   const [adminAgents, setAdminAgents] = useState([]);
   const [adminCommissions, setAdminCommissions] = useState([]);
@@ -1294,7 +1316,7 @@ export default function Dashboard() {
     Math.round((stats.kpis.nb_salons_actifs / stats.kpis.seuil_deblocage) * 100)
   );
 
-  const cardStyle = getCardStyle(isMobile);
+  const cardStyle = useMemo(() => getCardStyle(isMobile), [isMobile]);
 
   return (
     <div
@@ -1303,11 +1325,14 @@ export default function Dashboard() {
         flexDirection: isMobile ? 'column' : 'row',
         minHeight: '100vh',
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-        backgroundColor: '#f6f6f7',
+        backgroundColor: 'transparent',
         color: '#111827',
         paddingBottom: isMobile ? '84px' : '0'
       }}
     >
+      {/* Fond d'ambiance Aurora sur GPU dedie (aucune saccade au scroll) */}
+      <div className="sp-ambient-bg" />
+
       {/* Navigation Desktop & Mobile */}
       <Navigation
         isMobile={isMobile}
