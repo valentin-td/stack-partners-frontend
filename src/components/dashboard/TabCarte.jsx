@@ -1,5 +1,5 @@
 // src/components/dashboard/TabCarte.jsx
-// Onglet 3 : Carte de prospection interactive Leaflet, tournées OSRM et qualification CRM en Verre Cristal
+// Onglet 3 : Carte de prospection interactive Leaflet, tournées OSRM et qualification CRM — Optimisé Desktop & iPhone
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { Icon } from '../common/Icons';
@@ -83,7 +83,6 @@ export default function TabCarte({
   setActiveTab,
   isSuperAdmin,
   isMobile,
-  isSmall,
   leafletReady
 }) {
   const [rechercheLocaleListe, setRechercheLocaleListe] = useState('');
@@ -334,124 +333,187 @@ export default function TabCarte({
   ]);
 
   return (
-    <div style={{ paddingBottom: isMobile ? '90px' : '24px' }}>
+    <div
+      style={{
+        paddingBottom: isMobile ? 'calc(125px + env(safe-area-inset-bottom, 0px))' : '24px',
+        width: '100%',
+        boxSizing: 'border-box'
+      }}
+    >
+      <style>{`
+        .sp-salon-card {
+          background: linear-gradient(145deg, rgba(255, 255, 255, 0.92) 0%, rgba(255, 255, 255, 0.68) 100%);
+          border: 1px solid rgba(255, 255, 255, 0.96);
+          box-shadow: 0 4px 12px -4px rgba(15, 23, 42, 0.04), inset 0 1px 0 #ffffff;
+          border-radius: 16px;
+          padding: 11px 13px;
+          cursor: pointer;
+          transition: transform 0.14s ease, box-shadow 0.14s ease, border-color 0.14s ease;
+        }
+        .sp-salon-card:hover {
+          transform: translateY(-1px);
+          background: rgba(255, 255, 255, 0.96);
+          box-shadow: 0 8px 20px -6px rgba(15, 23, 42, 0.09), inset 0 1px 0 #ffffff;
+        }
+        .sp-salon-card.in-route {
+          border: 1.5px solid #111827;
+        }
+        .sp-map-input {
+          width: 100%;
+          box-sizing: border-box;
+          height: 40px;
+          padding: 0 13px;
+          background: rgba(255, 255, 255, 0.9);
+          border: 1px solid rgba(148, 163, 184, 0.3);
+          border-radius: 12px;
+          font-size: 13px;
+          font-weight: 600;
+          color: #0f172a;
+          outline: none;
+        }
+        .sp-map-input:focus {
+          border-color: #0f172a;
+          background: #ffffff;
+        }
+        .sp-no-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
+
       {/* =================================================================== */}
-      {/* 1. EN-TÊTE + ACTIONS GLOBALES (GPS & PLANIFICATEUR DE TOURNÉE)      */}
+      {/* 1. EN-TÊTE + ACTIONS GLOBALES (COMPACT SUR 1 LIGNE SUR IPHONE)      */}
       {/* =================================================================== */}
       <header
         style={{
           display: 'flex',
-          flexDirection: isMobile ? 'column' : 'row',
+          flexDirection: 'row',
           justifyContent: 'space-between',
-          alignItems: isMobile ? 'stretch' : 'flex-end',
-          gap: '14px',
-          marginBottom: '18px'
+          alignItems: isMobile ? 'center' : 'flex-end',
+          gap: '10px',
+          marginBottom: isMobile ? '10px' : '18px'
         }}
       >
-        <div>
-          <span
-            className="sp-glass-pill"
-            style={{
-              display: 'inline-block',
-              padding: '4px 12px',
-              borderRadius: '999px',
-              fontSize: '10.5px',
-              fontWeight: '800',
-              letterSpacing: '0.06em',
-              textTransform: 'uppercase',
-              color: '#64748b',
-              marginBottom: '6px'
-            }}
-          >
-            Prospection Terrain & Tournées OSRM
-          </span>
+        <div style={{ minWidth: 0 }}>
+          {!isMobile && (
+            <span
+              className="sp-glass-pill"
+              style={{
+                display: 'inline-block',
+                padding: '4px 12px',
+                borderRadius: '999px',
+                fontSize: '10.5px',
+                fontWeight: '800',
+                letterSpacing: '0.06em',
+                textTransform: 'uppercase',
+                color: '#64748b',
+                marginBottom: '6px'
+              }}
+            >
+              Prospection Terrain & Tournées OSRM
+            </span>
+          )}
           <h1
             style={{
-              fontSize: isMobile ? '24px' : '30px',
+              fontSize: isMobile ? '22px' : '30px',
               fontWeight: '800',
-              margin: '0 0 4px 0',
+              margin: isMobile ? '0' : '0 0 4px 0',
               letterSpacing: '-0.03em',
               color: '#0f172a',
-              lineHeight: 1.1
+              lineHeight: 1.1,
+              whiteSpace: 'nowrap'
             }}
           >
-            Carte de Prospection
+            {isMobile ? 'Carte Terrain' : 'Carte de Prospection'}
           </h1>
-          <span style={{ fontSize: '13.5px', color: '#64748b', fontWeight: '500' }}>
-            Explorez les salons autour de vous, qualifiez vos visites et optimisez vos feuilles de route.
-          </span>
+          {!isMobile && (
+            <span style={{ fontSize: '13.5px', color: '#64748b', fontWeight: '500' }}>
+              Explorez les salons autour de vous, qualifiez vos visites et optimisez vos feuilles de route.
+            </span>
+          )}
         </div>
 
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
           <button
             type="button"
             onClick={handleGeolocateAgent}
             className="sp-glass-pill"
+            title="Centrer autour de ma position GPS"
             style={{
-              flex: isMobile ? 1 : 'initial',
-              height: '40px',
-              padding: '0 16px',
+              height: isMobile ? '36px' : '40px',
+              padding: isMobile ? '0 12px' : '0 16px',
               borderRadius: '999px',
-              fontSize: '12.5px',
+              fontSize: isMobile ? '12px' : '12.5px',
               fontWeight: '700',
               color: '#0f172a',
               display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '7px',
-              cursor: 'pointer'
+              gap: '6px',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap'
             }}
           >
             <Icon.Compass />
-            <span>Autour de ma position GPS</span>
+            <span>{isMobile ? 'Ma position' : 'Autour de ma position GPS'}</span>
           </button>
 
           <button
             type="button"
             onClick={() => setShowRoutePlanner(!showRoutePlanner)}
             style={{
-              flex: isMobile ? 1 : 'initial',
-              height: '40px',
-              padding: '0 18px',
+              height: isMobile ? '36px' : '40px',
+              padding: isMobile ? '0 13px' : '0 18px',
               borderRadius: '999px',
               backgroundColor: showRoutePlanner ? '#4f46e5' : '#111827',
               color: '#ffffff',
               border: 'none',
-              fontSize: '12.5px',
+              fontSize: isMobile ? '12px' : '12.5px',
               fontWeight: '800',
               display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '7px',
+              gap: '6px',
               cursor: 'pointer',
-              boxShadow: '0 8px 20px -4px rgba(17, 24, 39, 0.22)'
+              boxShadow: '0 6px 16px -4px rgba(17, 24, 39, 0.22)',
+              whiteSpace: 'nowrap'
             }}
           >
             <Icon.Map />
-            <span>Planificateur de Tournée ({routeSalons.length})</span>
+            <span>{isMobile ? `Tournée (${routeSalons.length})` : `Planificateur de Tournée (${routeSalons.length})`}</span>
           </button>
         </div>
       </header>
 
       {/* =================================================================== */}
-      {/* 2. BARRE DE CONTRÔLE : RECHERCHE D'ADRESSE, RAYON & FILTRES         */}
+      {/* 2. BARRE DE CONTRÔLE ULTRA-COMPACTE SUR MOBILE                      */}
       {/* =================================================================== */}
-      <div className="sp-glass-panel" style={{ padding: isMobile ? '14px' : '18px 22px', marginBottom: '18px' }}>
-        {/* Ligne 1 : Recherche géographique + Sélecteur de rayon */}
-        <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '10px', alignItems: 'stretch' }}>
+      <div
+        className="sp-glass-panel"
+        style={{
+          padding: isMobile ? '10px 12px' : '18px 22px',
+          borderRadius: isMobile ? '20px' : '24px',
+          marginBottom: isMobile ? '12px' : '18px'
+        }}
+      >
+        {/* Ligne 1 : Recherche géographique (Bouton Centrer toujours sur la même ligne) + Rayon */}
+        <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '8px' : '10px', alignItems: 'stretch' }}>
           <form
             onSubmit={handleSearchAddressMap}
-            style={{ display: 'flex', flexDirection: isSmall ? 'column' : 'row', flex: 1, gap: '8px' }}
+            style={{ display: 'flex', flexDirection: 'row', flex: 1, gap: '6px', alignItems: 'center' }}
           >
             <div
               className="sp-glass-pill"
               style={{
                 flex: 1,
+                minWidth: 0,
                 display: 'flex',
                 alignItems: 'center',
-                gap: '10px',
-                padding: '0 14px',
-                height: '42px',
+                gap: '8px',
+                padding: '0 12px',
+                height: isMobile ? '38px' : '42px',
                 borderRadius: '999px',
                 background: 'rgba(255, 255, 255, 0.92)'
               }}
@@ -459,7 +521,7 @@ export default function TabCarte({
               <Icon.Search />
               <input
                 type="text"
-                placeholder="Adresse, code postal ou ville (ex : Strasbourg, 67000)..."
+                placeholder={isMobile ? 'Ville, CP ou adresse...' : 'Adresse, code postal ou ville (ex : Strasbourg, 67000)...'}
                 value={mapAddressQuery}
                 onChange={(e) => setMapAddressQuery(e.target.value)}
                 style={{
@@ -467,7 +529,7 @@ export default function TabCarte({
                   background: 'transparent',
                   outline: 'none',
                   width: '100%',
-                  fontSize: '13.5px',
+                  fontSize: isMobile ? '13px' : '13.5px',
                   fontWeight: '600',
                   color: '#0f172a'
                 }}
@@ -486,55 +548,61 @@ export default function TabCarte({
             <button
               type="submit"
               style={{
-                height: '42px',
-                padding: '0 20px',
+                height: isMobile ? '38px' : '42px',
+                padding: isMobile ? '0 15px' : '0 20px',
                 borderRadius: '999px',
                 backgroundColor: '#111827',
                 color: '#ffffff',
                 border: 'none',
-                fontSize: '13px',
+                fontSize: isMobile ? '12.5px' : '13px',
                 fontWeight: '800',
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '7px',
+                gap: '6px',
                 cursor: 'pointer',
-                flexShrink: 0
+                flexShrink: 0,
+                whiteSpace: 'nowrap'
               }}
             >
-              <Icon.Search />
+              {!isMobile && <Icon.Search />}
               <span>Centrer</span>
             </button>
           </form>
 
-          {/* Sélecteur de rayon en pilules */}
+          {/* Sélecteur de rayon sur 1 seule ligne garantie (sans retour à la ligne sur les km) */}
           <div
-            className="sp-glass-pill"
+            className="sp-glass-pill sp-no-scrollbar"
             style={{
-              display: 'inline-flex',
+              display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              gap: '4px',
-              padding: '4px 6px 4px 12px',
+              gap: '3px',
+              padding: isMobile ? '3px 4px 3px 10px' : '4px 6px 4px 12px',
               borderRadius: '999px',
-              overflowX: 'auto'
+              overflowX: 'auto',
+              scrollbarWidth: 'none'
             }}
           >
-            <span style={{ fontSize: '11.5px', fontWeight: '800', color: '#64748b', marginRight: '4px' }}>Rayon :</span>
+            <span style={{ fontSize: '11px', fontWeight: '800', color: '#64748b', whiteSpace: 'nowrap', marginRight: '2px' }}>
+              Rayon :
+            </span>
             {[1, 3, 5, 10, 25, 50].map((km) => (
               <button
                 key={km}
                 type="button"
                 onClick={() => handleRadiusChange(km)}
                 style={{
-                  padding: '6px 11px',
+                  padding: isMobile ? '5px 8px' : '6px 11px',
                   borderRadius: '999px',
                   border: 'none',
-                  fontSize: '12px',
+                  fontSize: isMobile ? '11px' : '12px',
                   fontWeight: '800',
                   cursor: 'pointer',
                   backgroundColor: mapRadius === km ? '#111827' : 'transparent',
                   color: mapRadius === km ? '#ffffff' : '#475569',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
                   transition: 'all 0.14s ease'
                 }}
               >
@@ -544,20 +612,32 @@ export default function TabCarte({
           </div>
         </div>
 
-        {/* Ligne 2 : Filtres de statut sur une seule ligne + Tri à droite */}
+        {/* Ligne 2 : Ruban horizontal de filtres (1 ligne sur iPhone) + Masquer visités & Tri */}
         <div
           style={{
             display: 'flex',
+            flexDirection: isMobile ? 'column' : 'row',
             justifyContent: 'space-between',
-            alignItems: 'center',
-            gap: '10px',
-            flexWrap: 'wrap',
-            marginTop: '14px',
-            paddingTop: '12px',
+            alignItems: isMobile ? 'stretch' : 'center',
+            gap: isMobile ? '8px' : '10px',
+            marginTop: isMobile ? '8px' : '14px',
+            paddingTop: isMobile ? '8px' : '12px',
             borderTop: '1px solid rgba(148, 163, 184, 0.2)'
           }}
         >
-          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+          {/* Ruban horizontal des statuts */}
+          <div
+            className="sp-no-scrollbar"
+            style={{
+              display: 'flex',
+              gap: '6px',
+               flexWrap: isMobile ? 'nowrap' : 'wrap',
+              overflowX: isMobile ? 'auto' : 'visible',
+              scrollbarWidth: 'none',
+              alignItems: 'center',
+              paddingBottom: isMobile ? '2px' : 0
+            }}
+          >
             {[
               { key: 'TOUS', label: `Tous (${inRadiusSalons.length})`, dot: null },
               { key: 'LIBRE', label: `Jamais visités (${inRadiusSalons.filter((s) => s.statut_carte === 'LIBRE').length})`, dot: '#10b981' },
@@ -576,19 +656,21 @@ export default function TabCarte({
                   style={{
                     display: 'inline-flex',
                     alignItems: 'center',
-                    gap: '6px',
-                    padding: '6px 12px',
+                    gap: '5px',
+                    padding: isMobile ? '5px 10px' : '6px 12px',
                     borderRadius: '999px',
                     border: actif ? '1px solid #111827' : undefined,
                     backgroundColor: actif ? '#111827' : undefined,
                     color: actif ? '#ffffff' : '#334155',
-                    fontSize: '12px',
+                    fontSize: isMobile ? '11px' : '12px',
                     fontWeight: '700',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0
                   }}
                 >
                   {tab.dot && (
-                    <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: tab.dot }} />
+                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: tab.dot, flexShrink: 0 }} />
                   )}
                   <span>{tab.label}</span>
                 </button>
@@ -596,20 +678,24 @@ export default function TabCarte({
             })}
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          {/* Masquer visités + Sélecteur de tri alignés */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px', flexShrink: 0 }}>
             <button
               type="button"
               onClick={() => setHideVisitedSalons(!hideVisitedSalons)}
               className="sp-glass-pill"
               style={{
-                padding: '6px 12px',
+                flex: isMobile ? 1 : 'initial',
+                padding: isMobile ? '5px 10px' : '6px 12px',
                 borderRadius: '999px',
-                fontSize: '11.5px',
+                fontSize: isMobile ? '11px' : '11.5px',
                 fontWeight: '800',
                 cursor: 'pointer',
                 background: hideVisitedSalons ? 'rgba(16, 185, 129, 0.16)' : undefined,
                 border: hideVisitedSalons ? '1px solid rgba(16, 185, 129, 0.4)' : undefined,
-                color: hideVisitedSalons ? '#059669' : '#475569'
+                color: hideVisitedSalons ? '#059669' : '#475569',
+                whiteSpace: 'nowrap',
+                textAlign: 'center'
               }}
             >
               {hideVisitedSalons ? 'OK Visités masqués' : 'Masquer les visités'}
@@ -620,9 +706,10 @@ export default function TabCarte({
               onChange={(e) => setMapSortBy(e.target.value)}
               className="sp-glass-pill"
               style={{
-                padding: '6px 12px',
+                flex: isMobile ? 1 : 'initial',
+                padding: isMobile ? '5px 10px' : '6px 12px',
                 borderRadius: '999px',
-                fontSize: '12px',
+                fontSize: isMobile ? '11px' : '12px',
                 fontWeight: '700',
                 color: '#0f172a',
                 cursor: 'pointer',
@@ -638,53 +725,58 @@ export default function TabCarte({
       </div>
 
       {/* =================================================================== */}
-      {/* 3. PLANIFICATEUR DE TOURNÉE OSRM EN VERRE CRISTAL                   */}
+      {/* 3. PLANIFICATEUR DE TOURNÉE OSRM (COMPACT SUR IPHONE)               */}
       {/* =================================================================== */}
       {showRoutePlanner && (
         <div
           className="sp-glass-panel"
           style={{
-            padding: isMobile ? '16px' : '20px 24px',
-            marginBottom: '18px',
+            padding: isMobile ? '14px 12px' : '20px 24px',
+            borderRadius: isMobile ? '20px' : '24px',
+            marginBottom: isMobile ? '12px' : '18px',
             border: '1.5px solid rgba(79, 70, 229, 0.35)'
           }}
         >
+          {/* En-tête du planificateur avec bouton X aligné à droite même sur mobile */}
           <div
             style={{
               display: 'flex',
-              flexDirection: isMobile ? 'column' : 'row',
+              flexDirection: 'row',
               justifyContent: 'space-between',
-              alignItems: isMobile ? 'flex-start' : 'center',
+              alignItems: 'center',
               gap: '10px',
-              marginBottom: '16px'
+              marginBottom: isMobile ? '12px' : '16px'
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
               <div
                 style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '11px',
+                  width: '34px',
+                  height: '34px',
+                  borderRadius: '10px',
                   background: 'rgba(79, 70, 229, 0.12)',
                   color: '#4f46e5',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center'
+                  justifyContent: 'center',
+                  flexShrink: 0
                 }}
               >
                 <Icon.Map />
               </div>
-              <div>
-                <h3 style={{ fontSize: '16.5px', fontWeight: '800', margin: 0, color: '#0f172a' }}>
+              <div style={{ minWidth: 0 }}>
+                <h3 style={{ fontSize: isMobile ? '15px' : '16.5px', fontWeight: '800', margin: 0, color: '#0f172a' }}>
                   Feuille de route optimale (OSRM)
                 </h3>
-                <span style={{ fontSize: '12px', color: '#64748b' }}>
-                  Sélectionnez vos salons ou lancez la sélection automatique pour calculer le trajet le plus court.
-                </span>
+                {!isMobile && (
+                  <span style={{ fontSize: '12px', color: '#64748b' }}>
+                    Sélectionnez vos salons ou lancez la sélection automatique pour calculer le trajet le plus court.
+                  </span>
+                )}
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
               {routeSalons.length > 0 && (
                 <button
                   type="button"
@@ -693,26 +785,39 @@ export default function TabCarte({
                     setOptimizedRoute(null);
                   }}
                   style={{
-                    padding: '7px 13px',
+                    padding: '6px 11px',
                     borderRadius: '999px',
-                    fontSize: '12px',
+                    fontSize: '11px',
                     fontWeight: '700',
                     color: '#dc2626',
                     border: '1px solid rgba(239, 68, 68, 0.3)',
                     background: 'rgba(239, 68, 68, 0.08)',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap'
                   }}
                 >
-                  Vider la liste
+                  Vider
                 </button>
               )}
               <button
                 type="button"
                 onClick={() => setShowRoutePlanner(false)}
                 className="sp-glass-pill"
-                style={{ padding: '7px 13px', borderRadius: '999px', fontSize: '12px', fontWeight: '700', color: '#475569', cursor: 'pointer' }}
+                style={{
+                  width: '30px',
+                  height: '30px',
+                  borderRadius: '50%',
+                  fontSize: '12px',
+                  fontWeight: '800',
+                  color: '#475569',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: 0
+                }}
               >
-                Fermer X
+                X
               </button>
             </div>
           </div>
@@ -721,147 +826,211 @@ export default function TabCarte({
             style={{
               display: 'grid',
               gridTemplateColumns: isMobile ? '1fr' : '1fr 1.25fr auto auto',
-              gap: '12px',
+              gap: isMobile ? '10px' : '12px',
               alignItems: 'end',
-              marginBottom: routeSalons.length > 0 ? '16px' : 0
+              marginBottom: routeSalons.length > 0 ? '14px' : 0
             }}
           >
-            <div>
-              <label style={{ display: 'block', fontSize: '11.5px', fontWeight: '800', color: '#334155', marginBottom: '5px' }}>
-                1. Point de départ
-              </label>
-              <div
-                className="sp-glass-pill"
-                style={{
-                  height: '40px',
-                  padding: '0 12px',
-                  borderRadius: '12px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: '8px',
-                  boxSizing: 'border-box'
-                }}
-              >
-                <span
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : '1fr', gap: '8px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: '#334155', marginBottom: '4px' }}>
+                  1. Départ
+                </label>
+                <div
+                  className="sp-glass-pill"
                   style={{
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
+                    height: '38px',
+                    padding: '0 10px',
+                    borderRadius: '11px',
                     display: 'flex',
                     alignItems: 'center',
+                    justifyContent: 'space-between',
                     gap: '6px',
-                    fontSize: '12.5px',
-                    fontWeight: '700',
-                    color: '#0f172a'
+                    boxSizing: 'border-box'
                   }}
                 >
-                  <Icon.MapPin /> {mapCenter.label || 'Ma position GPS'}
-                </span>
-                <button
-                  type="button"
-                  onClick={handleGeolocateAgent}
-                  style={{ background: 'none', border: 'none', color: '#4f46e5', fontWeight: '800', fontSize: '11px', cursor: 'pointer', padding: 0 }}
-                >
-                  Actualiser
-                </button>
+                  <span
+                    style={{
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '5px',
+                      fontSize: '12px',
+                      fontWeight: '700',
+                      color: '#0f172a'
+                    }}
+                  >
+                    <Icon.MapPin /> {mapCenter.label || 'Position GPS'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleGeolocateAgent}
+                    style={{ background: 'none', border: 'none', color: '#4f46e5', fontWeight: '800', fontSize: '10.5px', cursor: 'pointer', padding: 0, flexShrink: 0 }}
+                  >
+                    GPS
+                  </button>
+                </div>
               </div>
+
+              {isMobile && (
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: '#334155', marginBottom: '4px' }}>
+                    2. Arrivée (opt.)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Boucle départ"
+                    value={routeEndQuery}
+                    onChange={(e) => {
+                      setRouteEndQuery(e.target.value);
+                      setRouteEndPoint(null);
+                    }}
+                    className="sp-map-input"
+                    style={{ height: '38px', fontSize: '12px', padding: '0 10px' }}
+                  />
+                </div>
+              )}
             </div>
 
-            <div>
-              <label style={{ display: 'block', fontSize: '11.5px', fontWeight: '800', color: '#334155', marginBottom: '5px' }}>
-                2. Point d'arrivée (optionnel)
-              </label>
-              <input
-                type="text"
-                placeholder="Vide = retour au point de départ"
-                value={routeEndQuery}
-                onChange={(e) => {
-                  setRouteEndQuery(e.target.value);
-                  setRouteEndPoint(null);
-                }}
-                className="sp-map-input"
-              />
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '11.5px', fontWeight: '800', color: '#334155', marginBottom: '5px' }}>
-                3. Capacité
-              </label>
-              <div style={{ display: 'flex', gap: '6px' }}>
-                <select
-                  value={routeMaxCount}
-                  onChange={(e) => setRouteMaxCount(Number(e.target.value))}
+            {!isMobile && (
+              <div>
+                <label style={{ display: 'block', fontSize: '11.5px', fontWeight: '800', color: '#334155', marginBottom: '5px' }}>
+                  2. Point d'arrivée (optionnel)
+                </label>
+                <input
+                  type="text"
+                  placeholder="Vide = retour au point de départ"
+                  value={routeEndQuery}
+                  onChange={(e) => {
+                    setRouteEndQuery(e.target.value);
+                    setRouteEndPoint(null);
+                  }}
                   className="sp-map-input"
-                  style={{ width: '98px' }}
-                >
-                  {[5, 8, 10, 12, 15].map((n) => (
-                    <option key={n} value={n}>
-                      {n} salons
-                    </option>
-                  ))}
-                </select>
+                />
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
+              <div style={{ flex: isMobile ? 1 : 'initial' }}>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: '#334155', marginBottom: '4px' }}>
+                  3. Capacité
+                </label>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <select
+                    value={routeMaxCount}
+                    onChange={(e) => setRouteMaxCount(Number(e.target.value))}
+                    className="sp-map-input"
+                    style={{ width: isMobile ? '90px' : '98px', height: isMobile ? '38px' : '40px', fontSize: '12px', padding: '0 8px' }}
+                  >
+                    {[5, 8, 10, 12, 15].map((n) => (
+                      <option key={n} value={n}>
+                        {n} salons
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={handleAutoSelectRouteSalons}
+                    className="sp-glass-pill"
+                    style={{
+                      height: isMobile ? '38px' : '40px',
+                      padding: '0 12px',
+                      borderRadius: '11px',
+                      fontSize: '11.5px',
+                      fontWeight: '800',
+                      color: '#0f172a',
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    Sélection Auto
+                  </button>
+                </div>
+              </div>
+
+              {isMobile && (
                 <button
                   type="button"
-                  onClick={handleAutoSelectRouteSalons}
-                  className="sp-glass-pill"
-                  style={{ height: '40px', padding: '0 14px', borderRadius: '12px', fontSize: '12px', fontWeight: '800', color: '#0f172a', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                  disabled={isOptimizingRoute}
+                  onClick={handleOptimizeTournee}
+                  style={{
+                    height: '38px',
+                    padding: '0 14px',
+                    borderRadius: '999px',
+                    backgroundColor: '#111827',
+                    color: '#ffffff',
+                    border: 'none',
+                    fontSize: '12px',
+                    fontWeight: '800',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '5px',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0
+                  }}
                 >
-                  Sélection Auto
+                  <Icon.Zap />
+                  <span>{isOptimizingRoute ? 'Calcul...' : 'Optimiser'}</span>
                 </button>
-              </div>
+              )}
             </div>
 
-            <button
-              type="button"
-              disabled={isOptimizingRoute}
-              onClick={handleOptimizeTournee}
-              style={{
-                height: '40px',
-                padding: '0 20px',
-                borderRadius: '999px',
-                backgroundColor: '#111827',
-                color: '#ffffff',
-                border: 'none',
-                fontSize: '12.5px',
-                fontWeight: '800',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '6px',
-                cursor: 'pointer',
-                boxShadow: '0 8px 18px -4px rgba(17, 24, 39, 0.22)'
-              }}
-            >
-              <Icon.Zap />
-              <span>{isOptimizingRoute ? 'Calcul OSRM...' : 'Optimiser la route'}</span>
-            </button>
+            {!isMobile && (
+              <button
+                type="button"
+                disabled={isOptimizingRoute}
+                onClick={handleOptimizeTournee}
+                style={{
+                  height: '40px',
+                  padding: '0 20px',
+                  borderRadius: '999px',
+                  backgroundColor: '#111827',
+                  color: '#ffffff',
+                  border: 'none',
+                  fontSize: '12.5px',
+                  fontWeight: '800',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  cursor: 'pointer',
+                  boxShadow: '0 8px 18px -4px rgba(17, 24, 39, 0.22)'
+                }}
+              >
+                <Icon.Zap />
+                <span>{isOptimizingRoute ? 'Calcul OSRM...' : 'Optimiser la route'}</span>
+              </button>
+            )}
           </div>
 
           {routeSalons.length > 0 && (
-            <div className="sp-glass-pill" style={{ borderRadius: '16px', padding: '14px' }}>
+            <div className="sp-glass-pill" style={{ borderRadius: '15px', padding: '12px' }}>
               <div
                 style={{
                   display: 'flex',
                   flexDirection: isMobile ? 'column' : 'row',
                   justifyContent: 'space-between',
-                  alignItems: isMobile ? 'flex-start' : 'center',
-                  gap: '10px',
-                  marginBottom: '12px'
+                  alignItems: isMobile ? 'stretch' : 'center',
+                  gap: '8px',
+                  marginBottom: '10px'
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a' }}>
-                    Étapes de votre tournée ({routeSalons.length} salons)
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '12.5px', fontWeight: '800', color: '#0f172a' }}>
+                    Étapes ({routeSalons.length} salons)
                   </span>
                   {optimizedRoute && (
-                    <span style={{ padding: '4px 10px', borderRadius: '999px', background: 'rgba(16, 185, 129, 0.14)', color: '#059669', fontSize: '11.5px', fontWeight: '800' }}>
-                      {optimizedRoute.total_distance_km} km • ~{optimizedRoute.estimated_minutes} min (visites incluses)
+                    <span style={{ padding: '3px 9px', borderRadius: '999px', background: 'rgba(16, 185, 129, 0.14)', color: '#059669', fontSize: '11px', fontWeight: '800' }}>
+                      {optimizedRoute.total_distance_km} km • ~{optimizedRoute.estimated_minutes} min
                     </span>
                   )}
                 </div>
 
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: '6px' }}>
                   <a
                     href={(() => {
                       const origin = `${mapCenter.lat},${mapCenter.lng}`;
@@ -874,19 +1043,22 @@ export default function TabCarte({
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{
-                      padding: '8px 14px',
+                      flex: isMobile ? 1 : 'initial',
+                      padding: '7px 12px',
                       borderRadius: '999px',
-                      fontSize: '12px',
+                      fontSize: '11.5px',
                       fontWeight: '800',
                       textDecoration: 'none',
                       backgroundColor: '#111827',
                       color: '#ffffff',
                       display: 'inline-flex',
                       alignItems: 'center',
-                      gap: '6px'
+                      justifyContent: 'center',
+                      gap: '5px',
+                      whiteSpace: 'nowrap'
                     }}
                   >
-                    <Icon.Map /> Itinéraire Google Maps
+                    <Icon.Map /> Google Maps
                   </a>
                   <a
                     href={`https://waze.com/ul?ll=${routeSalons[0].lat},${routeSalons[0].lng}&navigate=yes`}
@@ -894,31 +1066,34 @@ export default function TabCarte({
                     rel="noopener noreferrer"
                     className="sp-glass-pill"
                     style={{
-                      padding: '8px 14px',
+                      flex: isMobile ? 1 : 'initial',
+                      padding: '7px 12px',
                       borderRadius: '999px',
-                      fontSize: '12px',
+                      fontSize: '11.5px',
                       fontWeight: '800',
                       textDecoration: 'none',
                       color: '#0f172a',
                       display: 'inline-flex',
                       alignItems: 'center',
-                      gap: '6px'
+                      justifyContent: 'center',
+                      gap: '5px',
+                      whiteSpace: 'nowrap'
                     }}
                   >
-                    <Icon.Car /> Waze (Étape #1)
+                    <Icon.Car /> Waze (#1)
                   </a>
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
+              <div className="sp-no-scrollbar" style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '2px' }}>
                 {routeSalons.map((s, idx) => (
                   <div
                     key={s.siret}
                     onClick={() => setSelectedSalonMap(s)}
                     style={{
-                      minWidth: '195px',
-                      padding: '9px 12px',
-                      borderRadius: '13px',
+                      minWidth: '180px',
+                      padding: '8px 11px',
+                      borderRadius: '12px',
                       border: '1px solid rgba(148, 163, 184, 0.25)',
                       backgroundColor: '#ffffff',
                       cursor: 'pointer',
@@ -931,13 +1106,13 @@ export default function TabCarte({
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
                       <span
                         style={{
-                          width: '22px',
-                          height: '22px',
+                          width: '20px',
+                          height: '20px',
                           borderRadius: '50%',
                           flexShrink: 0,
                           backgroundColor: '#111827',
                           color: '#ffffff',
-                          fontSize: '11px',
+                          fontSize: '10.5px',
                           fontWeight: '800',
                           display: 'flex',
                           alignItems: 'center',
@@ -947,10 +1122,10 @@ export default function TabCarte({
                         {idx + 1}
                       </span>
                       <div style={{ minWidth: 0 }}>
-                        <div style={{ fontSize: '12.5px', fontWeight: '800', color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        <div style={{ fontSize: '12px', fontWeight: '800', color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                           {formatTextePropre(s.nom_salon)}
                         </div>
-                        <div style={{ fontSize: '11px', color: '#64748b' }}>
+                        <div style={{ fontSize: '10.5px', color: '#64748b' }}>
                           {s.distance_km} km • Note {s.etoiles || 'N/A'}
                         </div>
                       </div>
@@ -980,17 +1155,18 @@ export default function TabCarte({
         style={{
           display: 'grid',
           gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 1fr) 400px',
-          gap: '18px',
+          gap: isMobile ? '12px' : '18px',
           alignItems: 'stretch'
         }}
       >
-        {/* CARTE INTERACTIVE LEAFLET */}
+        {/* CARTE INTERACTIVE LEAFLET (Hauteur calibrée sur iPhone pour voir la carte + la liste d'un coup) */}
         <div
           className="sp-glass-panel"
           style={{
-            padding: '8px',
+            padding: '6px',
+            borderRadius: isMobile ? '20px' : '24px',
             overflow: 'hidden',
-            height: isMobile ? '400px' : '610px',
+            height: isMobile ? '310px' : '610px',
             position: 'relative',
             boxSizing: 'border-box'
           }}
@@ -1000,7 +1176,7 @@ export default function TabCarte({
             style={{
               width: '100%',
               height: '100%',
-              borderRadius: '18px',
+              borderRadius: '15px',
               overflow: 'hidden'
             }}
           />
@@ -1009,8 +1185,8 @@ export default function TabCarte({
             <div
               style={{
                 position: 'absolute',
-                inset: '8px',
-                borderRadius: '18px',
+                inset: '6px',
+                borderRadius: '15px',
                 backgroundColor: 'rgba(255, 255, 255, 0.5)',
                 backdropFilter: 'blur(4px)',
                 zIndex: 1000,
@@ -1023,57 +1199,58 @@ export default function TabCarte({
                 style={{
                   backgroundColor: '#111827',
                   color: '#ffffff',
-                  padding: '12px 22px',
+                  padding: '10px 20px',
                   borderRadius: '999px',
-                  fontSize: '13px',
+                  fontSize: '12.5px',
                   fontWeight: '800',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '12px',
+                  gap: '10px',
                   boxShadow: '0 10px 30px rgba(0,0,0,0.18)'
                 }}
               >
                 <div
                   style={{
-                    width: '16px',
-                    height: '16px',
+                    width: '15px',
+                    height: '15px',
                     borderRadius: '50%',
-                    border: '3px solid rgba(255,255,255,0.2)',
+                    border: '2.5px solid rgba(255,255,255,0.2)',
                     borderTopColor: '#ffffff',
                     animation: 'spin 0.8s linear infinite'
                   }}
                 />
-                Scan géographique en cours...
+                Scan géographique...
               </div>
             </div>
           )}
 
           {mapProgress !== null && mapProgress > 0 && mapProgress < 6 && (
             <>
-              <div style={{ position: 'absolute', top: '8px', left: '8px', right: '8px', height: '4px', backgroundColor: 'rgba(255,255,255,0.3)', zIndex: 1000, borderRadius: '18px 18px 0 0', overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', top: '6px', left: '6px', right: '6px', height: '4px', backgroundColor: 'rgba(255,255,255,0.3)', zIndex: 1000, borderRadius: '15px 15px 0 0', overflow: 'hidden' }}>
                 <div style={{ width: `${(mapProgress / 5) * 100}%`, height: '100%', backgroundColor: '#4f46e5', transition: 'width 0.5s ease' }} />
               </div>
               <div
                 style={{
                   position: 'absolute',
-                  top: '18px',
+                  top: '14px',
                   left: '50%',
                   transform: 'translateX(-50%)',
                   background: 'rgba(17, 24, 39, 0.88)',
                   backdropFilter: 'blur(8px)',
                   color: '#ffffff',
-                  padding: '6px 15px',
+                  padding: '5px 13px',
                   borderRadius: '999px',
-                  fontSize: '11.5px',
+                  fontSize: '11px',
                   fontWeight: '800',
                   zIndex: 1000,
                   boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '8px'
+                  gap: '7px',
+                  whiteSpace: 'nowrap'
                 }}
               >
-                <div style={{ width: '12px', height: '12px', borderRadius: '50%', border: '2px solid rgba(255,255,255,0.25)', borderTopColor: '#ffffff', animation: 'spin 0.8s linear infinite' }} />
+                <div style={{ width: '11px', height: '11px', borderRadius: '50%', border: '2px solid rgba(255,255,255,0.25)', borderTopColor: '#ffffff', animation: 'spin 0.8s linear infinite' }} />
                 <span>Recherche approfondie... ({inRadiusSalons.length})</span>
               </div>
             </>
@@ -1085,12 +1262,13 @@ export default function TabCarte({
           className="sp-glass-panel"
           style={{
             height: isMobile ? 'auto' : '610px',
-            maxHeight: isMobile ? '580px' : '610px',
-            padding: '18px',
+            maxHeight: isMobile ? 'none' : '610px',
+            padding: isMobile ? '14px 12px' : '18px',
+            borderRadius: isMobile ? '20px' : '24px',
             boxSizing: 'border-box',
             display: 'flex',
             flexDirection: 'column',
-            overflowY: 'auto'
+            overflowY: isMobile ? 'visible' : 'auto'
           }}
         >
           {selectedSalonMap ? (
@@ -1141,7 +1319,7 @@ export default function TabCarte({
               {/* Carte d'identité du salon */}
               <div className="sp-glass-pill" style={{ padding: '14px', borderRadius: '18px', marginBottom: '12px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px', marginBottom: '6px' }}>
-                  <h3 style={{ fontSize: '17px', fontWeight: '800', margin: 0, color: '#0f172a', lineHeight: 1.25 }}>
+                  <h3 style={{ fontSize: '16.5px', fontWeight: '800', margin: 0, color: '#0f172a', lineHeight: 1.25 }}>
                     {formatTextePropre(selectedSalonMap.nom_salon)}
                   </h3>
 
@@ -1515,7 +1693,7 @@ export default function TabCarte({
                   gap: '8px',
                   padding: '7px 12px',
                   borderRadius: '12px',
-                  marginBottom: '12px',
+                  marginBottom: '10px',
                   background: 'rgba(255, 255, 255, 0.88)'
                 }}
               >
@@ -1546,9 +1724,18 @@ export default function TabCarte({
                 )}
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', overflowY: 'auto', paddingRight: '2px' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '8px',
+                  maxHeight: isMobile ? '360px' : 'none',
+                  overflowY: 'auto',
+                  paddingRight: '2px'
+                }}
+              >
                 {filteredAndSortedSalons.length === 0 ? (
-                  <div className="sp-glass-pill" style={{ padding: '28px 14px', borderRadius: '16px', textAlign: 'center', color: '#64748b', fontSize: '12.5px' }}>
+                  <div className="sp-glass-pill" style={{ padding: '24px 14px', borderRadius: '16px', textAlign: 'center', color: '#64748b', fontSize: '12.5px' }}>
                     Aucun salon ne correspond à vos filtres sur ce rayon.
                   </div>
                 ) : (
