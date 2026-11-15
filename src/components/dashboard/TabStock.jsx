@@ -27,6 +27,7 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
   const [onboardingSession, setOnboardingSession] = useState(null);
   const [joiningSession, setJoiningSession] = useState(false);
   const [joinError, setJoinError] = useState(null);
+  const [afficherProtocoleTpe, setAfficherProtocoleTpe] = useState(false);
 
   const rejoindreOnboarding = async (e) => {
     if (e) e.preventDefault();
@@ -147,16 +148,18 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
   return (
     <div
       style={{
-        paddingBottom: isMobile ? 'calc(125px + env(safe-area-inset-bottom, 0px))' : '28px',
+        paddingBottom: isMobile ? 'calc(95px + env(safe-area-inset-bottom, 0px))' : '28px',
         width: '100%',
         maxWidth: '100%',
         boxSizing: 'border-box',
-        overflowX: 'hidden'
+        overflowX: 'hidden',
+        position: 'relative',
+        zIndex: 1
       }}
     >
       <style>{`
         .sp-stock-row {
-          background: linear-gradient(145deg, rgba(255, 255, 255, 0.92) 0%, rgba(255, 255, 255, 0.68) 100%);
+          background: linear-gradient(145deg, rgba(255, 255, 255, 0.94) 0%, rgba(255, 255, 255, 0.72) 100%);
           border: 1px solid rgba(255, 255, 255, 0.96);
           box-shadow: 0 4px 12px -4px rgba(15, 23, 42, 0.04), inset 0 1px 0 #ffffff;
           border-radius: 16px;
@@ -174,26 +177,28 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
           box-shadow: 0 8px 20px -6px rgba(15, 23, 42, 0.08), inset 0 1px 0 #ffffff;
         }
         .sp-stock-input {
+          display: block;
           width: 100%;
           box-sizing: border-box;
-          height: 42px;
-          padding: 0 13px;
-          background: rgba(255, 255, 255, 0.92);
-          border: 1px solid rgba(148, 163, 184, 0.32);
-          border-radius: 12px;
+          height: 44px !important;
+          min-height: 44px !important;
+          padding: 0 14px;
+          background: #ffffff;
+          border: 1px solid rgba(148, 163, 184, 0.35);
+          border-radius: 13px;
           font-size: 13.5px;
           font-weight: 600;
           color: #0f172a;
           outline: none;
-          transition: border-color 0.15s ease, background-color 0.15s ease;
+          transition: border-color 0.15s ease, box-shadow 0.15s ease;
         }
         .sp-stock-input:focus {
           border-color: #0f172a;
-          background: #ffffff;
+          box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.06);
         }
       `}</style>
 
-      {/* Sélecteur SubTab : Saisie Stock Salon (Onboarding) vs Mes TPE */}
+      {/* Sélecteur SubTab : Saisie Stock Salon vs Mes TPE */}
       <div
         className="sp-glass-pill"
         style={{
@@ -246,9 +251,7 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
         </button>
       </div>
 
-      {/* =================================================================== */}
-      {/* SOUS-ONGLET 1 : SAISIE D'INVENTAIRE SALON (ONBOARDING TERRAIN)      */}
-      {/* =================================================================== */}
+      {/* SOUS-ONGLET 1 : SAISIE D'INVENTAIRE SALON */}
       {subTab === 'onboarding' && (
         onboardingSession ? (
           <FastScannerOnboarding
@@ -339,7 +342,7 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
                     letterSpacing: '0.15em',
                     color: '#0f172a',
                     outline: 'none',
-                    background: 'rgba(255, 255, 255, 0.92)',
+                    background: 'rgba(255, 255, 255, 0.94)',
                     fontFamily: 'monospace'
                   }}
                 />
@@ -369,12 +372,9 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
         )
       )}
 
-      {/* =================================================================== */}
-      {/* SOUS-ONGLET 2 : LOGISTIQUE & STOCK TPE                              */}
-      {/* =================================================================== */}
+      {/* SOUS-ONGLET 2 : LOGISTIQUE & STOCK TPE */}
       {subTab === 'tpe' && (
         <>
-          {/* 1. EN-TÊTE LOGISTIQUE & STOCK TPE (COMPACT SUR 1 LIGNE SUR IPHONE) */}
           <header
             style={{
               display: 'flex',
@@ -386,22 +386,24 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
             }}
           >
             <div style={{ minWidth: 0 }}>
-              <span
-                className="sp-glass-pill"
-                style={{
-                  display: 'inline-block',
-                  padding: isMobile ? '3px 10px' : '4px 12px',
-                  borderRadius: '999px',
-                  fontSize: isMobile ? '9.5px' : '10.5px',
-                  fontWeight: '800',
-                  letterSpacing: '0.06em',
-                  textTransform: 'uppercase',
-                  color: '#64748b',
-                  marginBottom: isMobile ? '4px' : '6px'
-                }}
-              >
-                {isMobile ? 'Stripe Terminal' : "Matériel d'Encaissement • Stripe Terminal"}
-              </span>
+              {!isMobile && (
+                <span
+                  className="sp-glass-pill"
+                  style={{
+                    display: 'inline-block',
+                    padding: '4px 12px',
+                    borderRadius: '999px',
+                    fontSize: '10.5px',
+                    fontWeight: '800',
+                    letterSpacing: '0.06em',
+                    textTransform: 'uppercase',
+                    color: '#64748b',
+                    marginBottom: '6px'
+                  }}
+                >
+                  Matériel d'Encaissement • Stripe Terminal
+                </span>
+              )}
               <h1
                 style={{
                   fontSize: isMobile ? '22px' : '30px',
@@ -421,7 +423,6 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
               )}
             </div>
 
-            {/* Badge de couverture (sur mobile, affiché uniquement s'il n'y a pas déjà la bannière rouge en dessous) */}
             {(!isMobile || !data.alerte_penurie) && (
               <span
                 className="sp-glass-pill"
@@ -455,29 +456,29 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
             )}
           </header>
 
-          {/* 2. BANDEAU D'ALERTE PÉNURIE COMPACT (SANS DOUBLON SUR IPHONE) */}
+          {/* BANDEAU D'ALERTE PÉNURIE COMPACT */}
           {data.alerte_penurie && (
             <div
               className="sp-glass-panel"
               style={{
                 display: 'flex',
-                flexDirection: isMobile ? 'row' : 'row',
+                flexDirection: 'row',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                gap: isMobile ? '10px' : '14px',
-                padding: isMobile ? '11px 13px' : '14px 18px',
-                marginBottom: isMobile ? '12px' : '20px',
+                gap: '10px',
+                padding: isMobile ? '10px 12px' : '14px 18px',
+                marginBottom: isMobile ? '10px' : '20px',
                 borderRadius: '18px',
                 border: '1.5px solid rgba(239, 68, 68, 0.38)',
-                background: 'linear-gradient(145deg, rgba(254, 242, 242, 0.92) 0%, rgba(255, 255, 255, 0.76) 100%)',
+                background: 'linear-gradient(145deg, rgba(254, 242, 242, 0.94) 0%, rgba(255, 255, 255, 0.78) 100%)',
                 boxSizing: 'border-box'
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flex: 1 }}>
                 <div
                   style={{
-                    width: isMobile ? '32px' : '36px',
-                    height: isMobile ? '32px' : '36px',
+                    width: '32px',
+                    height: '32px',
                     borderRadius: '10px',
                     background: 'rgba(239, 68, 68, 0.14)',
                     color: '#dc2626',
@@ -494,7 +495,7 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
                   </svg>
                 </div>
                 <div style={{ fontSize: isMobile ? '11.5px' : '13px', color: '#7f1d1d', lineHeight: 1.35, minWidth: 0 }}>
-                  <strong style={{ color: '#991b1b', display: 'block', fontSize: isMobile ? '12.5px' : '13.5px' }}>
+                  <strong style={{ color: '#991b1b', display: 'block', fontSize: isMobile ? '12px' : '13.5px' }}>
                     Réassort TPE requis ({nbManquant} manquant{nbManquant > 1 ? 's' : ''})
                   </strong>
                   <span>
@@ -517,7 +518,7 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
                   border: 'none',
                   backgroundColor: '#dc2626',
                   color: '#ffffff',
-                  fontSize: isMobile ? '11.5px' : '12px',
+                  fontSize: '11.5px',
                   fontWeight: '800',
                   cursor: 'pointer',
                   whiteSpace: 'nowrap',
@@ -530,33 +531,32 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
             </div>
           )}
 
-          {/* 3. LES 4 KPIS LOGISTIQUES (GRILLE 2x2 COMPACTE SUR IPHONE) */}
+          {/* LES 4 KPIS LOGISTIQUES */}
           <div
             style={{
               display: 'grid',
               gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
-              gap: isMobile ? '9px' : '16px',
-              marginBottom: isMobile ? '14px' : '22px'
+              gap: isMobile ? '8px' : '16px',
+              marginBottom: isMobile ? '12px' : '22px'
             }}
           >
-            {/* KPI 1 : TPE en stock avec boutons - / + */}
             <div
               className="sp-glass-panel"
               style={{
-                padding: isMobile ? '13px' : '20px 22px',
+                padding: isMobile ? '11px 12px' : '20px 22px',
                 borderRadius: isMobile ? '18px' : '24px',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'space-between',
-                gap: isMobile ? '8px' : '12px',
+                gap: isMobile ? '6px' : '12px',
                 minWidth: 0
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px' }}>
                 <div
                   style={{
-                    width: isMobile ? '32px' : '40px',
-                    height: isMobile ? '32px' : '40px',
+                    width: isMobile ? '30px' : '40px',
+                    height: isMobile ? '30px' : '40px',
                     borderRadius: '50%',
                     background: 'rgba(15, 23, 42, 0.08)',
                     color: '#0f172a',
@@ -575,8 +575,8 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
                     onClick={() => ajusterStock(-1)}
                     className="sp-glass-pill"
                     style={{
-                      width: isMobile ? '28px' : '32px',
-                      height: isMobile ? '28px' : '32px',
+                      width: '28px',
+                      height: '28px',
                       borderRadius: '9px',
                       color: '#0f172a',
                       fontWeight: '800',
@@ -587,7 +587,6 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
                       justifyContent: 'center',
                       padding: 0
                     }}
-                    title="Retirer 1 TPE installé en salon"
                   >
                     −
                   </button>
@@ -596,8 +595,8 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
                     onClick={() => ajusterStock(1)}
                     className="sp-glass-pill"
                     style={{
-                      width: isMobile ? '28px' : '32px',
-                      height: isMobile ? '28px' : '32px',
+                      width: '28px',
+                      height: '28px',
                       borderRadius: '9px',
                       color: '#0f172a',
                       fontWeight: '800',
@@ -608,7 +607,6 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
                       justifyContent: 'center',
                       padding: 0
                     }}
-                    title="Ajouter 1 TPE reçu"
                   >
                     +
                   </button>
@@ -616,33 +614,32 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
               </div>
 
               <div>
-                <div style={{ fontSize: isMobile ? '21px' : '28px', fontWeight: '800', color: '#0f172a', lineHeight: 1.05, fontVariantNumeric: 'tabular-nums' }}>
+                <div style={{ fontSize: isMobile ? '20px' : '28px', fontWeight: '800', color: '#0f172a', lineHeight: 1.05, fontVariantNumeric: 'tabular-nums' }}>
                   {nbStock}
                 </div>
-                <div style={{ fontSize: isMobile ? '11px' : '12.5px', fontWeight: '600', color: '#64748b', marginTop: '3px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <div style={{ fontSize: isMobile ? '11px' : '12.5px', fontWeight: '600', color: '#64748b', marginTop: '2px' }}>
                   TPE en stock
                 </div>
               </div>
             </div>
 
-            {/* KPI 2 : Onboardings prévus */}
             <div
               className="sp-glass-panel"
               style={{
-                padding: isMobile ? '13px' : '20px 22px',
+                padding: isMobile ? '11px 12px' : '20px 22px',
                 borderRadius: isMobile ? '18px' : '24px',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'space-between',
-                gap: isMobile ? '8px' : '12px',
+                gap: isMobile ? '6px' : '12px',
                 minWidth: 0
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px' }}>
                 <div
                   style={{
-                    width: isMobile ? '32px' : '40px',
-                    height: isMobile ? '32px' : '40px',
+                    width: isMobile ? '30px' : '40px',
+                    height: isMobile ? '30px' : '40px',
                     borderRadius: '50%',
                     background: 'rgba(99, 102, 241, 0.12)',
                     border: '1px solid rgba(99, 102, 241, 0.25)',
@@ -655,39 +652,38 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
                 >
                   <Icon.Prospects />
                 </div>
-                <span style={{ padding: '2px 7px', borderRadius: '999px', fontSize: isMobile ? '9.5px' : '10.5px', fontWeight: '800', background: 'rgba(99, 102, 241, 0.12)', color: '#4f46e5', whiteSpace: 'nowrap' }}>
+                <span style={{ padding: '2px 7px', borderRadius: '999px', fontSize: '9.5px', fontWeight: '800', background: 'rgba(99, 102, 241, 0.12)', color: '#4f46e5' }}>
                   Pipeline
                 </span>
               </div>
 
               <div>
-                <div style={{ fontSize: isMobile ? '21px' : '28px', fontWeight: '800', color: '#0f172a', lineHeight: 1.05, fontVariantNumeric: 'tabular-nums' }}>
+                <div style={{ fontSize: isMobile ? '20px' : '28px', fontWeight: '800', color: '#0f172a', lineHeight: 1.05, fontVariantNumeric: 'tabular-nums' }}>
                   {nbPrevus}
                 </div>
-                <div style={{ fontSize: isMobile ? '11px' : '12.5px', fontWeight: '600', color: '#64748b', marginTop: '3px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <div style={{ fontSize: isMobile ? '11px' : '12.5px', fontWeight: '600', color: '#64748b', marginTop: '2px' }}>
                   Onboardings prévus
                 </div>
               </div>
             </div>
 
-            {/* KPI 3 : Statut logistique (Calibré sur 1 ligne sur mobile) */}
             <div
               className="sp-glass-panel"
               style={{
-                padding: isMobile ? '13px' : '20px 22px',
+                padding: isMobile ? '11px 12px' : '20px 22px',
                 borderRadius: isMobile ? '18px' : '24px',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'space-between',
-                gap: isMobile ? '8px' : '12px',
+                gap: isMobile ? '6px' : '12px',
                 minWidth: 0
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px' }}>
                 <div
                   style={{
-                    width: isMobile ? '32px' : '40px',
-                    height: isMobile ? '32px' : '40px',
+                    width: isMobile ? '30px' : '40px',
+                    height: isMobile ? '30px' : '40px',
                     borderRadius: '50%',
                     background: data.alerte_penurie ? 'rgba(239, 68, 68, 0.14)' : 'rgba(16, 185, 129, 0.14)',
                     border: data.alerte_penurie ? '1px solid rgba(239, 68, 68, 0.28)' : '1px solid rgba(16, 185, 129, 0.28)',
@@ -704,11 +700,10 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
                   style={{
                     padding: '2px 7px',
                     borderRadius: '999px',
-                    fontSize: isMobile ? '9.5px' : '10.5px',
+                    fontSize: '9.5px',
                     fontWeight: '800',
                     background: data.alerte_penurie ? 'rgba(239, 68, 68, 0.14)' : 'rgba(16, 185, 129, 0.14)',
-                    color: data.alerte_penurie ? '#dc2626' : '#059669',
-                    whiteSpace: 'nowrap'
+                    color: data.alerte_penurie ? '#dc2626' : '#059669'
                   }}
                 >
                   {data.alerte_penurie ? 'À commander' : 'Complet'}
@@ -718,7 +713,7 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
               <div>
                 <div
                   style={{
-                    fontSize: isMobile ? '18px' : '18px',
+                    fontSize: isMobile ? '16.5px' : '18px',
                     fontWeight: '800',
                     color: data.alerte_penurie ? '#dc2626' : '#059669',
                     lineHeight: 1.05,
@@ -727,36 +722,31 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
                     textOverflow: 'ellipsis'
                   }}
                 >
-                  {data.alerte_penurie
-                    ? isMobile
-                      ? `${nbManquant} TPE manquant${nbManquant > 1 ? 's' : ''}`
-                      : `${nbManquant} ${nbManquant > 1 ? 'terminaux à commander' : 'terminal à commander'}`
-                    : 'Stock complet'}
+                  {data.alerte_penurie ? `${nbManquant} TPE manquant${nbManquant > 1 ? 's' : ''}` : 'Stock complet'}
                 </div>
-                <div style={{ fontSize: isMobile ? '11px' : '12.5px', fontWeight: '600', color: '#64748b', marginTop: '3px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <div style={{ fontSize: isMobile ? '11px' : '12.5px', fontWeight: '600', color: '#64748b', marginTop: '2px' }}>
                   Statut logistique
                 </div>
               </div>
             </div>
 
-            {/* KPI 4 : Expéditions suivies */}
             <div
               className="sp-glass-panel"
               style={{
-                padding: isMobile ? '13px' : '20px 22px',
+                padding: isMobile ? '11px 12px' : '20px 22px',
                 borderRadius: isMobile ? '18px' : '24px',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'space-between',
-                gap: isMobile ? '8px' : '12px',
+                gap: isMobile ? '6px' : '12px',
                 minWidth: 0
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px' }}>
                 <div
                   style={{
-                    width: isMobile ? '32px' : '40px',
-                    height: isMobile ? '32px' : '40px',
+                    width: isMobile ? '30px' : '40px',
+                    height: isMobile ? '30px' : '40px',
                     borderRadius: '50%',
                     background: 'rgba(14, 165, 233, 0.14)',
                     border: '1px solid rgba(14, 165, 233, 0.28)',
@@ -769,49 +759,49 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
                 >
                   <Icon.Car />
                 </div>
-                <span className="sp-glass-pill" style={{ padding: '2px 7px', borderRadius: '999px', fontSize: isMobile ? '9.5px' : '10.5px', fontWeight: '700', color: '#64748b', whiteSpace: 'nowrap' }}>
+                <span className="sp-glass-pill" style={{ padding: '2px 7px', borderRadius: '999px', fontSize: '9.5px', fontWeight: '700', color: '#64748b' }}>
                   {nbCommandesExpediees}/{(data.commandes || []).length} exp.
                 </span>
               </div>
 
               <div>
-                <div style={{ fontSize: isMobile ? '21px' : '28px', fontWeight: '800', color: '#0f172a', lineHeight: 1.05, fontVariantNumeric: 'tabular-nums' }}>
+                <div style={{ fontSize: isMobile ? '20px' : '28px', fontWeight: '800', color: '#0f172a', lineHeight: 1.05, fontVariantNumeric: 'tabular-nums' }}>
                   {totalTpeCommandes}
                 </div>
-                <div style={{ fontSize: isMobile ? '11px' : '12.5px', fontWeight: '600', color: '#64748b', marginTop: '3px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {isMobile ? 'TPE commandés' : 'TPE commandés au total'}
+                <div style={{ fontSize: isMobile ? '11px' : '12.5px', fontWeight: '600', color: '#64748b', marginTop: '2px' }}>
+                  TPE commandés
                 </div>
               </div>
             </div>
           </div>
 
-          {/* 4. GRILLE BENTO 2 COLONNES (SANS AUCUN DÉBORDEMENT HORIZONTAL) */}
+          {/* 4. GRILLE BENTO 2 COLONNES */}
           <div
             style={{
               display: 'grid',
               gridTemplateColumns: isMobile ? 'minmax(0, 1fr)' : 'minmax(0, 1.15fr) minmax(0, 1fr)',
-              gap: isMobile ? '14px' : '20px',
+              gap: isMobile ? '12px' : '20px',
               alignItems: 'start',
               width: '100%',
               boxSizing: 'border-box'
             }}
           >
             {/* COLONNE GAUCHE : FORMULAIRE DE COMMANDE */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '14px' : '20px', minWidth: 0 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', minWidth: 0 }}>
               <form
                 onSubmit={commanderTpe}
                 className="sp-glass-panel"
                 style={{
-                  padding: isMobile ? '16px 14px' : '24px',
+                  padding: isMobile ? '15px 14px' : '24px',
                   borderRadius: isMobile ? '20px' : '24px',
                   width: '100%',
                   boxSizing: 'border-box'
                 }}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', marginBottom: isMobile ? '12px' : '16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                   <div style={{ minWidth: 0 }}>
-                    <h2 style={{ margin: 0, fontSize: isMobile ? '16px' : '17px', fontWeight: '800', color: '#0f172a' }}>
-                      Commander des terminaux TPE
+                    <h2 style={{ margin: 0, fontSize: isMobile ? '15.5px' : '17px', fontWeight: '800', color: '#0f172a', whiteSpace: 'nowrap' }}>
+                      Commander des TPE
                     </h2>
                     {!isMobile && (
                       <span style={{ fontSize: '12.5px', color: '#64748b', display: 'block', marginTop: '2px' }}>
@@ -820,11 +810,11 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
                     )}
                   </div>
                   <span className="sp-glass-pill" style={{ padding: '4px 10px', borderRadius: '999px', fontSize: '10.5px', fontWeight: '800', color: '#0f172a', whiteSpace: 'nowrap', flexShrink: 0 }}>
-                    {modeleTpe === 'STRIPE_S700' ? 'Reader S700' : 'Reader T600'}
+                    {modeleTpe === 'STRIPE_S700' ? 'Stripe S700' : 'Stripe T600'}
                   </span>
                 </div>
 
-                {/* Sélecteur du modèle TPE : Côte à côte en 2 colonnes même sur iPhone */}
+                {/* Sélecteur du modèle TPE (Sans écrasement du badge Comptoir/Mobile) */}
                 <div style={{ marginBottom: '14px' }}>
                   <label style={{ display: 'block', fontSize: '11.5px', fontWeight: '800', color: '#334155', marginBottom: '6px' }}>
                     Modèle de terminal
@@ -834,10 +824,10 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
                       type="button"
                       onClick={() => setModeleTpe('STRIPE_T600')}
                       style={{
-                        padding: isMobile ? '10px' : '12px 14px',
+                        padding: '10px 11px',
                         borderRadius: '14px',
                         border: modeleTpe === 'STRIPE_T600' ? '2px solid #0f172a' : '1px solid rgba(148, 163, 184, 0.35)',
-                        background: modeleTpe === 'STRIPE_T600' ? 'rgba(15, 23, 42, 0.05)' : 'rgba(255, 255, 255, 0.75)',
+                        background: modeleTpe === 'STRIPE_T600' ? 'rgba(15, 23, 42, 0.05)' : 'rgba(255, 255, 255, 0.8)',
                         cursor: 'pointer',
                         textAlign: 'left',
                         boxSizing: 'border-box',
@@ -845,26 +835,25 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
                         transition: 'all 0.15s ease'
                       }}
                     >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
-                        <strong style={{ fontSize: isMobile ? '12px' : '13px', color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {isMobile ? 'Reader T600' : 'Stripe Reader T600'}
-                        </strong>
-                        <span
-                          style={{
-                            fontSize: '9.5px',
-                            fontWeight: '800',
-                            padding: '2px 6px',
-                            borderRadius: '999px',
-                            background: modeleTpe === 'STRIPE_T600' ? '#0f172a' : 'rgba(15, 23, 42, 0.08)',
-                            color: modeleTpe === 'STRIPE_T600' ? '#ffffff' : '#475569',
-                            flexShrink: 0
-                          }}
-                        >
-                          Comptoir
-                        </span>
-                      </div>
-                      <span style={{ fontSize: isMobile ? '10.5px' : '11.5px', color: '#64748b', lineHeight: 1.35, display: 'block' }}>
-                        {isMobile ? 'Écran 8" paysage & pourboires.' : 'Grand écran tactile 8" paysage avec pourboires dynamiques.'}
+                      <span
+                        style={{
+                          display: 'inline-block',
+                          fontSize: '9.5px',
+                          fontWeight: '800',
+                          padding: '2px 7px',
+                          borderRadius: '999px',
+                          background: modeleTpe === 'STRIPE_T600' ? '#0f172a' : 'rgba(15, 23, 42, 0.08)',
+                          color: modeleTpe === 'STRIPE_T600' ? '#ffffff' : '#475569',
+                          marginBottom: '5px'
+                        }}
+                      >
+                        Comptoir
+                      </span>
+                      <strong style={{ display: 'block', fontSize: '13px', color: '#0f172a', marginBottom: '2px' }}>
+                        Reader T600
+                      </strong>
+                      <span style={{ fontSize: '10.5px', color: '#64748b', lineHeight: 1.35, display: 'block' }}>
+                        Écran 8" paysage & pourboires.
                       </span>
                     </button>
 
@@ -872,10 +861,10 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
                       type="button"
                       onClick={() => setModeleTpe('STRIPE_S700')}
                       style={{
-                        padding: isMobile ? '10px' : '12px 14px',
+                        padding: '10px 11px',
                         borderRadius: '14px',
                         border: modeleTpe === 'STRIPE_S700' ? '2px solid #0f172a' : '1px solid rgba(148, 163, 184, 0.35)',
-                        background: modeleTpe === 'STRIPE_S700' ? 'rgba(15, 23, 42, 0.05)' : 'rgba(255, 255, 255, 0.75)',
+                        background: modeleTpe === 'STRIPE_S700' ? 'rgba(15, 23, 42, 0.05)' : 'rgba(255, 255, 255, 0.8)',
                         cursor: 'pointer',
                         textAlign: 'left',
                         boxSizing: 'border-box',
@@ -883,32 +872,31 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
                         transition: 'all 0.15s ease'
                       }}
                     >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
-                        <strong style={{ fontSize: isMobile ? '12px' : '13px', color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {isMobile ? 'Reader S700' : 'Stripe Reader S700'}
-                        </strong>
-                        <span
-                          style={{
-                            fontSize: '9.5px',
-                            fontWeight: '800',
-                            padding: '2px 6px',
-                            borderRadius: '999px',
-                            background: modeleTpe === 'STRIPE_S700' ? '#0f172a' : 'rgba(15, 23, 42, 0.08)',
-                            color: modeleTpe === 'STRIPE_S700' ? '#ffffff' : '#475569',
-                            flexShrink: 0
-                          }}
-                        >
-                          Mobile
-                        </span>
-                      </div>
-                      <span style={{ fontSize: isMobile ? '10.5px' : '11.5px', color: '#64748b', lineHeight: 1.35, display: 'block' }}>
-                        {isMobile ? 'Sans fil + imprimante ticket.' : 'Terminal sans fil tout-en-un avec imprimante ticket thermique.'}
+                      <span
+                        style={{
+                          display: 'inline-block',
+                          fontSize: '9.5px',
+                          fontWeight: '800',
+                          padding: '2px 7px',
+                          borderRadius: '999px',
+                          background: modeleTpe === 'STRIPE_S700' ? '#0f172a' : 'rgba(15, 23, 42, 0.08)',
+                          color: modeleTpe === 'STRIPE_S700' ? '#ffffff' : '#475569',
+                          marginBottom: '5px'
+                        }}
+                      >
+                        Mobile
+                      </span>
+                      <strong style={{ display: 'block', fontSize: '13px', color: '#0f172a', marginBottom: '2px' }}>
+                        Reader S700
+                      </strong>
+                      <span style={{ fontSize: '10.5px', color: '#64748b', lineHeight: 1.35, display: 'block' }}>
+                        Sans fil + imprimante ticket.
                       </span>
                     </button>
                   </div>
                 </div>
 
-                {/* Sélection rapide de la quantité : 5 colonnes sur 1 seule ligne */}
+                {/* Quantité souhaitée : 5 colonnes sur 1 seule ligne */}
                 <div style={{ marginBottom: '14px' }}>
                   <label style={{ display: 'block', fontSize: '11.5px', fontWeight: '800', color: '#334155', marginBottom: '6px' }}>
                     Quantité souhaitée
@@ -923,17 +911,16 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
                           onClick={() => setQuantite(n)}
                           className={actif ? '' : 'sp-glass-pill'}
                           style={{
-                            padding: isMobile ? '8px 4px' : '8px 12px',
+                            padding: '8px 4px',
                             borderRadius: '999px',
                             border: actif ? '1px solid #111827' : undefined,
                             backgroundColor: actif ? '#111827' : undefined,
                             color: actif ? '#ffffff' : '#0f172a',
-                            fontSize: isMobile ? '11.5px' : '12.5px',
+                            fontSize: '11.5px',
                             fontWeight: '800',
                             cursor: 'pointer',
                             textAlign: 'center',
-                            whiteSpace: 'nowrap',
-                            transition: 'all 0.14s ease'
+                            whiteSpace: 'nowrap'
                           }}
                         >
                           {n} TPE
@@ -943,7 +930,7 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
                   </div>
                 </div>
 
-                {/* Adresse de réception & Bouton Commander */}
+                {/* Adresse de réception & Bouton Commander (Sans flex: 1 qui écrasait la hauteur sur iPhone) */}
                 <div>
                   <label style={{ display: 'block', fontSize: '11.5px', fontWeight: '800', color: '#334155', marginBottom: '6px' }}>
                     Adresse de réception (Domicile ou Point Relais)
@@ -957,13 +944,12 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
                       placeholder="Numéro, rue, code postal et ville"
                       required
                       className="sp-stock-input"
-                      style={{ flex: 1 }}
                     />
                     <button
                       type="submit"
                       disabled={submitting}
                       style={{
-                        height: '42px',
+                        height: '44px',
                         padding: '0 22px',
                         borderRadius: '999px',
                         border: 'none',
@@ -977,6 +963,7 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
                         justifyContent: 'center',
                         gap: '8px',
                         flexShrink: 0,
+                        whiteSpace: 'nowrap',
                         boxShadow: '0 8px 20px -4px rgba(17, 24, 39, 0.22)'
                       }}
                     >
@@ -1006,11 +993,11 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
             </div>
 
             {/* COLONNE DROITE : SUIVI DES EXPÉDITIONS + PROTOCOLE LOGISTIQUE */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '14px' : '20px', minWidth: 0 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '12px' : '20px', minWidth: 0 }}>
               <div
                 className="sp-glass-panel"
                 style={{
-                  padding: isMobile ? '16px 14px' : '22px 24px',
+                  padding: isMobile ? '15px 14px' : '22px 24px',
                   borderRadius: isMobile ? '20px' : '24px',
                   width: '100%',
                   boxSizing: 'border-box'
@@ -1019,12 +1006,12 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
                     <Icon.Stock />
-                    <h3 style={{ margin: 0, fontSize: isMobile ? '15.5px' : '16px', fontWeight: '800', color: '#0f172a', whiteSpace: 'nowrap' }}>
+                    <h3 style={{ margin: 0, fontSize: isMobile ? '15px' : '16px', fontWeight: '800', color: '#0f172a', whiteSpace: 'nowrap' }}>
                       Suivi des expéditions ({(data.commandes || []).length})
                     </h3>
                   </div>
                   <span style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', whiteSpace: 'nowrap', flexShrink: 0 }}>
-                    {isMobile ? 'Envois' : 'Historique des envois'}
+                    Envois
                   </span>
                 </div>
 
@@ -1032,17 +1019,17 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
                   <div
                     className="sp-glass-pill"
                     style={{
-                      padding: '28px 16px',
-                      borderRadius: '16px',
+                      padding: '20px 14px',
+                      borderRadius: '14px',
                       textAlign: 'center',
                       color: '#64748b',
-                      fontSize: '12.5px'
+                      fontSize: '12px'
                     }}
                   >
                     Aucune commande de terminal enregistrée pour le moment.
                   </div>
                 ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '9px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {data.commandes.map((cmd) => {
                       const estExpediee = cmd.statut === 'EXPEDIEE';
                       const modeleLabel = cmd.modele_tpe === 'STRIPE_S700' ? 'Stripe Reader S700' : 'Stripe Reader T600';
@@ -1105,71 +1092,89 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
                 )}
               </div>
 
-              {/* Carte 2 : Protocole logistique TPE */}
+              {/* Carte 2 : Protocole logistique TPE (Repliable sur iPhone) */}
               <div
                 className="sp-glass-panel"
                 style={{
-                  padding: isMobile ? '16px 14px' : '20px 22px',
-                  borderRadius: isMobile ? '20px' : '24px',
+                  padding: isMobile ? '13px 14px' : '20px 22px',
+                  borderRadius: isMobile ? '18px' : '24px',
                   width: '100%',
                   boxSizing: 'border-box'
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                  <Icon.Shield />
-                  <h3 style={{ margin: 0, fontSize: '15.5px', fontWeight: '800', color: '#0f172a' }}>
-                    Protocole Logistique TPE
-                  </h3>
+                <div
+                  onClick={() => isMobile && setAfficherProtocoleTpe(!afficherProtocoleTpe)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    cursor: isMobile ? 'pointer' : 'default',
+                    marginBottom: !isMobile || afficherProtocoleTpe ? '12px' : 0
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Icon.Shield />
+                    <h3 style={{ margin: 0, fontSize: isMobile ? '14px' : '15.5px', fontWeight: '800', color: '#0f172a' }}>
+                      Protocole Logistique TPE
+                    </h3>
+                  </div>
+                  {isMobile && (
+                    <span style={{ fontSize: '11.5px', fontWeight: '800', color: '#64748b' }}>
+                      {afficherProtocoleTpe ? 'Masquer ▲' : 'Détails ▼'}
+                    </span>
+                  )}
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  {[
-                    {
-                      num: '1',
-                      titre: 'Stock tampon recommandé (2 TPE)',
-                      desc: "Conservez toujours au moins 2 terminaux d'avance pour pouvoir équiper un salon dès la signature."
-                    },
-                    {
-                      num: '2',
-                      titre: 'Appairage Wi-Fi / 4G & Stripe Terminal',
-                      desc: "Lors du Go-Live, connectez le TPE au Wi-Fi du salon et saisissez le code d'appairage dans l'onglet Paramètres."
-                    },
-                    {
-                      num: '3',
-                      titre: 'Décompte automatique',
-                      desc: "Ajustez d'une unité votre stock via les boutons − / + dès que le terminal est remis au gérant."
-                    }
-                  ].map((step) => (
-                    <div key={step.num} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-                      <span
-                        style={{
-                          width: '22px',
-                          height: '22px',
-                          borderRadius: '50%',
-                          background: '#111827',
-                          color: '#ffffff',
-                          fontSize: '11px',
-                          fontWeight: '800',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          flexShrink: 0,
-                          marginTop: '1px'
-                        }}
-                      >
-                        {step.num}
-                      </span>
-                      <div style={{ minWidth: 0, flex: 1 }}>
-                        <strong style={{ display: 'block', fontSize: '12.5px', color: '#0f172a', marginBottom: '2px' }}>
-                          {step.titre}
-                        </strong>
-                        <span style={{ fontSize: '11.5px', color: '#64748b', lineHeight: 1.4, display: 'block' }}>
-                          {step.desc}
+                {(!isMobile || afficherProtocoleTpe) && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {[
+                      {
+                        num: '1',
+                        titre: 'Stock tampon recommandé (2 TPE)',
+                        desc: "Conservez toujours au moins 2 terminaux d'avance pour pouvoir équiper un salon dès la signature."
+                      },
+                      {
+                        num: '2',
+                        titre: 'Appairage Wi-Fi / 4G & Stripe Terminal',
+                        desc: "Lors du Go-Live, connectez le TPE au Wi-Fi du salon et saisissez le code d'appairage dans l'onglet Paramètres."
+                      },
+                      {
+                        num: '3',
+                        titre: 'Décompte automatique',
+                        desc: "Ajustez d'une unité votre stock via les boutons − / + dès que le terminal est remis au gérant."
+                      }
+                    ].map((step) => (
+                      <div key={step.num} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                        <span
+                          style={{
+                            width: '22px',
+                            height: '22px',
+                            borderRadius: '50%',
+                            background: '#111827',
+                            color: '#ffffff',
+                            fontSize: '11px',
+                            fontWeight: '800',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                            marginTop: '1px'
+                          }}
+                        >
+                          {step.num}
                         </span>
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <strong style={{ display: 'block', fontSize: '12.5px', color: '#0f172a', marginBottom: '2px' }}>
+                            {step.titre}
+                          </strong>
+                          <span style={{ fontSize: '11.5px', color: '#64748b', lineHeight: 1.4, display: 'block' }}>
+                            {step.desc}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
