@@ -1,5 +1,5 @@
 // src/components/dashboard/TabProfil.jsx
-// Onglet 6 : Paramètres & Dossier de Conformité KYC épuré en 2 colonnes (Thème Verre Cristal & Aurora)
+// Onglet 6 : Paramètres & Dossier de Conformité KYC en Verre Cristal — Optimisé Desktop & iPhone
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { Icon } from '../common/Icons';
@@ -93,67 +93,82 @@ export default function TabProfil({
     setEtapeActive(premiereEtapePrioritaire);
   }, [premiereEtapePrioritaire]);
 
-  const nbEtapesValides = Object.values(statutsEtapes).filter(s => s.ok && !s.expire).length;
+  const nbEtapesValides = Object.values(statutsEtapes).filter((s) => s.ok && !s.expire).length;
   const pctConformite = Math.round((nbEtapesValides / 5) * 100);
 
   const ETAPES_CONFIG = [
     {
       num: 1,
-      titre: "Contrat de mandat",
-      sousTitre: "Signature électronique Yousign",
-      resume: profilData.contrat_signe ? "Contrat signé électroniquement" : "En attente de signature"
+      court: 'Contrat',
+      titre: 'Contrat de mandat',
+      sousTitre: 'Signature électronique Yousign',
+      resume: profilData.contrat_signe ? 'Contrat signé électroniquement' : 'En attente de signature'
     },
     {
       num: 2,
-      titre: "Identité, SIRET & RSAC",
-      sousTitre: "Immatriculation légale & Greffe",
-      resume: profilData.siret_agent ? `SIRET ${profilData.siret_agent} • RSAC ${profilData.numero_rsac || '—'}` : "Pièce d'identité et extrait RSAC"
+      court: 'RSAC & ID',
+      titre: 'Identité, SIRET & RSAC',
+      sousTitre: 'Immatriculation légale & Greffe',
+      resume: profilData.siret_agent
+        ? `SIRET ${profilData.siret_agent} • RSAC ${profilData.numero_rsac || '—'}`
+        : "Pièce d'identité et extrait RSAC"
     },
     {
       num: 3,
-      titre: "Vigilance URSSAF",
-      sousTitre: "Attestation de régularité sociale",
-      resume: profilData.date_expiration_urssaf ? `Valide jusqu'au ${new Date(profilData.date_expiration_urssaf).toLocaleDateString('fr-FR')}` : "Attestation de moins de 6 mois"
+      court: 'URSSAF',
+      titre: 'Vigilance URSSAF',
+      sousTitre: 'Attestation de régularité sociale',
+      resume: profilData.date_expiration_urssaf
+        ? `Valide jusqu'au ${new Date(profilData.date_expiration_urssaf).toLocaleDateString('fr-FR')}`
+        : 'Attestation de moins de 6 mois'
     },
     {
       num: 4,
-      titre: "RC Pro, IBAN & Charte",
-      sousTitre: "Assurance pro & Coordonnées bancaires",
-      resume: profilData.assureur_nom ? `${profilData.assureur_nom.toUpperCase()} • IBAN renseigné` : "Police RC Pro et RIB de versement"
+      court: 'RC Pro & IBAN',
+      titre: 'RC Pro, IBAN & Charte',
+      sousTitre: 'Assurance pro & Coordonnées bancaires',
+      resume: profilData.assureur_nom
+        ? `${profilData.assureur_nom.toUpperCase()} • IBAN renseigné`
+        : 'Police RC Pro et RIB de versement'
     },
     {
       num: 5,
-      titre: "Quiz NF525 & Contact",
-      sousTitre: "Certification fiscale & Mobile actif",
-      resume: profilData.telephone ? `Mobile : ${profilData.telephone}` : "4 questions réglementaires"
+      court: 'Quiz NF525',
+      titre: 'Quiz NF525 & Contact',
+      sousTitre: 'Certification fiscale & Mobile actif',
+      resume: profilData.telephone ? `Mobile : ${profilData.telephone}` : '4 questions réglementaires'
     }
   ];
 
-  // Composant d'upload de fichier stylisé en Verre Cristal (remplace le bouton natif disgracieux)
+  // Composant d'upload de fichier stylisé en Verre Cristal
   const renderCustomFileUploader = (fieldName, labelBtn, currentFile, badgeLabel) => (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', minWidth: 0 }}>
       <label
         className="sp-glass-pill"
         style={{
           height: '40px',
-          padding: '0 14px',
+          padding: '0 13px',
           borderRadius: '12px',
           display: 'inline-flex',
           alignItems: 'center',
-          gap: '8px',
+          gap: '7px',
           fontSize: '12px',
           fontWeight: '700',
           color: '#0f172a',
           cursor: 'pointer',
-          background: 'rgba(255, 255, 255, 0.92)'
+          background: 'rgba(255, 255, 255, 0.92)',
+          boxSizing: 'border-box',
+          maxWidth: '100%'
         }}
       >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
           <polyline points="17 8 12 3 7 8" />
           <line x1="12" y1="3" x2="12" y2="15" />
         </svg>
-        <span>{currentFile ? 'Remplacer le fichier' : labelBtn}</span>
+        <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          {currentFile ? 'Remplacer le fichier' : labelBtn}
+        </span>
         <input
           type="file"
           accept=".pdf,image/*"
@@ -166,7 +181,15 @@ export default function TabProfil({
   );
 
   return (
-    <div style={{ paddingBottom: isMobile ? '90px' : '28px' }}>
+    <div
+      style={{
+        paddingBottom: isMobile ? 'calc(125px + env(safe-area-inset-bottom, 0px))' : '28px',
+        width: '100%',
+        maxWidth: '100%',
+        boxSizing: 'border-box',
+        overflowX: 'hidden'
+      }}
+    >
       <style>{`
         .sp-step-nav-card {
           background: linear-gradient(145deg, rgba(255, 255, 255, 0.78) 0%, rgba(255, 255, 255, 0.48) 100%);
@@ -194,18 +217,26 @@ export default function TabProfil({
           box-shadow: 0 10px 24px -6px rgba(15, 23, 42, 0.1);
         }
         .sp-kyc-input {
-          width: 100%;
-          box-sizing: border-box;
+          display: block;
+          width: 100% !important;
+          max-width: 100% !important;
+          min-width: 0 !important;
+          box-sizing: border-box !important;
           height: 42px;
-          padding: 0 13px;
-          background: rgba(255, 255, 255, 0.92);
-          border: 1px solid rgba(148, 163, 184, 0.32);
+          padding: 0 12px;
+          background: rgba(255, 255, 255, 0.94);
+          border: 1px solid rgba(148, 163, 184, 0.34);
           border-radius: 12px;
           font-size: 13.5px;
           font-weight: 600;
           color: #0f172a;
           outline: none;
+          -webkit-appearance: none;
+          appearance: none;
           transition: border-color 0.15s ease, background-color 0.15s ease;
+        }
+        input[type="date"].sp-kyc-input {
+          line-height: 40px;
         }
         .sp-kyc-input:focus {
           border-color: #0f172a;
@@ -218,6 +249,9 @@ export default function TabProfil({
           color: #334155;
           margin-bottom: 5px;
         }
+        .sp-steps-scroll::-webkit-scrollbar {
+          display: none;
+        }
       `}</style>
 
       {/* =================================================================== */}
@@ -226,35 +260,36 @@ export default function TabProfil({
       <header
         style={{
           display: 'flex',
-          flexDirection: isMobile ? 'column' : 'row',
+          flexDirection: isMobile ? 'row' : 'row',
           justifyContent: 'space-between',
-          alignItems: isMobile ? 'flex-start' : 'flex-end',
-          gap: '14px',
-          marginBottom: '18px'
+          alignItems: isMobile ? 'center' : 'flex-end',
+          gap: '10px',
+          marginBottom: isMobile ? '12px' : '18px',
+          flexWrap: 'wrap'
         }}
       >
-        <div>
+        <div style={{ minWidth: 0, flex: 1 }}>
           <span
             className="sp-glass-pill"
             style={{
               display: 'inline-block',
-              padding: '4px 12px',
+              padding: isMobile ? '3px 10px' : '4px 12px',
               borderRadius: '999px',
-              fontSize: '10.5px',
+              fontSize: isMobile ? '9.5px' : '10.5px',
               fontWeight: '800',
               letterSpacing: '0.06em',
               textTransform: 'uppercase',
               color: '#64748b',
-              marginBottom: '6px'
+              marginBottom: isMobile ? '4px' : '6px'
             }}
           >
-            Conformité Légale & KYC Partenaire
+            {isMobile ? 'Conformité KYC' : 'Conformité Légale & KYC Partenaire'}
           </span>
           <h1
             style={{
-              fontSize: isMobile ? '24px' : '30px',
+              fontSize: isMobile ? '22px' : '30px',
               fontWeight: '800',
-              margin: '0 0 4px 0',
+              margin: isMobile ? '0' : '0 0 4px 0',
               letterSpacing: '-0.03em',
               color: '#0f172a',
               lineHeight: 1.1
@@ -262,34 +297,37 @@ export default function TabProfil({
           >
             Paramètres & Dossier
           </h1>
-          <span style={{ fontSize: '13.5px', color: '#64748b', fontWeight: '500' }}>
-            Sélectionnez une étape à gauche pour vérifier ou mettre à jour vos pièces justificatives.
-          </span>
+          {!isMobile && (
+            <span style={{ fontSize: '13.5px', color: '#64748b', fontWeight: '500' }}>
+              Sélectionnez une étape à gauche pour vérifier ou mettre à jour vos pièces justificatives.
+            </span>
+          )}
         </div>
 
-        {/* Badge de statut global + compteur d'étapes */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+        {/* Badges de statut global (Compactés sur une seule ligne sur iPhone) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
           <div
             className="sp-glass-pill"
             style={{
-              padding: '8px 14px',
+              padding: isMobile ? '6px 11px' : '8px 14px',
               borderRadius: '999px',
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '8px',
-              fontSize: '12px',
+              gap: '6px',
+              fontSize: isMobile ? '11.5px' : '12px',
               fontWeight: '800',
-              color: '#0f172a'
+              color: '#0f172a',
+              whiteSpace: 'nowrap'
             }}
           >
-            <span>Dossier : {nbEtapesValides}/5 validés ({pctConformite}%)</span>
+            <span>{isMobile ? `${nbEtapesValides}/5 (${pctConformite}%)` : `Dossier : ${nbEtapesValides}/5 validés (${pctConformite}%)`}</span>
           </div>
 
           <span
             style={{
-              padding: '8px 15px',
+              padding: isMobile ? '6px 11px' : '8px 15px',
               borderRadius: '999px',
-              fontSize: '12px',
+              fontSize: isMobile ? '11px' : '12px',
               fontWeight: '800',
               backgroundColor: profilData.autorise_a_vendre
                 ? 'rgba(16, 185, 129, 0.16)'
@@ -300,7 +338,8 @@ export default function TabProfil({
                 : '1px solid rgba(245, 158, 11, 0.35)',
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '7px'
+              gap: '6px',
+              whiteSpace: 'nowrap'
             }}
           >
             <span
@@ -312,7 +351,13 @@ export default function TabProfil({
               }}
             />
             <span>
-              {profilData.autorise_a_vendre ? 'Compte Actif — Vente Autorisée' : 'Dossier en cours de validation'}
+              {profilData.autorise_a_vendre
+                ? isMobile
+                  ? 'Vente Autorisée'
+                  : 'Compte Actif — Vente Autorisée'
+                : isMobile
+                  ? 'En validation'
+                  : 'Dossier en cours de validation'}
             </span>
           </span>
         </div>
@@ -325,41 +370,43 @@ export default function TabProfil({
         <div
           className="sp-glass-panel"
           style={{
-            padding: '12px 18px',
-            marginBottom: '18px',
-            borderRadius: '18px',
+            padding: isMobile ? '10px 12px' : '12px 18px',
+            marginBottom: isMobile ? '12px' : '18px',
+            borderRadius: '16px',
             border: '1px solid rgba(245, 158, 11, 0.4)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             flexWrap: 'wrap',
-            gap: '10px'
+            gap: '8px',
+            boxSizing: 'border-box'
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div
-              style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '10px',
-                background: 'rgba(245, 158, 11, 0.16)',
-                color: '#d97706',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0
-              }}
-            >
-              <Icon.Lock />
+          {!isMobile && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '10px',
+                  background: 'rgba(245, 158, 11, 0.16)',
+                  color: '#d97706',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0
+                }}
+              >
+                <Icon.Lock />
+              </div>
+              <span style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a' }}>
+                Action requise pour débloquer votre droit de vente :
+              </span>
             </div>
-            <span style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a' }}>
-              Action requise pour débloquer votre droit de vente :
-            </span>
-          </div>
+          )}
 
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', flex: 1, justifyContent: isMobile ? 'flex-start' : 'flex-end' }}>
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', flex: 1, justifyContent: isMobile ? 'stretch' : 'flex-end' }}>
             {profilData.motifs_blocage.map((motif, i) => {
-              // Détecte le numéro d'étape dans le texte (ex: "Étape 4 : Assurance RC Pro expirée.")
               const matchStep = String(motif).match(/[ÉE]tape\s*(\d)/i);
               const cibleStep = matchStep ? parseInt(matchStep[1], 10) : premiereEtapePrioritaire;
 
@@ -370,21 +417,26 @@ export default function TabProfil({
                   onClick={() => setEtapeActive(cibleStep)}
                   className="sp-glass-pill"
                   style={{
-                    padding: '6px 13px',
+                    width: isMobile ? '100%' : 'auto',
+                    padding: isMobile ? '7px 12px' : '6px 13px',
                     borderRadius: '999px',
-                    fontSize: '12px',
+                    fontSize: isMobile ? '11.5px' : '12px',
                     fontWeight: '700',
                     color: '#b45309',
                     border: '1px solid rgba(245, 158, 11, 0.35)',
                     display: 'inline-flex',
                     alignItems: 'center',
+                    justifyContent: 'space-between',
                     gap: '7px',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    boxSizing: 'border-box'
                   }}
                 >
-                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#f59e0b' }} />
-                  <span>{motif}</span>
-                  <span style={{ fontWeight: '800' }}>→ Corriger</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
+                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#f59e0b', flexShrink: 0 }} />
+                    <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{motif}</span>
+                  </span>
+                  <span style={{ fontWeight: '800', flexShrink: 0 }}>Corriger →</span>
                 </button>
               );
             })}
@@ -393,236 +445,327 @@ export default function TabProfil({
       )}
 
       {/* =================================================================== */}
-      {/* 3. ARCHITECTURE 2 COLONNES : SOMMAIRE DES 5 ÉTAPES | ÉTAPE ACTIVE   */}
+      {/* 3. ARCHITECTURE RESPONSIVE : RUBAN D'ONGLETS SUR IPHONE / 2 COL PC  */}
       {/* =================================================================== */}
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr' : '340px minmax(0, 1fr)',
-          gap: '20px',
-          alignItems: 'start'
+          gridTemplateColumns: isMobile ? 'minmax(0, 1fr)' : '340px minmax(0, 1fr)',
+          gap: isMobile ? '12px' : '20px',
+          alignItems: 'start',
+          width: '100%',
+          boxSizing: 'border-box'
         }}
       >
-        {/* COLONNE GAUCHE : MENU DES 5 ÉTAPES DE CONFORMITÉ */}
-        <div
-          className="sp-glass-panel"
-          style={{
-            padding: '16px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '8px'
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '2px 6px 8px 6px' }}>
-            <span style={{ fontSize: '11.5px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Parcours de validation (5 étapes)
-            </span>
-            <span style={{ fontSize: '11.5px', fontWeight: '800', color: '#0f172a' }}>
-              {nbEtapesValides}/5
-            </span>
-          </div>
+        {/* NAVIGATION DES 5 ÉTAPES : RUBAN HORIZONTAL COMPACT SUR IPHONE, CARTES SUR DESKTOP */}
+        {isMobile ? (
+          <div
+            className="sp-glass-panel sp-steps-scroll"
+            style={{
+              padding: '6px',
+              borderRadius: '18px',
+              display: 'flex',
+              gap: '6px',
+              overflowX: 'auto',
+              scrollbarWidth: 'none',
+              boxSizing: 'border-box'
+            }}
+          >
+            {ETAPES_CONFIG.map((item) => {
+              const st = statutsEtapes[item.num];
+              const isSelected = etapeActive === item.num;
 
-          {ETAPES_CONFIG.map((item) => {
-            const st = statutsEtapes[item.num];
-            const isSelected = etapeActive === item.num;
-
-            return (
-              <button
-                key={item.num}
-                type="button"
-                onClick={() => setEtapeActive(item.num)}
-                className={`sp-step-nav-card ${isSelected ? 'active' : ''}`}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0, flex: 1 }}>
-                  <div
+              return (
+                <button
+                  key={item.num}
+                  type="button"
+                  onClick={() => setEtapeActive(item.num)}
+                  style={{
+                    flex: '1 0 auto',
+                    padding: '8px 12px',
+                    borderRadius: '13px',
+                    border: isSelected
+                      ? '1.5px solid #0f172a'
+                      : st.expire
+                        ? '1px solid rgba(239, 68, 68, 0.35)'
+                        : '1px solid rgba(255, 255, 255, 0.9)',
+                    background: isSelected
+                      ? '#111827'
+                      : st.expire
+                        ? 'rgba(254, 242, 242, 0.9)'
+                        : 'rgba(255, 255, 255, 0.78)',
+                    color: isSelected ? '#ffffff' : '#0f172a',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '7px',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    boxShadow: isSelected ? '0 6px 14px -4px rgba(15, 23, 42, 0.25)' : 'none'
+                  }}
+                >
+                  <span
                     style={{
-                      width: '32px',
-                      height: '32px',
+                      width: '20px',
+                      height: '20px',
                       borderRadius: '50%',
+                      fontSize: '10px',
+                      fontWeight: '800',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
                       background: isSelected
-                        ? '#111827'
+                        ? 'rgba(255, 255, 255, 0.2)'
                         : st.expire
-                          ? 'rgba(239, 68, 68, 0.14)'
+                          ? 'rgba(239, 68, 68, 0.16)'
                           : st.ok
-                            ? 'rgba(16, 185, 129, 0.14)'
-                            : 'rgba(148, 163, 184, 0.18)',
+                            ? 'rgba(16, 185, 129, 0.16)'
+                            : 'rgba(148, 163, 184, 0.2)',
                       color: isSelected
                         ? '#ffffff'
                         : st.expire
                           ? '#dc2626'
                           : st.ok
                             ? '#059669'
-                            : '#475569',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '12.5px',
-                      fontWeight: '800',
-                      flexShrink: 0
+                            : '#475569'
                     }}
                   >
-                    {st.ok && !st.expire && !isSelected ? 'OK' : item.num}
-                  </div>
+                    {st.ok && !st.expire ? '✓' : st.expire ? '!' : item.num}
+                  </span>
+                  <span style={{ fontSize: '12px', fontWeight: '800' }}>{item.court}</span>
+                </button>
+              );
+            })}
+          </div>
+        ) : (
+          <div
+            className="sp-glass-panel"
+            style={{
+              padding: '16px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '8px'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '2px 6px 8px 6px' }}>
+              <span style={{ fontSize: '11.5px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Parcours de validation (5 étapes)
+              </span>
+              <span style={{ fontSize: '11.5px', fontWeight: '800', color: '#0f172a' }}>
+                {nbEtapesValides}/5
+              </span>
+            </div>
 
-                  <div style={{ minWidth: 0, flex: 1 }}>
-                    <div
-                      style={{
-                        fontSize: '13.5px',
-                        fontWeight: '800',
-                        color: '#0f172a',
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis'
-                      }}
-                    >
-                      {item.titre}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: '11px',
-                        color: '#64748b',
-                        marginTop: '2px',
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis'
-                      }}
-                    >
-                      {item.resume}
-                    </div>
-                  </div>
-                </div>
+            {ETAPES_CONFIG.map((item) => {
+              const st = statutsEtapes[item.num];
+              const isSelected = etapeActive === item.num;
 
-                <span
-                  style={{
-                    padding: '3px 9px',
-                    borderRadius: '999px',
-                    fontSize: '10px',
-                    fontWeight: '800',
-                    flexShrink: 0,
-                    backgroundColor: st.expire
-                      ? 'rgba(239, 68, 68, 0.14)'
-                      : st.ok
-                        ? 'rgba(16, 185, 129, 0.14)'
-                        : 'rgba(245, 158, 11, 0.15)',
-                    color: st.expire ? '#dc2626' : st.ok ? '#059669' : '#b45309'
-                  }}
+              return (
+                <button
+                  key={item.num}
+                  type="button"
+                  onClick={() => setEtapeActive(item.num)}
+                  className={`sp-step-nav-card ${isSelected ? 'active' : ''}`}
                 >
-                  {st.label}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0, flex: 1 }}>
+                    <div
+                      style={{
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '50%',
+                        background: isSelected
+                          ? '#111827'
+                          : st.expire
+                            ? 'rgba(239, 68, 68, 0.14)'
+                            : st.ok
+                              ? 'rgba(16, 185, 129, 0.14)'
+                              : 'rgba(148, 163, 184, 0.18)',
+                        color: isSelected
+                          ? '#ffffff'
+                          : st.expire
+                            ? '#dc2626'
+                            : st.ok
+                              ? '#059669'
+                              : '#475569',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '12.5px',
+                        fontWeight: '800',
+                        flexShrink: 0
+                      }}
+                    >
+                      {st.ok && !st.expire && !isSelected ? 'OK' : item.num}
+                    </div>
+
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div
+                        style={{
+                          fontSize: '13.5px',
+                          fontWeight: '800',
+                          color: '#0f172a',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis'
+                        }}
+                      >
+                        {item.titre}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: '11px',
+                          color: '#64748b',
+                          marginTop: '2px',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis'
+                        }}
+                      >
+                        {item.resume}
+                      </div>
+                    </div>
+                  </div>
+
+                  <span
+                    style={{
+                      padding: '3px 9px',
+                      borderRadius: '999px',
+                      fontSize: '10px',
+                      fontWeight: '800',
+                      flexShrink: 0,
+                      backgroundColor: st.expire
+                        ? 'rgba(239, 68, 68, 0.14)'
+                        : st.ok
+                          ? 'rgba(16, 185, 129, 0.14)'
+                          : 'rgba(245, 158, 11, 0.15)',
+                      color: st.expire ? '#dc2626' : st.ok ? '#059669' : '#b45309'
+                    }}
+                  >
+                    {st.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {/* COLONNE DROITE : CONTENU DE L'ÉTAPE ACTIVE UNIQUEMENT */}
-        <div className="sp-glass-panel" style={{ padding: isMobile ? '20px 16px' : '28px' }}>
-
+        <div
+          className="sp-glass-panel"
+          style={{
+            padding: isMobile ? '16px 14px' : '28px',
+            borderRadius: isMobile ? '20px' : '24px',
+            width: '100%',
+            minWidth: 0,
+            boxSizing: 'border-box',
+            overflow: 'hidden'
+          }}
+        >
           {/* =============================================================== */}
-          {/* ÉTAPE 1 : CONTRAT DE MANDAT D'AGENT COMMERCIAL (YOUSIGN)        */}
+          {/* ÉTAPE 1 : CONTRAT DE MANDAT D'AGENT COMMERCIAL                  */}
           {/* =============================================================== */}
           {etapeActive === 1 && (
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
-                <div>
-                  <span style={{ fontSize: '11px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+                <div style={{ minWidth: 0 }}>
+                  <span style={{ fontSize: '10.5px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                     Étape 1 sur 5
                   </span>
-                  <h2 style={{ margin: '4px 0 0 0', fontSize: '20px', fontWeight: '800', color: '#0f172a' }}>
-                    Contrat de mandat d'agent commercial
+                  <h2 style={{ margin: '2px 0 0 0', fontSize: isMobile ? '17.5px' : '20px', fontWeight: '800', color: '#0f172a' }}>
+                    Contrat de mandat commercial
                   </h2>
                 </div>
                 <span
                   style={{
-                    padding: '5px 12px',
+                    padding: '4px 11px',
                     borderRadius: '999px',
-                    fontSize: '11.5px',
+                    fontSize: '11px',
                     fontWeight: '800',
                     backgroundColor: profilData.statut_contrat === 'VALIDE' ? 'rgba(16, 185, 129, 0.14)' : 'rgba(245, 158, 11, 0.16)',
-                    color: profilData.statut_contrat === 'VALIDE' ? '#059669' : '#b45309'
+                    color: profilData.statut_contrat === 'VALIDE' ? '#059669' : '#b45309',
+                    flexShrink: 0
                   }}
                 >
                   {profilData.statut_contrat || 'EN ATTENTE'}
                 </span>
               </div>
 
-              <div className="sp-glass-pill" style={{ padding: '20px', borderRadius: '18px', marginBottom: '20px' }}>
-                <p style={{ fontSize: '13.5px', color: '#334155', lineHeight: 1.6, margin: '0 0 14px 0' }}>
-                  Ce contrat de mandat commercial indépendant est conclu sous condition suspensive d'immatriculation au Registre Spécial des Agents Commerciaux (RSAC). Il régit votre mission de prospection, fixe votre commission récurrente de <strong>20 % HT pendant 24 mois</strong> sur chaque abonnement de salon affilié, ainsi que votre forfait de mise en service terrain de <strong>99 € HT</strong> par établissement.
+              <div className="sp-glass-pill" style={{ padding: isMobile ? '14px' : '20px', borderRadius: '16px', marginBottom: '16px', boxSizing: 'border-box' }}>
+                <p style={{ fontSize: isMobile ? '12.5px' : '13.5px', color: '#334155', lineHeight: 1.55, margin: '0 0 14px 0' }}>
+                  Ce contrat de mandat commercial indépendant est conclu sous condition suspensive d'immatriculation RSAC. Il fixe votre commission récurrente de <strong>20 % HT pendant 24 mois</strong> sur chaque abonnement de salon affilié, ainsi que votre forfait de mise en service terrain de <strong>99 € HT</strong>.
                 </p>
 
                 {profilData.contrat_signe && profilData.statut_contrat === 'VALIDE' ? (
-                  <div style={{ backgroundColor: '#f0fdf4', border: '1px solid #86efac', borderRadius: '14px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
-                      <div style={{ fontSize: '13.5px', fontWeight: '800', color: '#059669', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <Icon.Check /> Contrat de mandat signé électroniquement et scellé.
+                  <div style={{ backgroundColor: '#f0fdf4', border: '1px solid #86efac', borderRadius: '14px', padding: isMobile ? '12px' : '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                      <div style={{ fontSize: '13px', fontWeight: '800', color: '#059669', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <Icon.Check /> Contrat signé et scellé.
                       </div>
-                      <span style={{ fontSize: '11px', fontWeight: '700', color: '#15803d', backgroundColor: '#dcfce7', padding: '3px 9px', borderRadius: '999px' }}>
-                        eIDAS • Art. 1366 & 1367 C. Civ.
+                      <span style={{ fontSize: '10.5px', fontWeight: '700', color: '#15803d', backgroundColor: '#dcfce7', padding: '2px 8px', borderRadius: '999px' }}>
+                        eIDAS • Art. 1366 C. Civ.
                       </span>
                     </div>
 
-                    <div style={{ fontSize: '12px', color: '#166534', lineHeight: 1.6, display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '6px' }}>
-                      <div><strong>Référence :</strong> {profilData.certificat_contrat_ref || 'STACK-MANDAT-VALIDE'}</div>
-                      <div><strong>Date :</strong> {profilData.date_signature_contrat ? new Date(profilData.date_signature_contrat).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }) : 'Certifiée'}</div>
-                      <div style={{ gridColumn: isMobile ? '1' : '1 / -1' }}>
-                        <strong>Empreinte SHA-256 :</strong> <code style={{ fontSize: '11px' }}>{profilData.hash_contrat ? `${profilData.hash_contrat.substring(0, 32)}...` : 'Scellement cryptographique actif'}</code>
-                      </div>
+                    <div style={{ fontSize: '11.5px', color: '#166534', lineHeight: 1.5, display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '4px' }}>
+                      <div><strong>Réf :</strong> {profilData.certificat_contrat_ref || 'STACK-MANDAT-VALIDE'}</div>
+                      <div><strong>Date :</strong> {profilData.date_signature_contrat ? new Date(profilData.date_signature_contrat).toLocaleDateString('fr-FR') : 'Certifiée'}</div>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', paddingTop: '8px', borderTop: '1px solid #bbf7d0' }}>
+                    <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '8px', paddingTop: '8px', borderTop: '1px solid #bbf7d0' }}>
                       <button
                         type="button"
                         onClick={onTelechargerContratPdf}
                         style={{
-                          padding: '9px 18px',
+                          padding: '10px 16px',
                           borderRadius: '999px',
                           border: 'none',
                           backgroundColor: '#059669',
                           color: '#ffffff',
-                          fontSize: '12.5px',
+                          fontSize: '12px',
                           fontWeight: '800',
                           display: 'inline-flex',
                           alignItems: 'center',
+                          justifyContent: 'center',
                           gap: '6px',
                           cursor: 'pointer'
                         }}
                       >
-                        <Icon.FileDownload /> Télécharger mon contrat signé (PDF)
+                        <Icon.FileDownload /> Télécharger mon contrat (PDF)
                       </button>
                       <button
                         type="button"
                         onClick={onOuvrirSignatureContrat || handleYousignSignature}
                         className="sp-glass-pill"
-                        style={{ padding: '9px 16px', borderRadius: '999px', fontSize: '12.5px', fontWeight: '700', color: '#166534', cursor: 'pointer', backgroundColor: '#ffffff' }}
+                        style={{ padding: '10px 14px', borderRadius: '999px', fontSize: '12px', fontWeight: '700', color: '#166534', cursor: 'pointer', backgroundColor: '#ffffff', textAlign: 'center' }}
                       >
-                        Revoir les 10 articles du contrat
+                        Revoir les 10 articles
                       </button>
                     </div>
                   </div>
                 ) : (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '14px', paddingTop: '10px', borderTop: '1px solid rgba(148, 163, 184, 0.2)' }}>
-                    <div style={{ fontSize: '12.5px', color: '#64748b' }}>
-                      Signature manuscrite et scellement d'intégrité intégrés directement dans STACK Partners.
+                  <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'center', justifyContent: 'space-between', gap: '12px', paddingTop: '10px', borderTop: '1px solid rgba(148, 163, 184, 0.2)' }}>
+                    <div style={{ fontSize: '12px', color: '#64748b' }}>
+                      Signature manuscrite et scellement d'intégrité intégrés.
                     </div>
                     <button
                       type="button"
                       onClick={onOuvrirSignatureContrat || handleYousignSignature}
                       style={{
-                        padding: '12px 24px',
+                        padding: '12px 20px',
                         borderRadius: '999px',
                         border: 'none',
                         backgroundColor: '#0f172a',
                         color: '#ffffff',
-                        fontSize: '13.5px',
+                        fontSize: '13px',
                         fontWeight: '800',
                         display: 'inline-flex',
                         alignItems: 'center',
+                        justifyContent: 'center',
                         gap: '8px',
                         cursor: 'pointer',
                         boxShadow: '0 8px 20px -4px rgba(15, 23, 42, 0.25)'
                       }}
                     >
-                      <Icon.Check /> Consulter et signer mon contrat de mandat
+                      <Icon.Check /> Signer mon contrat de mandat
                     </button>
                   </div>
                 )}
@@ -633,7 +776,7 @@ export default function TabProfil({
                   type="button"
                   onClick={() => setEtapeActive(2)}
                   className="sp-glass-pill"
-                  style={{ padding: '10px 18px', borderRadius: '999px', fontSize: '12.5px', fontWeight: '800', color: '#0f172a', cursor: 'pointer' }}
+                  style={{ width: isMobile ? '100%' : 'auto', padding: '11px 18px', borderRadius: '999px', fontSize: '12.5px', fontWeight: '800', color: '#0f172a', cursor: 'pointer', textAlign: 'center' }}
                 >
                   Passer à l'Étape 2 (Identité & RSAC) →
                 </button>
@@ -646,36 +789,37 @@ export default function TabProfil({
           {/* =============================================================== */}
           {etapeActive === 2 && (
             <div style={{ opacity: profilData.contrat_signe ? 1 : 0.65 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', marginBottom: '18px', flexWrap: 'wrap' }}>
-                <div>
-                  <span style={{ fontSize: '11px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+                <div style={{ minWidth: 0 }}>
+                  <span style={{ fontSize: '10.5px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                     Étape 2 sur 5
                   </span>
-                  <h2 style={{ margin: '4px 0 0 0', fontSize: '20px', fontWeight: '800', color: '#0f172a' }}>
-                    Identité, SIRET & Immatriculation RSAC
+                  <h2 style={{ margin: '2px 0 0 0', fontSize: isMobile ? '17.5px' : '20px', fontWeight: '800', color: '#0f172a' }}>
+                    Identité, SIRET & RSAC
                   </h2>
                 </div>
                 <span
                   style={{
-                    padding: '5px 12px',
+                    padding: '4px 11px',
                     borderRadius: '999px',
-                    fontSize: '11.5px',
+                    fontSize: '11px',
                     fontWeight: '800',
                     backgroundColor: statutsEtapes[2].ok ? 'rgba(16, 185, 129, 0.14)' : 'rgba(245, 158, 11, 0.16)',
-                    color: statutsEtapes[2].ok ? '#059669' : '#b45309'
+                    color: statutsEtapes[2].ok ? '#059669' : '#b45309',
+                    flexShrink: 0
                   }}
                 >
                   {statutsEtapes[2].label}
                 </span>
               </div>
 
-              {/* Sous-bloc A : Pièce d'identité */}
-              <div className="sp-glass-pill" style={{ padding: '16px', borderRadius: '18px', marginBottom: '14px' }}>
-                <div style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a', marginBottom: '12px' }}>
+              {/* Sous-bloc A : Pièce d'identité (Grille 2 colonnes sur mobile pour les 2 dates sans débordement) */}
+              <div className="sp-glass-pill" style={{ padding: isMobile ? '14px 12px' : '16px', borderRadius: '16px', marginBottom: '12px', boxSizing: 'border-box' }}>
+                <div style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a', marginBottom: '10px' }}>
                   A. Pièce d'identité du mandataire
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1.2fr', gap: '12px', alignItems: 'end' }}>
-                  <div>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'minmax(0, 1fr) minmax(0, 1fr)' : 'minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.2fr)', gap: '10px', alignItems: 'end' }}>
+                  <div style={{ minWidth: 0 }}>
                     <label className="sp-kyc-label">Date de naissance</label>
                     <input
                       type="date"
@@ -684,8 +828,8 @@ export default function TabProfil({
                       className="sp-kyc-input"
                     />
                   </div>
-                  <div>
-                    <label className="sp-kyc-label">Date d'expiration CNI / Passeport</label>
+                  <div style={{ minWidth: 0 }}>
+                    <label className="sp-kyc-label">Expiration CNI</label>
                     <input
                       type="date"
                       value={profilData.date_expiration_identite ? profilData.date_expiration_identite.slice(0, 10) : ''}
@@ -693,7 +837,7 @@ export default function TabProfil({
                       className="sp-kyc-input"
                     />
                   </div>
-                  <div>
+                  <div style={{ minWidth: 0, gridColumn: isMobile ? '1 / -1' : 'auto' }}>
                     <label className="sp-kyc-label">Justificatif d'identité</label>
                     {renderCustomFileUploader('fichier_identite', 'Importer CNI / Passeport', profilData.fichier_identite, 'Identité')}
                   </div>
@@ -701,12 +845,12 @@ export default function TabProfil({
               </div>
 
               {/* Sous-bloc B : Entreprise & Adresse */}
-              <div className="sp-glass-pill" style={{ padding: '16px', borderRadius: '18px', marginBottom: '14px' }}>
-                <div style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a', marginBottom: '12px' }}>
+              <div className="sp-glass-pill" style={{ padding: isMobile ? '14px 12px' : '16px', borderRadius: '16px', marginBottom: '12px', boxSizing: 'border-box' }}>
+                <div style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a', marginBottom: '10px' }}>
                   B. Structure juridique & Siège social
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '12px', marginBottom: '12px' }}>
-                  <div>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'minmax(0, 1fr)' : 'repeat(3, minmax(0, 1fr))', gap: '10px', marginBottom: '10px' }}>
+                  <div style={{ minWidth: 0 }}>
                     <label className="sp-kyc-label">Numéro SIRET (14 chiffres)</label>
                     <input
                       type="text"
@@ -716,28 +860,30 @@ export default function TabProfil({
                       className="sp-kyc-input"
                     />
                   </div>
-                  <div>
-                    <label className="sp-kyc-label">Forme juridique</label>
-                    <select
-                      value={profilData.forme_juridique || 'EI'}
-                      onChange={(e) => setProfilData({ ...profilData, forme_juridique: e.target.value })}
-                      className="sp-kyc-input"
-                    >
-                      <option value="EI">Entrepreneur Individuel / Micro</option>
-                      <option value="SOCIETE">Société (SASU, EURL, SAS...)</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="sp-kyc-label">Début d'activité</label>
-                    <input
-                      type="date"
-                      value={profilData.date_debut_activite ? profilData.date_debut_activite.slice(0, 10) : ''}
-                      onChange={(e) => setProfilData({ ...profilData, date_debut_activite: e.target.value })}
-                      className="sp-kyc-input"
-                    />
+                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'minmax(0, 1.1fr) minmax(0, 0.9fr)' : 'contents', gap: '10px' }}>
+                    <div style={{ minWidth: 0 }}>
+                      <label className="sp-kyc-label">Forme juridique</label>
+                      <select
+                        value={profilData.forme_juridique || 'EI'}
+                        onChange={(e) => setProfilData({ ...profilData, forme_juridique: e.target.value })}
+                        className="sp-kyc-input"
+                      >
+                        <option value="EI">EI / Micro</option>
+                        <option value="SOCIETE">Société (SASU, EURL...)</option>
+                      </select>
+                    </div>
+                    <div style={{ minWidth: 0 }}>
+                      <label className="sp-kyc-label">Début d'activité</label>
+                      <input
+                        type="date"
+                        value={profilData.date_debut_activite ? profilData.date_debut_activite.slice(0, 10) : ''}
+                        onChange={(e) => setProfilData({ ...profilData, date_debut_activite: e.target.value })}
+                        className="sp-kyc-input"
+                      />
+                    </div>
                   </div>
                 </div>
-                <div>
+                <div style={{ minWidth: 0 }}>
                   <label className="sp-kyc-label">Adresse professionnelle complète</label>
                   <input
                     type="text"
@@ -750,12 +896,12 @@ export default function TabProfil({
               </div>
 
               {/* Sous-bloc C : RSAC */}
-              <div className="sp-glass-pill" style={{ padding: '16px', borderRadius: '18px', marginBottom: '20px' }}>
-                <div style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a', marginBottom: '12px' }}>
-                  C. Immatriculation au Registre Spécial des Agents Commerciaux (RSAC)
+              <div className="sp-glass-pill" style={{ padding: isMobile ? '14px 12px' : '16px', borderRadius: '16px', marginBottom: '16px', boxSizing: 'border-box' }}>
+                <div style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a', marginBottom: '10px' }}>
+                  C. Immatriculation au RSAC
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr 1.3fr', gap: '12px', alignItems: 'end' }}>
-                  <div>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'minmax(0, 1fr) minmax(0, 1fr)' : 'minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.3fr)', gap: '10px', alignItems: 'end' }}>
+                  <div style={{ minWidth: 0 }}>
                     <label className="sp-kyc-label">Numéro RSAC</label>
                     <input
                       type="text"
@@ -765,7 +911,7 @@ export default function TabProfil({
                       className="sp-kyc-input"
                     />
                   </div>
-                  <div>
+                  <div style={{ minWidth: 0 }}>
                     <label className="sp-kyc-label">Greffe / Tribunal</label>
                     <input
                       type="text"
@@ -775,7 +921,7 @@ export default function TabProfil({
                       className="sp-kyc-input"
                     />
                   </div>
-                  <div>
+                  <div style={{ minWidth: 0, gridColumn: isMobile ? '1 / -1' : 'auto' }}>
                     <label className="sp-kyc-label">Date extrait RSAC</label>
                     <input
                       type="date"
@@ -784,41 +930,56 @@ export default function TabProfil({
                       className="sp-kyc-input"
                     />
                   </div>
-                  <div>
+                  <div style={{ minWidth: 0, gridColumn: isMobile ? '1 / -1' : 'auto' }}>
                     <label className="sp-kyc-label">Extrait RSAC (PDF)</label>
                     {renderCustomFileUploader('fichier_rsac', 'Importer RSAC', profilData.fichier_rsac, 'RSAC')}
                   </div>
                 </div>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              {/* Barre d'actions sur une seule ligne */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
                 <button
                   type="button"
                   disabled={!profilData.contrat_signe}
                   onClick={() => submitEtapeConformite(2)}
                   style={{
-                    padding: '12px 24px',
+                    flex: isMobile ? 1.4 : 'initial',
+                    padding: '12px 18px',
                     borderRadius: '999px',
                     border: 'none',
                     backgroundColor: '#111827',
                     color: '#ffffff',
-                    fontSize: '13.5px',
+                    fontSize: '13px',
                     fontWeight: '800',
                     display: 'inline-flex',
                     alignItems: 'center',
-                    gap: '8px',
+                    justifyContent: 'center',
+                    gap: '7px',
                     cursor: profilData.contrat_signe ? 'pointer' : 'not-allowed',
-                    boxShadow: '0 8px 20px -4px rgba(17, 24, 39, 0.22)'
+                    boxShadow: '0 8px 20px -4px rgba(17, 24, 39, 0.22)',
+                    whiteSpace: 'nowrap'
                   }}
                 >
-                  <Icon.Check /> Enregistrer l'Étape 2
+                  <Icon.Check />
+                  <span>Enregistrer l'Étape 2</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setEtapeActive(3)}
                   className="sp-glass-pill"
-                  style={{ padding: '10px 18px', borderRadius: '999px', fontSize: '12.5px', fontWeight: '800', color: '#0f172a', cursor: 'pointer' }}
+                  style={{
+                    flex: isMobile ? 1 : 'initial',
+                    padding: '12px 14px',
+                    borderRadius: '999px',
+                    fontSize: '12px',
+                    fontWeight: '800',
+                    color: '#0f172a',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    textAlign: 'center'
+                  }}
                 >
                   Étape 3 (URSSAF) →
                 </button>
@@ -831,36 +992,37 @@ export default function TabProfil({
           {/* =============================================================== */}
           {etapeActive === 3 && (
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', marginBottom: '18px', flexWrap: 'wrap' }}>
-                <div>
-                  <span style={{ fontSize: '11px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+                <div style={{ minWidth: 0 }}>
+                  <span style={{ fontSize: '10.5px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                     Étape 3 sur 5
                   </span>
-                  <h2 style={{ margin: '4px 0 0 0', fontSize: '20px', fontWeight: '800', color: '#0f172a' }}>
+                  <h2 style={{ margin: '2px 0 0 0', fontSize: isMobile ? '17.5px' : '20px', fontWeight: '800', color: '#0f172a' }}>
                     Attestation de vigilance URSSAF
                   </h2>
                 </div>
                 <span
                   style={{
-                    padding: '5px 12px',
+                    padding: '4px 11px',
                     borderRadius: '999px',
-                    fontSize: '11.5px',
+                    fontSize: '11px',
                     fontWeight: '800',
                     backgroundColor: statutsEtapes[3].expire
                       ? 'rgba(239, 68, 68, 0.14)'
                       : statutsEtapes[3].ok
                         ? 'rgba(16, 185, 129, 0.14)'
                         : 'rgba(245, 158, 11, 0.16)',
-                    color: statutsEtapes[3].expire ? '#dc2626' : statutsEtapes[3].ok ? '#059669' : '#b45309'
+                    color: statutsEtapes[3].expire ? '#dc2626' : statutsEtapes[3].ok ? '#059669' : '#b45309',
+                    flexShrink: 0
                   }}
                 >
                   {statutsEtapes[3].label}
                 </span>
               </div>
 
-              <div className="sp-glass-pill" style={{ padding: '18px', borderRadius: '18px', marginBottom: '20px' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '12px', marginBottom: '16px' }}>
-                  <div>
+              <div className="sp-glass-pill" style={{ padding: isMobile ? '14px 12px' : '18px', borderRadius: '16px', marginBottom: '16px', boxSizing: 'border-box' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'minmax(0, 1fr)' : 'repeat(3, minmax(0, 1fr))', gap: '10px', marginBottom: '14px' }}>
+                  <div style={{ minWidth: 0 }}>
                     <label className="sp-kyc-label">Code de sécurité URSSAF</label>
                     <input
                       type="text"
@@ -870,61 +1032,77 @@ export default function TabProfil({
                       className="sp-kyc-input"
                     />
                   </div>
-                  <div>
-                    <label className="sp-kyc-label">Date de délivrance</label>
-                    <input
-                      type="date"
-                      value={profilData.date_emission_urssaf ? profilData.date_emission_urssaf.slice(0, 10) : ''}
-                      onChange={(e) => setProfilData({ ...profilData, date_emission_urssaf: e.target.value })}
-                      className="sp-kyc-input"
-                    />
-                  </div>
-                  <div>
-                    <label className="sp-kyc-label">Date d'expiration</label>
-                    <input
-                      type="date"
-                      value={profilData.date_expiration_urssaf ? profilData.date_expiration_urssaf.slice(0, 10) : ''}
-                      onChange={(e) => setProfilData({ ...profilData, date_expiration_urssaf: e.target.value })}
-                      className="sp-kyc-input"
-                    />
+                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'minmax(0, 1fr) minmax(0, 1fr)' : 'contents', gap: '10px' }}>
+                    <div style={{ minWidth: 0 }}>
+                      <label className="sp-kyc-label">Date de délivrance</label>
+                      <input
+                        type="date"
+                        value={profilData.date_emission_urssaf ? profilData.date_emission_urssaf.slice(0, 10) : ''}
+                        onChange={(e) => setProfilData({ ...profilData, date_emission_urssaf: e.target.value })}
+                        className="sp-kyc-input"
+                      />
+                    </div>
+                    <div style={{ minWidth: 0 }}>
+                      <label className="sp-kyc-label">Date d'expiration</label>
+                      <input
+                        type="date"
+                        value={profilData.date_expiration_urssaf ? profilData.date_expiration_urssaf.slice(0, 10) : ''}
+                        onChange={(e) => setProfilData({ ...profilData, date_expiration_urssaf: e.target.value })}
+                        className="sp-kyc-input"
+                      />
+                    </div>
                   </div>
                 </div>
 
-                <div>
+                <div style={{ minWidth: 0 }}>
                   <label className="sp-kyc-label">Document officiel URSSAF (PDF ou Image)</label>
                   {renderCustomFileUploader('fichier_urssaf', 'Importer mon attestation URSSAF', profilData.fichier_urssaf, 'URSSAF')}
                 </div>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
                 <button
                   type="button"
                   onClick={() => submitEtapeConformite(3)}
                   style={{
-                    padding: '12px 24px',
+                    flex: isMobile ? 1.4 : 'initial',
+                    padding: '12px 18px',
                     borderRadius: '999px',
                     border: 'none',
                     backgroundColor: '#111827',
                     color: '#ffffff',
-                    fontSize: '13.5px',
+                    fontSize: '13px',
                     fontWeight: '800',
                     display: 'inline-flex',
                     alignItems: 'center',
-                    gap: '8px',
+                    justifyContent: 'center',
+                    gap: '7px',
                     cursor: 'pointer',
-                    boxShadow: '0 8px 20px -4px rgba(17, 24, 39, 0.22)'
+                    boxShadow: '0 8px 20px -4px rgba(17, 24, 39, 0.22)',
+                    whiteSpace: 'nowrap'
                   }}
                 >
-                  <Icon.Check /> Enregistrer l'Étape 3
+                  <Icon.Check />
+                  <span>Enregistrer l'Étape 3</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setEtapeActive(4)}
                   className="sp-glass-pill"
-                  style={{ padding: '10px 18px', borderRadius: '999px', fontSize: '12.5px', fontWeight: '800', color: '#0f172a', cursor: 'pointer' }}
+                  style={{
+                    flex: isMobile ? 1 : 'initial',
+                    padding: '12px 14px',
+                    borderRadius: '999px',
+                    fontSize: '12px',
+                    fontWeight: '800',
+                    color: '#0f172a',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    textAlign: 'center'
+                  }}
                 >
-                  Étape 4 (RC Pro & IBAN) →
+                  Étape 4 (RC Pro) →
                 </button>
               </div>
             </div>
@@ -935,27 +1113,28 @@ export default function TabProfil({
           {/* =============================================================== */}
           {etapeActive === 4 && (
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', marginBottom: '18px', flexWrap: 'wrap' }}>
-                <div>
-                  <span style={{ fontSize: '11px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+                <div style={{ minWidth: 0 }}>
+                  <span style={{ fontSize: '10.5px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                     Étape 4 sur 5
                   </span>
-                  <h2 style={{ margin: '4px 0 0 0', fontSize: '20px', fontWeight: '800', color: '#0f172a' }}>
-                    Assurance RC Pro, IBAN, TVA & Charte
+                  <h2 style={{ margin: '2px 0 0 0', fontSize: isMobile ? '17.5px' : '20px', fontWeight: '800', color: '#0f172a' }}>
+                    RC Pro, IBAN, TVA & Charte
                   </h2>
                 </div>
                 <span
                   style={{
-                    padding: '5px 12px',
+                    padding: '4px 11px',
                     borderRadius: '999px',
-                    fontSize: '11.5px',
+                    fontSize: '11px',
                     fontWeight: '800',
                     backgroundColor: statutsEtapes[4].expire
                       ? 'rgba(239, 68, 68, 0.14)'
                       : statutsEtapes[4].ok
                         ? 'rgba(16, 185, 129, 0.14)'
                         : 'rgba(245, 158, 11, 0.16)',
-                    color: statutsEtapes[4].expire ? '#dc2626' : statutsEtapes[4].ok ? '#059669' : '#b45309'
+                    color: statutsEtapes[4].expire ? '#dc2626' : statutsEtapes[4].ok ? '#059669' : '#b45309',
+                    flexShrink: 0
                   }}
                 >
                   {statutsEtapes[4].label}
@@ -966,45 +1145,46 @@ export default function TabProfil({
               <div
                 className="sp-glass-pill"
                 style={{
-                  padding: '16px',
-                  borderRadius: '18px',
-                  marginBottom: '14px',
-                  border: statutsEtapes[4].expire ? '1.5px solid rgba(239, 68, 68, 0.45)' : undefined
+                  padding: isMobile ? '14px 12px' : '16px',
+                  borderRadius: '16px',
+                  marginBottom: '12px',
+                  border: statutsEtapes[4].expire ? '1.5px solid rgba(239, 68, 68, 0.45)' : undefined,
+                  boxSizing: 'border-box'
                 }}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '6px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '4px' }}>
                   <span style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a' }}>
-                    A. Assurance Responsabilité Civile Professionnelle (RC Pro)
+                    A. Assurance RC Professionnelle
                   </span>
                   {statutsEtapes[4].expire && (
-                    <span style={{ fontSize: '11.5px', fontWeight: '800', color: '#dc2626' }}>
-                      Attention : La date d'expiration de votre RC Pro est dépassée. Mettez-la à jour ci-dessous.
+                    <span style={{ fontSize: '11px', fontWeight: '800', color: '#dc2626' }}>
+                      Date d'expiration dépassée — mettez-la à jour ci-dessous.
                     </span>
                   )}
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '12px', marginBottom: '12px' }}>
-                  <div>
-                    <label className="sp-kyc-label">Compagnie d'assurance</label>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'minmax(0, 1fr) minmax(0, 1fr)' : 'repeat(3, minmax(0, 1fr))', gap: '10px', marginBottom: '10px' }}>
+                  <div style={{ minWidth: 0 }}>
+                    <label className="sp-kyc-label">Assureur</label>
                     <input
                       type="text"
-                      placeholder="Ex : AXA, Hiscox, Allianz..."
+                      placeholder="Ex : AXA, Hiscox..."
                       value={profilData.assureur_nom || ''}
                       onChange={(e) => setProfilData({ ...profilData, assureur_nom: e.target.value })}
                       className="sp-kyc-input"
                     />
                   </div>
-                  <div>
-                    <label className="sp-kyc-label">N° de police RC Pro</label>
+                  <div style={{ minWidth: 0 }}>
+                    <label className="sp-kyc-label">N° de police</label>
                     <input
                       type="text"
-                      placeholder="Numéro de contrat..."
+                      placeholder="N° contrat..."
                       value={profilData.assureur_contrat || ''}
                       onChange={(e) => setProfilData({ ...profilData, assureur_contrat: e.target.value })}
                       className="sp-kyc-input"
                     />
                   </div>
-                  <div>
+                  <div style={{ minWidth: 0, gridColumn: isMobile ? '1 / -1' : 'auto' }}>
                     <label className="sp-kyc-label">Plafond de garantie (€)</label>
                     <input
                       type="text"
@@ -1016,8 +1196,8 @@ export default function TabProfil({
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1.4fr', gap: '12px', alignItems: 'end' }}>
-                  <div>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'minmax(0, 1fr)' : 'minmax(0, 1fr) minmax(0, 1.4fr)', gap: '10px', alignItems: 'end' }}>
+                  <div style={{ minWidth: 0 }}>
                     <label className="sp-kyc-label" style={{ color: statutsEtapes[4].expire ? '#dc2626' : '#334155' }}>
                       Date d'expiration RC Pro *
                     </label>
@@ -1029,7 +1209,7 @@ export default function TabProfil({
                       style={statutsEtapes[4].expire ? { borderColor: '#ef4444' } : undefined}
                     />
                   </div>
-                  <div>
+                  <div style={{ minWidth: 0 }}>
                     <label className="sp-kyc-label">Attestation RC Pro en cours de validité</label>
                     {renderCustomFileUploader('fichier_rc_pro', 'Importer attestation RC Pro', profilData.fichier_rc_pro, 'RC Pro')}
                   </div>
@@ -1037,12 +1217,12 @@ export default function TabProfil({
               </div>
 
               {/* Sous-bloc B : Coordonnées bancaires & TVA */}
-              <div className="sp-glass-pill" style={{ padding: '16px', borderRadius: '18px', marginBottom: '14px' }}>
-                <div style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a', marginBottom: '12px' }}>
-                  B. Versement des commissions (IBAN & Régime de TVA)
+              <div className="sp-glass-pill" style={{ padding: isMobile ? '14px 12px' : '16px', borderRadius: '16px', marginBottom: '12px', boxSizing: 'border-box' }}>
+                <div style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a', marginBottom: '10px' }}>
+                  B. Versement des commissions (IBAN & TVA)
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1.3fr 1fr', gap: '12px' }}>
-                  <div>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'minmax(0, 1fr)' : 'minmax(0, 1fr) minmax(0, 1.3fr) minmax(0, 1fr)', gap: '10px' }}>
+                  <div style={{ minWidth: 0 }}>
                     <label className="sp-kyc-label">Titulaire du compte</label>
                     <input
                       type="text"
@@ -1052,7 +1232,7 @@ export default function TabProfil({
                       className="sp-kyc-input"
                     />
                   </div>
-                  <div>
+                  <div style={{ minWidth: 0 }}>
                     <label className="sp-kyc-label">IBAN (Zone SEPA)</label>
                     <input
                       type="text"
@@ -1063,7 +1243,7 @@ export default function TabProfil({
                       style={{ fontFamily: 'monospace', fontSize: '12.5px' }}
                     />
                   </div>
-                  <div>
+                  <div style={{ minWidth: 0 }}>
                     <label className="sp-kyc-label">Régime de TVA</label>
                     <select
                       value={profilData.regime_tva || 'FRANCHISE_293B'}
@@ -1081,85 +1261,100 @@ export default function TabProfil({
               <div
                 className="sp-glass-pill"
                 style={{
-                  padding: '14px 16px',
-                  borderRadius: '18px',
-                  marginBottom: '20px',
+                  padding: isMobile ? '12px' : '14px 16px',
+                  borderRadius: '16px',
+                  marginBottom: '16px',
                   display: 'grid',
-                  gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
-                  gap: '10px',
-                  fontSize: '12.5px'
+                  gridTemplateColumns: isMobile ? 'minmax(0, 1fr)' : 'minmax(0, 1fr) minmax(0, 1fr)',
+                  gap: '9px',
+                  fontSize: '12px',
+                  boxSizing: 'border-box'
                 }}
               >
-                <label style={{ display: 'flex', alignItems: 'center', gap: '9px', cursor: 'pointer', color: '#334155', fontWeight: '600' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', color: '#334155', fontWeight: '600' }}>
                   <input
                     type="checkbox"
                     checked={!!profilData.honneur_aucune_interdiction}
                     onChange={(e) => setProfilData({ ...profilData, honneur_aucune_interdiction: e.target.checked })}
-                    style={{ width: '16px', height: '16px', accentColor: '#111827', cursor: 'pointer' }}
+                    style={{ width: '16px', height: '16px', accentColor: '#111827', cursor: 'pointer', flexShrink: 0 }}
                   />
                   <span>Aucune interdiction de gérer ou d'exercer.</span>
                 </label>
 
-                <label style={{ display: 'flex', alignItems: 'center', gap: '9px', cursor: 'pointer', color: '#334155', fontWeight: '600' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', color: '#334155', fontWeight: '600' }}>
                   <input
                     type="checkbox"
                     checked={!!profilData.honneur_pas_exclusivite_employeur}
                     onChange={(e) => setProfilData({ ...profilData, honneur_pas_exclusivite_employeur: e.target.checked })}
-                    style={{ width: '16px', height: '16px', accentColor: '#111827', cursor: 'pointer' }}
+                    style={{ width: '16px', height: '16px', accentColor: '#111827', cursor: 'pointer', flexShrink: 0 }}
                   />
                   <span>Aucune clause d'exclusivité employeur bloquante.</span>
                 </label>
 
-                <label style={{ display: 'flex', alignItems: 'center', gap: '9px', cursor: 'pointer', color: '#334155', fontWeight: '600' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', color: '#334155', fontWeight: '600' }}>
                   <input
                     type="checkbox"
                     checked={!!profilData.honneur_pas_mandat_concurrent}
                     onChange={(e) => setProfilData({ ...profilData, honneur_pas_mandat_concurrent: e.target.checked })}
-                    style={{ width: '16px', height: '16px', accentColor: '#111827', cursor: 'pointer' }}
+                    style={{ width: '16px', height: '16px', accentColor: '#111827', cursor: 'pointer', flexShrink: 0 }}
                   />
                   <span>Aucun mandat concurrent non déclaré.</span>
                 </label>
 
-                <label style={{ display: 'flex', alignItems: 'center', gap: '9px', cursor: 'pointer', color: '#0f172a', fontWeight: '800' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', color: '#0f172a', fontWeight: '800' }}>
                   <input
                     type="checkbox"
                     checked={!!profilData.charte_acceptee}
                     onChange={(e) => setProfilData({ ...profilData, charte_acceptee: e.target.checked })}
-                    style={{ width: '16px', height: '16px', accentColor: '#111827', cursor: 'pointer' }}
+                    style={{ width: '16px', height: '16px', accentColor: '#111827', cursor: 'pointer', flexShrink: 0 }}
                   />
                   <span>J'accepte la Charte Commerciale STACK (v1.0).</span>
                 </label>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
                 <button
                   type="button"
                   onClick={() => submitEtapeConformite(4)}
                   style={{
-                    padding: '12px 24px',
+                    flex: isMobile ? 1.4 : 'initial',
+                    padding: '12px 18px',
                     borderRadius: '999px',
                     border: 'none',
                     backgroundColor: '#111827',
                     color: '#ffffff',
-                    fontSize: '13.5px',
+                    fontSize: '13px',
                     fontWeight: '800',
                     display: 'inline-flex',
                     alignItems: 'center',
-                    gap: '8px',
+                    justifyContent: 'center',
+                    gap: '7px',
                     cursor: 'pointer',
-                    boxShadow: '0 8px 20px -4px rgba(17, 24, 39, 0.22)'
+                    boxShadow: '0 8px 20px -4px rgba(17, 24, 39, 0.22)',
+                    whiteSpace: 'nowrap'
                   }}
                 >
-                  <Icon.Check /> Enregistrer l'Étape 4
+                  <Icon.Check />
+                  <span>Enregistrer l'Étape 4</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setEtapeActive(5)}
                   className="sp-glass-pill"
-                  style={{ padding: '10px 18px', borderRadius: '999px', fontSize: '12.5px', fontWeight: '800', color: '#0f172a', cursor: 'pointer' }}
+                  style={{
+                    flex: isMobile ? 1 : 'initial',
+                    padding: '12px 14px',
+                    borderRadius: '999px',
+                    fontSize: '12px',
+                    fontWeight: '800',
+                    color: '#0f172a',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    textAlign: 'center'
+                  }}
                 >
-                  Étape 5 (Quiz NF525) →
+                  Étape 5 (Quiz) →
                 </button>
               </div>
             </div>
@@ -1170,32 +1365,33 @@ export default function TabProfil({
           {/* =============================================================== */}
           {etapeActive === 5 && (
             <form onSubmit={handleQuizSubmit}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', marginBottom: '18px', flexWrap: 'wrap' }}>
-                <div>
-                  <span style={{ fontSize: '11px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+                <div style={{ minWidth: 0 }}>
+                  <span style={{ fontSize: '10.5px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                     Étape 5 sur 5
                   </span>
-                  <h2 style={{ margin: '4px 0 0 0', fontSize: '20px', fontWeight: '800', color: '#0f172a' }}>
-                    Quiz de Certification NF525 & Contact
+                  <h2 style={{ margin: '2px 0 0 0', fontSize: isMobile ? '17.5px' : '20px', fontWeight: '800', color: '#0f172a' }}>
+                    Quiz de Certification NF525
                   </h2>
                 </div>
                 <span
                   style={{
-                    padding: '5px 12px',
+                    padding: '4px 11px',
                     borderRadius: '999px',
-                    fontSize: '11.5px',
+                    fontSize: '11px',
                     fontWeight: '800',
                     backgroundColor: statutsEtapes[5].ok ? 'rgba(16, 185, 129, 0.14)' : 'rgba(245, 158, 11, 0.16)',
-                    color: statutsEtapes[5].ok ? '#059669' : '#b45309'
+                    color: statutsEtapes[5].ok ? '#059669' : '#b45309',
+                    flexShrink: 0
                   }}
                 >
                   {statutsEtapes[5].label}
                 </span>
               </div>
 
-              <div className="sp-glass-pill" style={{ padding: '18px', borderRadius: '18px', marginBottom: '16px' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '14px' }}>
-                  <div>
+              <div className="sp-glass-pill" style={{ padding: isMobile ? '14px 12px' : '18px', borderRadius: '16px', marginBottom: '12px', boxSizing: 'border-box' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'minmax(0, 1fr)' : 'minmax(0, 1fr) minmax(0, 1fr)', gap: '12px' }}>
+                  <div style={{ minWidth: 0 }}>
                     <label className="sp-kyc-label">1. Quelle norme encadre la caisse STACK ?</label>
                     <select
                       required
@@ -1209,7 +1405,7 @@ export default function TabProfil({
                     </select>
                   </div>
 
-                  <div>
+                  <div style={{ minWidth: 0 }}>
                     <label className="sp-kyc-label">2. Un agent peut-il supprimer un ticket de caisse ?</label>
                     <select
                       required
@@ -1223,7 +1419,7 @@ export default function TabProfil({
                     </select>
                   </div>
 
-                  <div>
+                  <div style={{ minWidth: 0 }}>
                     <label className="sp-kyc-label">3. Quel est votre statut vis-à-vis de STACK ?</label>
                     <select
                       required
@@ -1237,7 +1433,7 @@ export default function TabProfil({
                     </select>
                   </div>
 
-                  <div>
+                  <div style={{ minWidth: 0 }}>
                     <label className="sp-kyc-label">4. Facturation des 99 € HT de mise en service ?</label>
                     <select
                       required
@@ -1256,17 +1452,18 @@ export default function TabProfil({
               <div
                 className="sp-glass-pill"
                 style={{
-                  padding: '16px 18px',
-                  borderRadius: '18px',
-                  marginBottom: '20px',
+                  padding: isMobile ? '14px 12px' : '16px 18px',
+                  borderRadius: '16px',
+                  marginBottom: '16px',
                   display: 'flex',
                   flexDirection: isMobile ? 'column' : 'row',
-                  gap: '14px',
+                  gap: '12px',
                   alignItems: isMobile ? 'stretch' : 'center',
-                  justifyContent: 'space-between'
+                  justifyContent: 'space-between',
+                  boxSizing: 'border-box'
                 }}
               >
-                <div style={{ flex: 1, maxWidth: isMobile ? '100%' : '280px' }}>
+                <div style={{ flex: 1, maxWidth: isMobile ? '100%' : '280px', minWidth: 0 }}>
                   <label className="sp-kyc-label">Téléphone mobile professionnel actif *</label>
                   <input
                     type="tel"
@@ -1278,13 +1475,13 @@ export default function TabProfil({
                   />
                 </div>
 
-                <label style={{ display: 'flex', alignItems: 'center', gap: '9px', fontSize: '13px', fontWeight: '700', color: '#0f172a', cursor: 'pointer', paddingTop: isMobile ? 0 : '18px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '9px', fontSize: '12.5px', fontWeight: '700', color: '#0f172a', cursor: 'pointer', paddingTop: isMobile ? 0 : '18px' }}>
                   <input
                     type="checkbox"
                     required
                     checked={!!profilData.telephone_confirme}
                     onChange={(e) => setProfilData({ ...profilData, telephone_confirme: e.target.checked })}
-                    style={{ width: '17px', height: '17px', accentColor: '#111827', cursor: 'pointer' }}
+                    style={{ width: '17px', height: '17px', accentColor: '#111827', cursor: 'pointer', flexShrink: 0 }}
                   />
                   <span>Je confirme que mes coordonnées téléphoniques sont actives.</span>
                 </label>
@@ -1293,6 +1490,7 @@ export default function TabProfil({
               <button
                 type="submit"
                 style={{
+                  width: isMobile ? '100%' : 'auto',
                   padding: '13px 26px',
                   borderRadius: '999px',
                   border: 'none',
@@ -1302,16 +1500,17 @@ export default function TabProfil({
                   fontWeight: '800',
                   display: 'inline-flex',
                   alignItems: 'center',
+                  justifyContent: 'center',
                   gap: '8px',
                   cursor: 'pointer',
                   boxShadow: '0 8px 20px -4px rgba(17, 24, 39, 0.22)'
                 }}
               >
-                <Icon.Check /> Valider le Quiz NF525 & Terminer
+                <Icon.Check />
+                <span>Valider le Quiz NF525 & Terminer</span>
               </button>
             </form>
           )}
-
         </div>
       </div>
     </div>
