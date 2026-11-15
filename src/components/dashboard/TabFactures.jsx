@@ -550,7 +550,9 @@ export default function TabFactures({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {facturesFiltrees.map((f) => {
                 const estPayee = f.statut === 'PAYEE';
+                const estStack = f.type_facture === 'STACK' || String(f.numero_facture || '').startsWith('FAC-ST');
                 const nomSalonFormate = formatNomSalonPropre(f.nom_salon || 'Salon');
+                const montantHT = parseFloat(f.montant_ht) || (estStack ? 100 : 99);
 
                 return (
                   <div key={f.id_facture} className="sp-invoice-row">
@@ -570,8 +572,8 @@ export default function TabFactures({
                             width: '42px',
                             height: '42px',
                             borderRadius: '13px',
-                            background: estPayee ? 'rgba(16, 185, 129, 0.14)' : 'rgba(245, 158, 11, 0.15)',
-                            color: estPayee ? '#059669' : '#d97706',
+                            background: estPayee ? 'rgba(16, 185, 129, 0.14)' : (estStack ? 'rgba(99, 102, 241, 0.14)' : 'rgba(245, 158, 11, 0.15)'),
+                            color: estPayee ? '#059669' : (estStack ? '#4f46e5' : '#d97706'),
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -598,6 +600,19 @@ export default function TabFactures({
 
                             <span
                               style={{
+                                padding: '2px 8px',
+                                borderRadius: '7px',
+                                fontSize: '11px',
+                                fontWeight: '800',
+                                background: estStack ? 'rgba(99, 102, 241, 0.12)' : 'rgba(16, 185, 129, 0.12)',
+                                color: estStack ? '#4f46e5' : '#059669'
+                              }}
+                            >
+                              {estStack ? 'STACK Cloud' : 'Agent Installation'}
+                            </span>
+
+                            <span
+                              style={{
                                 fontFamily: 'monospace',
                                 fontSize: '11.5px',
                                 fontWeight: '700',
@@ -620,7 +635,7 @@ export default function TabFactures({
                                 color: estPayee ? '#059669' : '#b45309'
                               }}
                             >
-                              {estPayee ? 'Payée' : 'En attente'}
+                              {estPayee ? (f.mode_reglement === 'STRIPE' ? 'Payée via Stripe' : 'Payée') : 'En attente'}
                             </span>
                           </div>
 
@@ -641,7 +656,13 @@ export default function TabFactures({
                               SIRET : {f.siret_salon || 'N/A'}
                             </span>
                             <span>•</span>
-                            <strong style={{ color: '#0f172a' }}>99,00 € HT</strong>
+                            <strong style={{ color: '#0f172a' }}>{formatMontant(montantHT)} € HT</strong>
+                            {f.mode_reglement === 'STRIPE' && (
+                              <>
+                                <span>•</span>
+                                <span style={{ color: '#4f46e5', fontWeight: '700', fontSize: '11px' }}>Règlement Carte Bancaire</span>
+                              </>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -906,10 +927,10 @@ export default function TabFactures({
                 </div>
                 <div>
                   <h2 style={{ margin: 0, fontSize: isMobile ? '19px' : '22px', fontWeight: '800', color: '#0f172a', letterSpacing: '-0.02em' }}>
-                    Nouvelle Facture d'Installation
+                    Nouvelle Facture d'Installation (Méthode B)
                   </h2>
                   <span style={{ fontSize: '12.5px', color: '#64748b' }}>
-                    Édition immédiate de la facture de mise en service et paramétrage (99,00 € HT)
+                    Génération du lot double facture : Prestation Agent (99,00 € HT) &amp; Frais Cloud STACK (100,00 € HT)
                   </span>
                 </div>
               </div>
