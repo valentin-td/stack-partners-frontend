@@ -32,7 +32,6 @@ export default function TabBord({
   const seuilDeblocage = parseInt(kpis.seuil_deblocage, 10) || 3;
   const nbSalonsEssai = parseInt(kpis.nb_salons_essai, 10) || 0;
 
-  // Le palier disparaît automatiquement dès que l'agent commercial l'a atteint
   const palierAtteint = nbSalonsActifs >= seuilDeblocage;
   const pctPalier = Math.max(
     0,
@@ -68,45 +67,47 @@ export default function TabBord({
   return (
     <div
       style={{
-        paddingBottom: isMobile ? 'calc(120px + env(safe-area-inset-bottom, 0px))' : '24px',
+        paddingBottom: isMobile ? 'calc(95px + env(safe-area-inset-bottom, 0px))' : '24px',
         width: '100%',
-        boxSizing: 'border-box'
+        boxSizing: 'border-box',
+        position: 'relative',
+        zIndex: 1
       }}
     >
-      {/* =================================================================== */}
-      {/* 1. EN-TÊTE + PILULE FLOTTANTE DU PALIER (DISPARAÎT UNE FOIS ATTEINT)*/}
-      {/* =================================================================== */}
+      {/* 1. EN-TÊTE + PILULE FLOTTANTE DU PALIER */}
       <header
         style={{
           display: 'flex',
           flexDirection: isMobile ? 'column' : 'row',
           justifyContent: 'space-between',
           alignItems: isMobile ? 'stretch' : 'center',
-          gap: isMobile ? '10px' : '14px',
-          marginBottom: isMobile ? '14px' : '24px',
+          gap: isMobile ? '8px' : '14px',
+          marginBottom: isMobile ? '12px' : '22px',
           position: 'relative'
         }}
       >
         <div>
-          <span
-            className="sp-glass-pill"
-            style={{
-              display: 'inline-block',
-              padding: isMobile ? '3px 10px' : '4px 12px',
-              borderRadius: '999px',
-              fontSize: isMobile ? '9.5px' : '10.5px',
-              fontWeight: '800',
-              letterSpacing: '0.06em',
-              textTransform: 'uppercase',
-              color: '#64748b',
-              marginBottom: isMobile ? '4px' : '6px'
-            }}
-          >
-            Activité Commerciale
-          </span>
+          {!isMobile && (
+            <span
+              className="sp-glass-pill"
+              style={{
+                display: 'inline-block',
+                padding: '4px 12px',
+                borderRadius: '999px',
+                fontSize: '10.5px',
+                fontWeight: '800',
+                letterSpacing: '0.06em',
+                textTransform: 'uppercase',
+                color: '#64748b',
+                marginBottom: '6px'
+              }}
+            >
+              Activité Commerciale
+            </span>
+          )}
           <h1
             style={{
-              fontSize: isMobile ? '23px' : '30px',
+              fontSize: isMobile ? '22px' : '30px',
               fontWeight: '800',
               margin: isMobile ? '0' : '0 0 4px 0',
               letterSpacing: '-0.03em',
@@ -123,7 +124,6 @@ export default function TabBord({
           )}
         </div>
 
-        {/* PILULE FLOTTANTE DU PALIER DE DÉBLOCAGE (Masquée automatiquement dès que nbSalonsActifs >= seuilDeblocage) */}
         {!palierAtteint && (
           <div style={{ position: 'relative' }}>
             <button
@@ -135,17 +135,16 @@ export default function TabBord({
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                gap: isMobile ? '10px' : '12px',
+                gap: '10px',
                 padding: isMobile ? '7px 12px 7px 9px' : '8px 15px 8px 10px',
                 borderRadius: '999px',
                 cursor: 'pointer',
                 color: '#0f172a',
-                boxShadow: '0 8px 24px -6px rgba(15, 23, 42, 0.1), inset 0 1px 0 #ffffff',
+                boxShadow: '0 6px 20px -6px rgba(15, 23, 42, 0.08), inset 0 1px 0 #ffffff',
                 boxSizing: 'border-box'
               }}
-              title="Cliquez pour afficher le détail du palier de déblocage"
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '8px' : '10px', minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '9px', minWidth: 0 }}>
                 <div style={{ position: 'relative', width: '26px', height: '26px', flexShrink: 0 }}>
                   <svg width="26" height="26" viewBox="0 0 28 28" style={{ transform: 'rotate(-90deg)' }}>
                     <circle cx="14" cy="14" r={rayonCercle} fill="none" stroke="rgba(148, 163, 184, 0.25)" strokeWidth="3" />
@@ -159,7 +158,6 @@ export default function TabBord({
                       strokeLinecap="round"
                       strokeDasharray={circonferenceCercle}
                       strokeDashoffset={offsetCercle}
-                      style={{ transition: 'stroke-dashoffset 0.4s ease' }}
                     />
                   </svg>
                   <span
@@ -181,7 +179,7 @@ export default function TabBord({
                 <div style={{ textAlign: 'left', minWidth: 0 }}>
                   <div
                     style={{
-                      fontSize: isMobile ? '11.5px' : '12px',
+                      fontSize: '11.5px',
                       fontWeight: '800',
                       color: '#0f172a',
                       lineHeight: 1.2,
@@ -248,8 +246,7 @@ export default function TabBord({
                       width: `${Math.max(6, pctPalier)}%`,
                       height: '100%',
                       backgroundColor: '#111827',
-                      borderRadius: '999px',
-                      transition: 'width 0.4s ease'
+                      borderRadius: '999px'
                     }}
                   />
                 </div>
@@ -259,35 +256,32 @@ export default function TabBord({
         )}
       </header>
 
-      {/* =================================================================== */}
-      {/* 2. LES 4 CARTES KPI (GRILLE 2x2 COMPACTE SUR IPHONE)                */}
-      {/* =================================================================== */}
+      {/* 2. LES 4 CARTES KPI (GRILLE 2x2 ULTRA-NETTE SUR IPHONE) */}
       <div
         style={{
           display: 'grid',
           gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
-          gap: isMobile ? '9px' : '16px',
-          marginBottom: isMobile ? '14px' : '22px'
+          gap: isMobile ? '8px' : '16px',
+          marginBottom: isMobile ? '12px' : '22px'
         }}
       >
-        {/* KPI 1 : Salons en Essai (30j) */}
         <div
           className="sp-glass-panel"
           style={{
-            padding: isMobile ? '13px 13px' : '20px 22px',
+            padding: isMobile ? '11px 12px' : '20px 22px',
             borderRadius: isMobile ? '18px' : '24px',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
-            gap: isMobile ? '8px' : '12px',
+            gap: isMobile ? '6px' : '12px',
             minWidth: 0
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px' }}>
             <div
               style={{
-                width: isMobile ? '32px' : '40px',
-                height: isMobile ? '32px' : '40px',
+                width: isMobile ? '30px' : '40px',
+                height: isMobile ? '30px' : '40px',
                 borderRadius: '50%',
                 background: 'rgba(99, 102, 241, 0.12)',
                 border: '1px solid rgba(99, 102, 241, 0.25)',
@@ -298,53 +292,41 @@ export default function TabBord({
                 flexShrink: 0
               }}
             >
-              <svg viewBox="0 0 24 24" width={isMobile ? '15' : '18'} height={isMobile ? '15' : '18'} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg viewBox="0 0 24 24" width={isMobile ? '14' : '18'} height={isMobile ? '14' : '18'} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
               </svg>
             </div>
-            <span
-              className="sp-glass-pill"
-              style={{
-                padding: isMobile ? '2px 7px' : '3px 9px',
-                borderRadius: '999px',
-                fontSize: isMobile ? '9.5px' : '10.5px',
-                fontWeight: '700',
-                color: '#64748b',
-                whiteSpace: 'nowrap'
-              }}
-            >
+            <span className="sp-glass-pill" style={{ padding: '2px 7px', borderRadius: '999px', fontSize: '9.5px', fontWeight: '700', color: '#64748b' }}>
               30 jours
             </span>
           </div>
-
           <div>
-            <div style={{ fontSize: isMobile ? '21px' : '28px', fontWeight: '800', color: '#0f172a', lineHeight: 1.05, fontVariantNumeric: 'tabular-nums' }}>
+            <div style={{ fontSize: isMobile ? '20px' : '28px', fontWeight: '800', color: '#0f172a', lineHeight: 1.05, fontVariantNumeric: 'tabular-nums' }}>
               {nbSalonsEssai}
             </div>
-            <div style={{ fontSize: isMobile ? '11px' : '12.5px', fontWeight: '600', color: '#64748b', marginTop: '3px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {isMobile ? 'Salons en essai' : 'Salons en essai gratuit'}
+            <div style={{ fontSize: isMobile ? '11px' : '12.5px', fontWeight: '600', color: '#64748b', marginTop: '2px' }}>
+              Salons en essai
             </div>
           </div>
         </div>
 
-        {/* KPI 2 : Salons Actifs Payants */}
         <div
           className="sp-glass-panel"
           style={{
-            padding: isMobile ? '13px 13px' : '20px 22px',
+            padding: isMobile ? '11px 12px' : '20px 22px',
             borderRadius: isMobile ? '18px' : '24px',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
-            gap: isMobile ? '8px' : '12px',
+            gap: isMobile ? '6px' : '12px',
             minWidth: 0
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px' }}>
             <div
               style={{
-                width: isMobile ? '32px' : '40px',
-                height: isMobile ? '32px' : '40px',
+                width: isMobile ? '30px' : '40px',
+                height: isMobile ? '30px' : '40px',
                 borderRadius: '50%',
                 background: 'rgba(16, 185, 129, 0.14)',
                 border: '1px solid rgba(16, 185, 129, 0.28)',
@@ -355,53 +337,41 @@ export default function TabBord({
                 flexShrink: 0
               }}
             >
-              <svg viewBox="0 0 24 24" width={isMobile ? '15' : '18'} height={isMobile ? '15' : '18'} fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <svg viewBox="0 0 24 24" width={isMobile ? '14' : '18'} height={isMobile ? '14' : '18'} fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><polyline points="16 11 18 13 22 9" />
               </svg>
             </div>
-            <span
-              style={{
-                padding: isMobile ? '2px 7px' : '3px 9px',
-                borderRadius: '999px',
-                fontSize: isMobile ? '9.5px' : '10.5px',
-                fontWeight: '800',
-                background: 'rgba(16, 185, 129, 0.14)',
-                color: '#059669',
-                whiteSpace: 'nowrap'
-              }}
-            >
+            <span style={{ padding: '2px 7px', borderRadius: '999px', fontSize: '9.5px', fontWeight: '800', background: 'rgba(16, 185, 129, 0.14)', color: '#059669' }}>
               Abonnés
             </span>
           </div>
-
           <div>
-            <div style={{ fontSize: isMobile ? '21px' : '28px', fontWeight: '800', color: '#059669', lineHeight: 1.05, fontVariantNumeric: 'tabular-nums' }}>
+            <div style={{ fontSize: isMobile ? '20px' : '28px', fontWeight: '800', color: '#059669', lineHeight: 1.05, fontVariantNumeric: 'tabular-nums' }}>
               {nbSalonsActifs}
             </div>
-            <div style={{ fontSize: isMobile ? '11px' : '12.5px', fontWeight: '600', color: '#64748b', marginTop: '3px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {isMobile ? 'Salons payants' : 'Salons actifs payants'}
+            <div style={{ fontSize: isMobile ? '11px' : '12.5px', fontWeight: '600', color: '#64748b', marginTop: '2px' }}>
+              Salons payants
             </div>
           </div>
         </div>
 
-        {/* KPI 3 : En attente de seuil */}
         <div
           className="sp-glass-panel"
           style={{
-            padding: isMobile ? '13px 13px' : '20px 22px',
+            padding: isMobile ? '11px 12px' : '20px 22px',
             borderRadius: isMobile ? '18px' : '24px',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
-            gap: isMobile ? '8px' : '12px',
+            gap: isMobile ? '6px' : '12px',
             minWidth: 0
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px' }}>
             <div
               style={{
-                width: isMobile ? '32px' : '40px',
-                height: isMobile ? '32px' : '40px',
+                width: isMobile ? '30px' : '40px',
+                height: isMobile ? '30px' : '40px',
                 borderRadius: '50%',
                 background: 'rgba(245, 158, 11, 0.15)',
                 border: '1px solid rgba(245, 158, 11, 0.3)',
@@ -412,54 +382,41 @@ export default function TabBord({
                 flexShrink: 0
               }}
             >
-              <svg viewBox="0 0 24 24" width={isMobile ? '15' : '18'} height={isMobile ? '15' : '18'} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg viewBox="0 0 24 24" width={isMobile ? '14' : '18'} height={isMobile ? '14' : '18'} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
               </svg>
             </div>
-            <span
-              style={{
-                padding: isMobile ? '2px 7px' : '3px 9px',
-                borderRadius: '999px',
-                fontSize: isMobile ? '9.5px' : '10.5px',
-                fontWeight: '800',
-                background: 'rgba(245, 158, 11, 0.15)',
-                color: '#b45309',
-                whiteSpace: 'nowrap'
-              }}
-            >
+            <span style={{ padding: '2px 7px', borderRadius: '999px', fontSize: '9.5px', fontWeight: '800', background: 'rgba(245, 158, 11, 0.15)', color: '#b45309' }}>
               Réserve
             </span>
           </div>
-
           <div>
-            <div style={{ fontSize: isMobile ? '18.5px' : '26px', fontWeight: '800', color: '#d97706', lineHeight: 1.05, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
-              {formatMontant(kpis.commissions_en_attente)}{' '}
-              <span style={{ fontSize: isMobile ? '10.5px' : '13px', fontWeight: '700', color: '#94a3b8' }}>€ HT</span>
+            <div style={{ fontSize: isMobile ? '18px' : '26px', fontWeight: '800', color: '#d97706', lineHeight: 1.05, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+              {formatMontant(kpis.commissions_en_attente)} <span style={{ fontSize: '10.5px', fontWeight: '700', color: '#94a3b8' }}>€ HT</span>
             </div>
-            <div style={{ fontSize: isMobile ? '11px' : '12.5px', fontWeight: '600', color: '#64748b', marginTop: '3px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <div style={{ fontSize: isMobile ? '11px' : '12.5px', fontWeight: '600', color: '#64748b', marginTop: '2px' }}>
               En attente de seuil
             </div>
           </div>
         </div>
 
-        {/* KPI 4 : Commissions Acquises */}
         <div
           className="sp-glass-panel"
           style={{
-            padding: isMobile ? '13px 13px' : '20px 22px',
+            padding: isMobile ? '11px 12px' : '20px 22px',
             borderRadius: isMobile ? '18px' : '24px',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
-            gap: isMobile ? '8px' : '12px',
+            gap: isMobile ? '6px' : '12px',
             minWidth: 0
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px' }}>
             <div
               style={{
-                width: isMobile ? '32px' : '40px',
-                height: isMobile ? '32px' : '40px',
+                width: isMobile ? '30px' : '40px',
+                height: isMobile ? '30px' : '40px',
                 borderRadius: '50%',
                 background: 'rgba(15, 23, 42, 0.08)',
                 border: '1px solid rgba(15, 23, 42, 0.14)',
@@ -468,55 +425,41 @@ export default function TabBord({
                 alignItems: 'center',
                 justifyContent: 'center',
                 fontWeight: '800',
-                fontSize: isMobile ? '14px' : '16px',
+                fontSize: isMobile ? '13.5px' : '16px',
                 flexShrink: 0
               }}
             >
               €
             </div>
-            <span
-              className="sp-glass-pill"
-              style={{
-                padding: isMobile ? '2px 7px' : '3px 9px',
-                borderRadius: '999px',
-                fontSize: isMobile ? '9.5px' : '10.5px',
-                fontWeight: '800',
-                color: '#059669',
-                whiteSpace: 'nowrap'
-              }}
-            >
+            <span className="sp-glass-pill" style={{ padding: '2px 7px', borderRadius: '999px', fontSize: '9.5px', fontWeight: '800', color: '#059669' }}>
               20 % HT
             </span>
           </div>
-
           <div>
-            <div style={{ fontSize: isMobile ? '18.5px' : '26px', fontWeight: '800', color: '#0f172a', lineHeight: 1.05, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
-              {formatMontant(kpis.commissions_acquises)}{' '}
-              <span style={{ fontSize: isMobile ? '10.5px' : '13px', fontWeight: '700', color: '#94a3b8' }}>€ HT</span>
+            <div style={{ fontSize: isMobile ? '18px' : '26px', fontWeight: '800', color: '#0f172a', lineHeight: 1.05, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+              {formatMontant(kpis.commissions_acquises)} <span style={{ fontSize: '10.5px', fontWeight: '700', color: '#94a3b8' }}>€ HT</span>
             </div>
-            <div style={{ fontSize: isMobile ? '11px' : '12.5px', fontWeight: '600', color: '#64748b', marginTop: '3px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <div style={{ fontSize: isMobile ? '11px' : '12.5px', fontWeight: '600', color: '#64748b', marginTop: '2px' }}>
               Commissions acquises
             </div>
           </div>
         </div>
       </div>
 
-      {/* =================================================================== */}
-      {/* 3. GRILLE BENTO 2 COLONNES (COMMISSIONS MENSUELLES | SALONS AFFILIÉS)*/}
-      {/* =================================================================== */}
+      {/* 3. GRILLE BENTO 2 COLONNES */}
       <div
         style={{
           display: 'grid',
           gridTemplateColumns: isMobile ? '1fr' : '1.35fr 1fr',
-          gap: isMobile ? '14px' : '20px',
+          gap: isMobile ? '12px' : '20px',
           alignItems: 'start'
         }}
       >
-        {/* COLONNE GAUCHE : DÉTAIL DES COMMISSIONS MENSUELLES (20 % HT) */}
+        {/* COLONNE GAUCHE : COMMISSIONS MENSUELLES */}
         <div
           className="sp-glass-panel"
           style={{
-            padding: isMobile ? '16px 14px' : '22px 24px',
+            padding: isMobile ? '14px 13px' : '22px 24px',
             borderRadius: isMobile ? '20px' : '24px',
             minWidth: 0
           }}
@@ -527,15 +470,15 @@ export default function TabBord({
               justifyContent: 'space-between',
               alignItems: isMobile ? 'stretch' : 'center',
               flexDirection: isMobile ? 'column' : 'row',
-              gap: '10px',
-              marginBottom: isMobile ? '12px' : '16px'
+              gap: '8px',
+              marginBottom: '12px'
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#0f172a" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" />
               </svg>
-              <h2 style={{ margin: 0, fontSize: isMobile ? '15.5px' : '16.5px', fontWeight: '800', color: '#0f172a', letterSpacing: '-0.02em' }}>
+              <h2 style={{ margin: 0, fontSize: isMobile ? '15px' : '16.5px', fontWeight: '800', color: '#0f172a', letterSpacing: '-0.02em' }}>
                 Commissions mensuelles (20 % HT)
               </h2>
             </div>
@@ -565,9 +508,9 @@ export default function TabBord({
                       border: 'none',
                       background: actif ? '#111827' : 'transparent',
                       color: actif ? '#ffffff' : '#64748b',
-                      padding: '5px 11px',
+                      padding: '5px 10px',
                       borderRadius: '999px',
-                      fontSize: '11.5px',
+                      fontSize: '11px',
                       fontWeight: '700',
                       cursor: 'pointer',
                       textAlign: 'center'
@@ -584,39 +527,43 @@ export default function TabBord({
             <div
               className="sp-glass-pill"
               style={{
-                padding: isMobile ? '22px 14px' : '38px 18px',
-                borderRadius: '16px',
-                textAlign: 'center',
+                padding: isMobile ? '14px 12px' : '32px 18px',
+                borderRadius: '14px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                textAlign: 'left',
                 color: '#64748b',
-                fontSize: isMobile ? '12px' : '13px'
+                fontSize: '12px'
               }}
             >
               <div
                 style={{
-                  width: isMobile ? '36px' : '44px',
-                  height: isMobile ? '36px' : '44px',
-                  borderRadius: '12px',
-                  background: 'rgba(15, 23, 42, 0.05)',
-                  color: '#64748b',
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '11px',
+                  background: 'rgba(15, 23, 42, 0.06)',
+                  color: '#475569',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  margin: '0 auto 8px auto',
                   fontWeight: '800',
-                  fontSize: isMobile ? '15px' : '17px'
+                  fontSize: '15px',
+                  flexShrink: 0
                 }}
               >
                 €
               </div>
-              <strong style={{ display: 'block', fontSize: isMobile ? '13.5px' : '14px', color: '#0f172a', marginBottom: '4px' }}>
-                Aucune commission générée pour le moment
-              </strong>
-              <span style={{ lineHeight: 1.45, display: 'block' }}>
-                Vos commissions récurrentes de 20 % HT apparaîtront ici à chaque échéance mensuelle.
-              </span>
+              <div>
+                <strong style={{ display: 'block', fontSize: '13px', color: '#0f172a', marginBottom: '2px' }}>
+                  Aucune commission générée pour le moment
+                </strong>
+                <span style={{ lineHeight: 1.35, display: 'block', fontSize: '11.5px' }}>
+                  Vos commissions récurrentes de 20 % HT apparaîtront ici à chaque échéance mensuelle.
+                </span>
+              </div>
             </div>
           ) : isMobile ? (
-            /* VUE MOBILE NATIVE EN CARTES (SANS TABLEAU À DÉFILEMENT HORIZONTAL) */
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {commissionsFiltrees.map((c) => {
                 const isPayee = c.statut_commission === 'PAYEE';
@@ -669,7 +616,6 @@ export default function TabBord({
               })}
             </div>
           ) : (
-            /* VUE DESKTOP TABLEAU */
             <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
               <table style={{ width: '100%', minWidth: '480px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
                 <thead>
@@ -727,66 +673,41 @@ export default function TabBord({
         <div
           className="sp-glass-panel"
           style={{
-            padding: isMobile ? '16px 14px' : '22px 24px',
+            padding: isMobile ? '14px 13px' : '22px 24px',
             borderRadius: isMobile ? '20px' : '24px',
             minWidth: 0
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: isMobile ? '12px' : '14px', gap: '8px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', gap: '8px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#0f172a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" />
               </svg>
-              <h2 style={{ margin: 0, fontSize: isMobile ? '15.5px' : '16.5px', fontWeight: '800', color: '#0f172a', letterSpacing: '-0.02em' }}>
+              <h2 style={{ margin: 0, fontSize: isMobile ? '15px' : '16.5px', fontWeight: '800', color: '#0f172a', letterSpacing: '-0.02em' }}>
                 Salons affiliés ({salonsListe.length})
               </h2>
             </div>
 
-            <span className="sp-glass-pill" style={{ padding: '3px 9px', borderRadius: '999px', fontSize: '10.5px', fontWeight: '700', color: '#64748b', whiteSpace: 'nowrap' }}>
+            <span className="sp-glass-pill" style={{ padding: '3px 9px', borderRadius: '999px', fontSize: '10px', fontWeight: '700', color: '#64748b', whiteSpace: 'nowrap' }}>
               Durée 24 mois
             </span>
           </div>
-
-          {salonsListe.length > 2 && (
-            <div
-              className="sp-glass-pill"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '7px 12px',
-                borderRadius: '12px',
-                marginBottom: '12px'
-              }}
-            >
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#64748b" strokeWidth="2">
-                <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
-              <input
-                type="text"
-                placeholder="Rechercher un salon affilié..."
-                value={rechercheSalon}
-                onChange={(e) => setRechercheSalon(e.target.value)}
-                style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%', fontSize: '12.5px', color: '#0f172a' }}
-              />
-            </div>
-          )}
 
           {salonsFiltres.length === 0 ? (
             <div
               className="sp-glass-pill"
               style={{
-                padding: isMobile ? '20px 14px' : '32px 16px',
-                borderRadius: '16px',
-                textAlign: 'center',
+                padding: isMobile ? '14px 12px' : '28px 16px',
+                borderRadius: '14px',
+                textAlign: 'left',
                 color: '#64748b',
-                fontSize: isMobile ? '12px' : '13px'
+                fontSize: '12px'
               }}
             >
-              <strong style={{ display: 'block', fontSize: isMobile ? '13.5px' : '14px', color: '#0f172a', marginBottom: '4px' }}>
+              <strong style={{ display: 'block', fontSize: '13px', color: '#0f172a', marginBottom: '2px' }}>
                 Aucun salon client inscrit
               </strong>
-              <span style={{ lineHeight: 1.45, display: 'block' }}>
+              <span style={{ lineHeight: 1.35, display: 'block', fontSize: '11.5px' }}>
                 Les salons inscrits avec votre code partenaire apparaîtront automatiquement ici.
               </span>
             </div>
@@ -802,7 +723,7 @@ export default function TabBord({
                     key={s.id_salon}
                     className="sp-glass-pill"
                     style={{
-                      padding: isMobile ? '11px 12px' : '12px 14px',
+                      padding: '11px 12px',
                       borderRadius: '15px',
                       display: 'flex',
                       alignItems: 'center',
@@ -831,29 +752,10 @@ export default function TabBord({
                       </div>
 
                       <div style={{ minWidth: 0, flex: 1 }}>
-                        <strong
-                          style={{
-                            display: 'block',
-                            fontSize: '13.5px',
-                            fontWeight: '800',
-                            color: '#0f172a',
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis'
-                          }}
-                        >
+                        <strong style={{ display: 'block', fontSize: '13.5px', fontWeight: '800', color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                           {s.nom_salon}
                         </strong>
-                        <span
-                          style={{
-                            display: 'block',
-                            fontSize: '11.5px',
-                            color: '#64748b',
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis'
-                          }}
-                        >
+                        <span style={{ display: 'block', fontSize: '11.5px', color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                           {s.email_gerant}
                         </span>
                         <span style={{ display: 'block', fontSize: '10.5px', color: '#94a3b8', marginTop: '2px' }}>
