@@ -233,10 +233,18 @@ export default function TabProfil({
           outline: none;
           -webkit-appearance: none;
           appearance: none;
+          overflow: hidden;
           transition: border-color 0.15s ease, background-color 0.15s ease;
         }
         input[type="date"].sp-kyc-input {
+          display: inline-flex !important;
+          align-items: center;
+          width: 100% !important;
+          max-width: 100% !important;
+          min-width: 0 !important;
           line-height: 40px;
+          -webkit-appearance: none;
+          appearance: none;
         }
         .sp-kyc-input:focus {
           border-color: #0f172a;
