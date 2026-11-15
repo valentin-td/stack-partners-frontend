@@ -1684,45 +1684,47 @@ export default function TabCarte({
                 )}
               </div>
 
-              {/* Barre de recherche rapide dans la liste */}
-              <div
-                className="sp-glass-pill"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '7px 12px',
-                  borderRadius: '12px',
-                  marginBottom: '10px',
-                  background: 'rgba(255, 255, 255, 0.88)'
-                }}
-              >
-                <Icon.Search />
-                <input
-                  type="text"
-                  placeholder="Filtrer un salon dans la liste..."
-                  value={rechercheLocaleListe}
-                  onChange={(e) => setRechercheLocaleListe(e.target.value)}
+              {/* Barre de recherche rapide dans la liste (affichée uniquement s'il y a des salons dans le rayon) */}
+              {inRadiusSalons.length > 0 && (
+                <div
+                  className="sp-glass-pill"
                   style={{
-                    border: 'none',
-                    background: 'transparent',
-                    outline: 'none',
-                    width: '100%',
-                    fontSize: '12.5px',
-                    fontWeight: '600',
-                    color: '#0f172a'
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '7px 12px',
+                    borderRadius: '12px',
+                    marginBottom: '10px',
+                    background: 'rgba(255, 255, 255, 0.88)'
                   }}
-                />
-                {rechercheLocaleListe && (
-                  <button
-                    type="button"
-                    onClick={() => setRechercheLocaleListe('')}
-                    style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: '11px', padding: 0 }}
-                  >
-                    X
-                  </button>
-                )}
-              </div>
+                >
+                  <Icon.Search />
+                  <input
+                    type="text"
+                    placeholder="Filtrer un salon dans la liste..."
+                    value={rechercheLocaleListe}
+                    onChange={(e) => setRechercheLocaleListe(e.target.value)}
+                    style={{
+                      border: 'none',
+                      background: 'transparent',
+                      outline: 'none',
+                      width: '100%',
+                      fontSize: '12.5px',
+                      fontWeight: '600',
+                      color: '#0f172a'
+                    }}
+                  />
+                  {rechercheLocaleListe && (
+                    <button
+                      type="button"
+                      onClick={() => setRechercheLocaleListe('')}
+                      style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: '11px', padding: 0 }}
+                    >
+                      X
+                    </button>
+                  )}
+                </div>
+              )}
 
               <div
                 style={{
@@ -1735,8 +1737,10 @@ export default function TabCarte({
                 }}
               >
                 {filteredAndSortedSalons.length === 0 ? (
-                  <div className="sp-glass-pill" style={{ padding: '24px 14px', borderRadius: '16px', textAlign: 'center', color: '#64748b', fontSize: '12.5px' }}>
-                    Aucun salon ne correspond à vos filtres sur ce rayon.
+                  <div className="sp-glass-pill" style={{ padding: '16px 14px', borderRadius: '14px', textAlign: 'center', color: '#64748b', fontSize: '12px' }}>
+                    {mapLoading
+                      ? 'Recherche des établissements autour de ce point...'
+                      : 'Aucun salon ne correspond à vos filtres sur ce rayon.'}
                   </div>
                 ) : (
                   filteredAndSortedSalons.slice(0, 120).map((s) => {
