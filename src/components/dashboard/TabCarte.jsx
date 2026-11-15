@@ -414,9 +414,9 @@ export default function TabCarte({
           display: 'flex',
           flexDirection: isMobile ? 'column' : 'row',
           justifyContent: 'space-between',
-          alignItems: isMobile ? 'stretch' : 'flex-end',
-          gap: isMobile ? '10px' : '10px',
-          marginBottom: isMobile ? '10px' : '18px',
+          alignItems: isMobile ? 'stretch' : 'center',
+          gap: isMobile ? '8px' : '14px',
+          marginBottom: isMobile ? '12px' : '22px',
           width: '100%',
           maxWidth: '100%',
           minWidth: 0,
@@ -439,7 +439,7 @@ export default function TabCarte({
                 marginBottom: '6px'
               }}
             >
-              Prospection Terrain & Tournées OSRM
+              Prospection Terrain
             </span>
           )}
           <h1
@@ -452,11 +452,11 @@ export default function TabCarte({
               lineHeight: 1.1
             }}
           >
-            {isMobile ? 'Carte Terrain' : 'Carte de Prospection'}
+            Carte des prospects
           </h1>
           {!isMobile && (
             <span style={{ fontSize: '13.5px', color: '#64748b', fontWeight: '500' }}>
-              Explorez les salons autour de vous, qualifiez vos visites et optimisez vos feuilles de route.
+              Visualisez les salons de votre secteur, qualifiez vos visites et optimisez vos tournées.
             </span>
           )}
         </div>

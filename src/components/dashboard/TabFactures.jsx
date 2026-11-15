@@ -173,43 +173,48 @@ export default function TabFactures({
           display: 'flex',
           flexDirection: isMobile ? 'column' : 'row',
           justifyContent: 'space-between',
-          alignItems: isMobile ? 'stretch' : 'flex-end',
-          gap: '14px',
-          marginBottom: isMobile ? '18px' : '22px'
+          alignItems: isMobile ? 'stretch' : 'center',
+          gap: isMobile ? '8px' : '14px',
+          marginBottom: isMobile ? '12px' : '22px',
+          position: 'relative'
         }}
       >
         <div>
-          <span
-            className="sp-glass-pill"
-            style={{
-              display: 'inline-block',
-              padding: '4px 12px',
-              borderRadius: '999px',
-              fontSize: '10.5px',
-              fontWeight: '800',
-              letterSpacing: '0.06em',
-              textTransform: 'uppercase',
-              color: '#64748b',
-              marginBottom: '6px'
-            }}
-          >
-            Facturation Mandataire • Mise en Service
-          </span>
+          {!isMobile && (
+            <span
+              className="sp-glass-pill"
+              style={{
+                display: 'inline-block',
+                padding: '4px 12px',
+                borderRadius: '999px',
+                fontSize: '10.5px',
+                fontWeight: '800',
+                letterSpacing: '0.06em',
+                textTransform: 'uppercase',
+                color: '#64748b',
+                marginBottom: '6px'
+              }}
+            >
+              Facturation Mandataire • Mise en Service
+            </span>
+          )}
           <h1
             style={{
-              fontSize: isMobile ? '24px' : '30px',
+              fontSize: isMobile ? '22px' : '30px',
               fontWeight: '800',
-              margin: '0 0 4px 0',
+              margin: isMobile ? '0' : '0 0 4px 0',
               letterSpacing: '-0.03em',
               color: '#0f172a',
               lineHeight: 1.1
             }}
           >
-            Factures d'Installation (99 € HT)
+            Facturation
           </h1>
-          <span style={{ fontSize: '13.5px', color: '#64748b', fontWeight: '500' }}>
-            Générez vos factures d'onboarding, transmettez-les par e-mail au gérant et suivez vos règlements.
-          </span>
+          {!isMobile && (
+            <span style={{ fontSize: '13.5px', color: '#64748b', fontWeight: '500' }}>
+              Générez vos factures d'onboarding, transmettez-les par e-mail au gérant et suivez vos règlements.
+            </span>
+          )}
         </div>
 
         <button

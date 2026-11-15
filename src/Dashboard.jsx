@@ -58,6 +58,15 @@ export default function Dashboard() {
     };
   }, []);
 
+  // Remise a zero automatique du scroll lors d'un changement d'onglet
+  useEffect(() => {
+    try {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    } catch (e) {
+      window.scrollTo(0, 0);
+    }
+  }, [activeTab]);
+
   // Etats Dashboard & Commissions
   const [stats, setStats] = useState({
     kpis: {
