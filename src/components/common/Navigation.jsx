@@ -15,6 +15,49 @@ export default function Navigation({
 }) {
   return (
     <>
+      <style>{`
+        html, body, #root {
+          background-color: #dce5f2 !important;
+          color: #0f172a;
+          margin: 0;
+          padding: 0;
+        }
+        /* Calque fixe compatible iOS Safari pour conserver l'effet Aurora sur toute la hauteur */
+        .sp-aurora-bg {
+          position: fixed;
+          inset: 0;
+          z-index: 0;
+          pointer-events: none;
+          background-color: #dce5f2;
+          background-image:
+            radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.28) 0px, transparent 52%),
+            radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.24) 0px, transparent 52%),
+            radial-gradient(at 100% 100%, rgba(245, 158, 11, 0.18) 0px, transparent 52%),
+            radial-gradient(at 0% 100%, rgba(14, 165, 233, 0.24) 0px, transparent 52%);
+        }
+        .sp-glass-panel {
+          position: relative;
+          z-index: 1;
+          background: linear-gradient(145deg, rgba(255, 255, 255, 0.86) 0%, rgba(255, 255, 255, 0.62) 100%);
+          backdrop-filter: blur(18px);
+          -webkit-backdrop-filter: blur(18px);
+          border-top: 1.5px solid rgba(255, 255, 255, 0.98);
+          border-left: 1.5px solid rgba(255, 255, 255, 0.94);
+          border-right: 1px solid rgba(255, 255, 255, 0.6);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+          box-shadow: 0 10px 28px -8px rgba(15, 23, 42, 0.06), inset 0 1px 0 0 #ffffff;
+          border-radius: 22px;
+        }
+        .sp-glass-pill {
+          background: linear-gradient(145deg, rgba(255, 255, 255, 0.94) 0%, rgba(255, 255, 255, 0.72) 100%);
+          border: 1px solid rgba(255, 255, 255, 0.96);
+          box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04), inset 0 1px 0 #ffffff;
+        }
+      `}</style>
+
+      {/* Fond Aurora fixe sur iOS et Desktop */}
+      <div className="sp-aurora-bg" />
+
       {/* EN-TÊTE MOBILE STICKY EN VERRE */}
       {isMobile && (
         <div
@@ -22,18 +65,19 @@ export default function Navigation({
             position: 'sticky',
             top: 0,
             zIndex: 900,
-            background: 'rgba(255, 255, 255, 0.88)',
-            backdropFilter: 'blur(8px)',
-            WebkitBackdropFilter: 'blur(8px)',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.90)',
-            padding: '10px 16px',
+            background: 'rgba(255, 255, 255, 0.82)',
+            backdropFilter: 'blur(18px)',
+            WebkitBackdropFilter: 'blur(18px)',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.9)',
+            boxShadow: '0 4px 16px -6px rgba(15, 23, 42, 0.05)',
+            padding: '9px 14px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             gap: '10px'
           }}
         >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <img
               src="/stack-logo-light.png"
               onError={(e) => {
@@ -41,14 +85,24 @@ export default function Navigation({
                 e.currentTarget.src = '/IMG_6804.png';
               }}
               alt="STACK"
-              style={{ height: '22px', width: 'auto', objectFit: 'contain', display: 'block' }}
+              style={{ height: '21px', width: 'auto', objectFit: 'contain', display: 'block' }}
             />
-            <div style={{ fontSize: '10px', fontWeight: '700', color: '#64748b', letterSpacing: '0.02em' }}>
-              Portail Partenaires
-            </div>
+            <span
+              style={{
+                fontSize: '10px',
+                fontWeight: '800',
+                color: '#64748b',
+                padding: '2px 7px',
+                borderRadius: '999px',
+                background: 'rgba(15, 23, 42, 0.05)',
+                letterSpacing: '0.02em'
+              }}
+            >
+              Partenaires
+            </span>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
             <button
               type="button"
               onClick={() => setActiveTab('profil')}
@@ -62,7 +116,7 @@ export default function Navigation({
                 background: activeTab === 'profil' ? '#111827' : undefined,
                 color: activeTab === 'profil' ? '#ffffff' : '#0f172a',
                 fontSize: '12px',
-                fontWeight: '700',
+                fontWeight: '800',
                 cursor: 'pointer'
               }}
             >
@@ -75,7 +129,7 @@ export default function Navigation({
                 }}
               />
               <span style={{ textTransform: 'capitalize' }}>
-                {agent?.prenom || agent?.nom || 'Mon Profil'}
+                {agent?.prenom || agent?.nom || 'Profil'}
               </span>
             </button>
             <button
@@ -83,14 +137,17 @@ export default function Navigation({
               onClick={onLogout}
               title="Déconnexion"
               style={{
-                padding: '7px 9px',
-                borderRadius: '11px',
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
                 backgroundColor: 'rgba(239, 68, 68, 0.1)',
                 color: '#dc2626',
                 border: '1px solid rgba(239, 68, 68, 0.22)',
                 cursor: 'pointer',
                 display: 'flex',
-                alignItems: 'center'
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 0
               }}
             >
               <Icon.Logout />
@@ -109,7 +166,8 @@ export default function Navigation({
             position: 'sticky',
             top: 0,
             height: '100vh',
-            boxSizing: 'border-box'
+            boxSizing: 'border-box',
+            zIndex: 10
           }}
         >
           <div
@@ -123,7 +181,6 @@ export default function Navigation({
               borderRadius: '28px'
             }}
           >
-            {/* Logo STACK Partenaires centré comme sur la maquette */}
             <div style={{ marginBottom: '20px', textAlign: 'center', padding: '4px 8px' }}>
               <img
                 src="/stack-logo-light.png"
@@ -139,7 +196,6 @@ export default function Navigation({
               </div>
             </div>
 
-            {/* Carte profil de l'agent */}
             <button
               type="button"
               onClick={() => setActiveTab('profil')}
@@ -202,7 +258,6 @@ export default function Navigation({
               </div>
             </button>
 
-            {/* Liens de navigation */}
             <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: '5px', overflowY: 'auto' }}>
               <button type="button" onClick={() => setActiveTab('bord')} style={navBtnStyle(activeTab === 'bord')}>
                 <Icon.Bord /> Tableau de bord
@@ -255,7 +310,6 @@ export default function Navigation({
               )}
             </div>
 
-            {/* Bouton Se déconnecter en bas */}
             <button
               type="button"
               onClick={onLogout}
@@ -287,20 +341,19 @@ export default function Navigation({
         <div
           style={{
             position: 'fixed',
-            bottom: 'max(14px, env(safe-area-inset-bottom, 10px))',
+            bottom: 'max(10px, env(safe-area-inset-bottom, 8px))',
             left: '12px',
             right: '12px',
             zIndex: 950,
-            background: 'rgba(255, 255, 255, 0.90)',
-            backdropFilter: 'blur(10px)',
-            WebkitBackdropFilter: 'blur(10px)',
-            transform: 'translateZ(0)',
+            background: 'rgba(255, 255, 255, 0.88)',
+            backdropFilter: 'blur(22px)',
+            WebkitBackdropFilter: 'blur(22px)',
             border: '1.5px solid #ffffff',
-            borderRadius: '26px',
+            borderRadius: '24px',
             display: 'grid',
             gridTemplateColumns: `repeat(${isSuperAdmin ? 6 : 5}, 1fr)`,
-            padding: '5px 6px',
-            boxShadow: '0 12px 32px rgba(15, 23, 42, 0.12)'
+            padding: '4px 5px',
+            boxShadow: '0 10px 28px rgba(15, 23, 42, 0.12)'
           }}
         >
           {[
@@ -318,7 +371,7 @@ export default function Navigation({
                 type="button"
                 onClick={() => setActiveTab(item.key)}
                 style={{
-                  background: active ? 'rgba(15, 23, 42, 0.08)' : 'none',
+                  background: active ? '#111827' : 'transparent',
                   border: 'none',
                   borderRadius: '18px',
                   padding: '6px 2px',
@@ -327,10 +380,11 @@ export default function Navigation({
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '2px',
-                  color: active ? '#0f172a' : '#64748b',
+                  color: active ? '#ffffff' : '#64748b',
                   fontWeight: active ? '800' : '600',
                   fontSize: '10px',
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
