@@ -1302,7 +1302,7 @@ export default function Dashboard() {
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
         backgroundColor: 'transparent',
         color: '#111827',
-        paddingBottom: isMobile ? '84px' : '0'
+        paddingBottom: isMobile ? 'calc(88px + env(safe-area-inset-bottom, 0px))' : '0'
       }}
     >
       {/* Fond d'ambiance Aurora sur GPU dedie (aucune saccade au scroll) */}
@@ -1324,7 +1324,10 @@ export default function Dashboard() {
         style={{
           flex: 1,
           minWidth: 0,
-          padding: isMobile ? '18px 14px' : '36px 40px',
+          paddingTop: isMobile ? 'calc(max(env(safe-area-inset-top, 0px), 12px) + 54px)' : '36px',
+          paddingBottom: isMobile ? '16px' : '40px',
+          paddingLeft: isMobile ? 'max(env(safe-area-inset-left, 0px), 14px)' : '40px',
+          paddingRight: isMobile ? 'max(env(safe-area-inset-right, 0px), 14px)' : '40px',
           maxWidth: '1280px',
           width: '100%',
           boxSizing: 'border-box',

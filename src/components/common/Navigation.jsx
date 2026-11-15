@@ -58,102 +58,125 @@ export default function Navigation({
       {/* Fond Aurora fixe sur iOS et Desktop */}
       <div className="sp-aurora-bg" />
 
-      {/* EN-TÊTE MOBILE STICKY EN VERRE */}
+      {/* EN-TÊTE MOBILE FIXE ET FLOU AVEC SAFE-AREA IPHONE */}
       {isMobile && (
-        <div
+        <header
           style={{
-            position: 'sticky',
+            position: 'fixed',
             top: 0,
-            zIndex: 900,
-            background: 'rgba(255, 255, 255, 0.82)',
-            backdropFilter: 'blur(18px)',
-            WebkitBackdropFilter: 'blur(18px)',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.9)',
-            boxShadow: '0 4px 16px -6px rgba(15, 23, 42, 0.05)',
-            padding: '9px 14px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '10px'
+            left: 0,
+            right: 0,
+            width: '100%',
+            zIndex: 9000,
+            background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.90) 0%, rgba(255, 255, 255, 0.78) 100%)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.92)',
+            boxShadow: '0 4px 20px -4px rgba(15, 23, 42, 0.08), inset 0 -1px 0 rgba(148, 163, 184, 0.08)',
+            paddingTop: 'max(env(safe-area-inset-top, 0px), 12px)',
+            paddingLeft: 'max(env(safe-area-inset-left, 0px), 14px)',
+            paddingRight: 'max(env(safe-area-inset-right, 0px), 14px)',
+            paddingBottom: '9px',
+            boxSizing: 'border-box'
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <img
-              src="/stack-logo-light.png"
-              onError={(e) => {
-                e.currentTarget.onerror = null;
-                e.currentTarget.src = '/IMG_6804.png';
-              }}
-              alt="STACK"
-              style={{ height: '21px', width: 'auto', objectFit: 'contain', display: 'block' }}
-            />
-            <span
-              style={{
-                fontSize: '10px',
-                fontWeight: '800',
-                color: '#64748b',
-                padding: '2px 7px',
-                borderRadius: '999px',
-                background: 'rgba(15, 23, 42, 0.05)',
-                letterSpacing: '0.02em'
-              }}
+          <div
+            style={{
+              height: '36px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '10px'
+            }}
+          >
+            <div
+              onClick={() => setActiveTab('bord')}
+              style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', userSelect: 'none' }}
+              title="Tableau de bord"
             >
-              Partenaires
-            </span>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
-            <button
-              type="button"
-              onClick={() => setActiveTab('profil')}
-              className="sp-glass-pill"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '6px 12px',
-                borderRadius: '999px',
-                background: activeTab === 'profil' ? '#111827' : undefined,
-                color: activeTab === 'profil' ? '#ffffff' : '#0f172a',
-                fontSize: '12px',
-                fontWeight: '800',
-                cursor: 'pointer'
-              }}
-            >
+              <img
+                src="/stack-logo-light.png"
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = '/IMG_6804.png';
+                }}
+                alt="STACK"
+                style={{ height: '22px', width: 'auto', objectFit: 'contain', display: 'block' }}
+              />
               <span
                 style={{
-                  width: '7px',
-                  height: '7px',
-                  borderRadius: '50%',
-                  backgroundColor: profilData?.autorise_a_vendre ? '#10b981' : '#f59e0b'
+                  fontSize: '10.5px',
+                  fontWeight: '800',
+                  color: '#64748b',
+                  padding: '2px 8px',
+                  borderRadius: '999px',
+                  background: 'rgba(15, 23, 42, 0.06)',
+                  border: '1px solid rgba(148, 163, 184, 0.2)',
+                  letterSpacing: '0.03em',
+                  textTransform: 'uppercase'
                 }}
-              />
-              <span style={{ textTransform: 'capitalize' }}>
-                {agent?.prenom || agent?.nom || 'Profil'}
+              >
+                Partenaires
               </span>
-            </button>
-            <button
-              type="button"
-              onClick={onLogout}
-              title="Déconnexion"
-              style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '50%',
-                backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                color: '#dc2626',
-                border: '1px solid rgba(239, 68, 68, 0.22)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: 0
-              }}
-            >
-              <Icon.Logout />
-            </button>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+              <button
+                type="button"
+                onClick={() => setActiveTab('profil')}
+                className="sp-glass-pill"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '6px 12px',
+                  borderRadius: '999px',
+                  background: activeTab === 'profil' ? '#111827' : undefined,
+                  color: activeTab === 'profil' ? '#ffffff' : '#0f172a',
+                  fontSize: '12px',
+                  fontWeight: '800',
+                  cursor: 'pointer',
+                  border: activeTab === 'profil' ? '1px solid #111827' : '1px solid rgba(255, 255, 255, 0.96)',
+                  boxShadow: '0 2px 8px rgba(15, 23, 42, 0.05)'
+                }}
+              >
+                <span
+                  style={{
+                    width: '7px',
+                    height: '7px',
+                    borderRadius: '50%',
+                    backgroundColor: profilData?.autorise_a_vendre ? '#10b981' : '#f59e0b',
+                    boxShadow: profilData?.autorise_a_vendre ? '0 0 6px #10b981' : '0 0 6px #f59e0b'
+                  }}
+                />
+                <span style={{ textTransform: 'capitalize' }}>
+                  {agent?.prenom || agent?.nom || 'Profil'}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={onLogout}
+                title="Déconnexion"
+                style={{
+                  width: '34px',
+                  height: '34px',
+                  borderRadius: '50%',
+                  backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                  color: '#dc2626',
+                  border: '1px solid rgba(239, 68, 68, 0.24)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: 0,
+                  transition: 'background-color 0.15s ease'
+                }}
+              >
+                <Icon.Logout />
+              </button>
+            </div>
           </div>
-        </div>
+        </header>
       )}
 
       {/* DOCK LATÉRAL GAUCHE FLOTTANT EN VERRE (DESKTOP) */}
@@ -344,7 +367,7 @@ export default function Navigation({
             bottom: 'max(10px, env(safe-area-inset-bottom, 8px))',
             left: '12px',
             right: '12px',
-            zIndex: 950,
+            zIndex: 8900,
             background: 'rgba(255, 255, 255, 0.88)',
             backdropFilter: 'blur(22px)',
             WebkitBackdropFilter: 'blur(22px)',
