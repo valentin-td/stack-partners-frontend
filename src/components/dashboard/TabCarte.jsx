@@ -337,6 +337,9 @@ export default function TabCarte({
       style={{
         paddingBottom: isMobile ? 'calc(125px + env(safe-area-inset-bottom, 0px))' : '24px',
         width: '100%',
+        maxWidth: '100%',
+        minWidth: 0,
+        overflowX: 'hidden',
         boxSizing: 'border-box'
       }}
     >
@@ -349,6 +352,10 @@ export default function TabCarte({
           padding: 11px 13px;
           cursor: pointer;
           transition: transform 0.14s ease, box-shadow 0.14s ease, border-color 0.14s ease;
+          width: 100%;
+          max-width: 100%;
+          box-sizing: border-box;
+          min-width: 0;
         }
         .sp-salon-card:hover {
           transform: translateY(-1px);
@@ -381,19 +388,39 @@ export default function TabCarte({
         @keyframes spin {
           to { transform: rotate(360deg); }
         }
+        @media (max-width: 860px) {
+          .sp-carte-split-grid {
+            grid-template-columns: minmax(0, 1fr) !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+            box-sizing: border-box !important;
+          }
+          .sp-carte-map-panel,
+          .sp-carte-side-panel {
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+            box-sizing: border-box !important;
+          }
+        }
       `}</style>
 
       {/* =================================================================== */}
-      {/* 1. EN-TÊTE + ACTIONS GLOBALES (COMPACT SUR 1 LIGNE SUR IPHONE)      */}
+      {/* 1. EN-TÊTE + ACTIONS GLOBALES (COMPACT SUR IPHONE)                  */}
       {/* =================================================================== */}
       <header
         style={{
           display: 'flex',
-          flexDirection: 'row',
+          flexDirection: isMobile ? 'column' : 'row',
           justifyContent: 'space-between',
-          alignItems: isMobile ? 'center' : 'flex-end',
-          gap: '10px',
-          marginBottom: isMobile ? '10px' : '18px'
+          alignItems: isMobile ? 'stretch' : 'flex-end',
+          gap: isMobile ? '10px' : '10px',
+          marginBottom: isMobile ? '10px' : '18px',
+          width: '100%',
+          maxWidth: '100%',
+          minWidth: 0,
+          boxSizing: 'border-box'
         }}
       >
         <div style={{ minWidth: 0 }}>
@@ -422,8 +449,7 @@ export default function TabCarte({
               margin: isMobile ? '0' : '0 0 4px 0',
               letterSpacing: '-0.03em',
               color: '#0f172a',
-              lineHeight: 1.1,
-              whiteSpace: 'nowrap'
+              lineHeight: 1.1
             }}
           >
             {isMobile ? 'Carte Terrain' : 'Carte de Prospection'}
@@ -435,7 +461,7 @@ export default function TabCarte({
           )}
         </div>
 
-        <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'auto auto', gap: '6px', alignItems: 'center', width: isMobile ? '100%' : 'auto', maxWidth: '100%', boxSizing: 'border-box' }}>
           <button
             type="button"
             onClick={handleGeolocateAgent}
@@ -443,9 +469,9 @@ export default function TabCarte({
             title="Centrer autour de ma position GPS"
             style={{
               height: isMobile ? '36px' : '40px',
-              padding: isMobile ? '0 12px' : '0 16px',
+              padding: isMobile ? '0 8px' : '0 16px',
               borderRadius: '999px',
-              fontSize: isMobile ? '12px' : '12.5px',
+              fontSize: isMobile ? '11.5px' : '12.5px',
               fontWeight: '700',
               color: '#0f172a',
               display: 'inline-flex',
@@ -465,12 +491,12 @@ export default function TabCarte({
             onClick={() => setShowRoutePlanner(!showRoutePlanner)}
             style={{
               height: isMobile ? '36px' : '40px',
-              padding: isMobile ? '0 13px' : '0 18px',
+              padding: isMobile ? '0 8px' : '0 18px',
               borderRadius: '999px',
               backgroundColor: showRoutePlanner ? '#4f46e5' : '#111827',
               color: '#ffffff',
               border: 'none',
-              fontSize: isMobile ? '12px' : '12.5px',
+              fontSize: isMobile ? '11.5px' : '12.5px',
               fontWeight: '800',
               display: 'inline-flex',
               alignItems: 'center',
@@ -495,14 +521,18 @@ export default function TabCarte({
         style={{
           padding: isMobile ? '10px 12px' : '18px 22px',
           borderRadius: isMobile ? '20px' : '24px',
-          marginBottom: isMobile ? '12px' : '18px'
+          marginBottom: isMobile ? '12px' : '18px',
+          width: '100%',
+          maxWidth: '100%',
+          minWidth: 0,
+          boxSizing: 'border-box'
         }}
       >
         {/* Ligne 1 : Recherche géographique (Bouton Centrer toujours sur la même ligne) + Rayon */}
-        <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '8px' : '10px', alignItems: 'stretch' }}>
+        <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '8px' : '10px', alignItems: 'stretch', width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box' }}>
           <form
             onSubmit={handleSearchAddressMap}
-            style={{ display: 'flex', flexDirection: 'row', flex: 1, gap: '6px', alignItems: 'center' }}
+            style={{ display: 'flex', flexDirection: 'row', flex: 1, gap: '6px', alignItems: 'center', width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box' }}
           >
             <div
               className="sp-glass-pill"
@@ -515,7 +545,8 @@ export default function TabCarte({
                 padding: '0 12px',
                 height: isMobile ? '38px' : '42px',
                 borderRadius: '999px',
-                background: 'rgba(255, 255, 255, 0.92)'
+                background: 'rgba(255, 255, 255, 0.92)',
+                boxSizing: 'border-box'
               }}
             >
               <Icon.Search />
@@ -529,6 +560,7 @@ export default function TabCarte({
                   background: 'transparent',
                   outline: 'none',
                   width: '100%',
+                  minWidth: 0,
                   fontSize: isMobile ? '13px' : '13.5px',
                   fontWeight: '600',
                   color: '#0f172a'
@@ -576,12 +608,16 @@ export default function TabCarte({
             style={{
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'space-between',
+              justifyContent: isMobile ? 'flex-start' : 'space-between',
               gap: '3px',
               padding: isMobile ? '3px 4px 3px 10px' : '4px 6px 4px 12px',
               borderRadius: '999px',
               overflowX: 'auto',
-              scrollbarWidth: 'none'
+              scrollbarWidth: 'none',
+              width: isMobile ? '100%' : 'auto',
+              maxWidth: '100%',
+              minWidth: 0,
+              boxSizing: 'border-box'
             }}
           >
             <span style={{ fontSize: '11px', fontWeight: '800', color: '#64748b', whiteSpace: 'nowrap', marginRight: '2px' }}>
@@ -622,7 +658,11 @@ export default function TabCarte({
             gap: isMobile ? '8px' : '10px',
             marginTop: isMobile ? '8px' : '14px',
             paddingTop: isMobile ? '8px' : '12px',
-            borderTop: '1px solid rgba(148, 163, 184, 0.2)'
+            borderTop: '1px solid rgba(148, 163, 184, 0.2)',
+            width: '100%',
+            maxWidth: '100%',
+            minWidth: 0,
+            boxSizing: 'border-box'
           }}
         >
           {/* Ruban horizontal des statuts */}
@@ -631,11 +671,15 @@ export default function TabCarte({
             style={{
               display: 'flex',
               gap: '6px',
-               flexWrap: isMobile ? 'nowrap' : 'wrap',
-              overflowX: isMobile ? 'auto' : 'visible',
+              flexWrap: isMobile ? 'nowrap' : 'wrap',
+              overflowX: 'auto',
               scrollbarWidth: 'none',
               alignItems: 'center',
-              paddingBottom: isMobile ? '2px' : 0
+              paddingBottom: isMobile ? '2px' : 0,
+              width: '100%',
+              maxWidth: '100%',
+              minWidth: 0,
+              boxSizing: 'border-box'
             }}
           >
             {[
@@ -679,7 +723,7 @@ export default function TabCarte({
           </div>
 
           {/* Masquer visités + Sélecteur de tri alignés */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px', flexShrink: 0, width: isMobile ? '100%' : 'auto', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box' }}>
             <button
               type="button"
               onClick={() => setHideVisitedSalons(!hideVisitedSalons)}
@@ -734,7 +778,11 @@ export default function TabCarte({
             padding: isMobile ? '14px 12px' : '20px 24px',
             borderRadius: isMobile ? '20px' : '24px',
             marginBottom: isMobile ? '12px' : '18px',
-            border: '1.5px solid rgba(79, 70, 229, 0.35)'
+            border: '1.5px solid rgba(79, 70, 229, 0.35)',
+            width: '100%',
+            maxWidth: '100%',
+            minWidth: 0,
+            boxSizing: 'border-box'
           }}
         >
           {/* En-tête du planificateur avec bouton X aligné à droite même sur mobile */}
@@ -1152,22 +1200,30 @@ export default function TabCarte({
       {/* 4. CONTENEUR SPLIT : CARTE LEAFLET | PANNEAU LATÉRAL DE DROITE      */}
       {/* =================================================================== */}
       <div
+        className="sp-carte-split-grid"
         style={{
           display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 1fr) 400px',
+          gridTemplateColumns: isMobile ? 'minmax(0, 1fr)' : 'minmax(0, 1fr) 400px',
           gap: isMobile ? '12px' : '18px',
-          alignItems: 'stretch'
+          alignItems: 'stretch',
+          width: '100%',
+          maxWidth: '100%',
+          minWidth: 0,
+          boxSizing: 'border-box'
         }}
       >
         {/* CARTE INTERACTIVE LEAFLET (Hauteur calibrée sur iPhone pour voir la carte + la liste d'un coup) */}
         <div
-          className="sp-glass-panel"
+          className="sp-glass-panel sp-carte-map-panel"
           style={{
             padding: '6px',
             borderRadius: isMobile ? '20px' : '24px',
             overflow: 'hidden',
             height: isMobile ? '310px' : '610px',
             position: 'relative',
+            width: '100%',
+            maxWidth: '100%',
+            minWidth: 0,
             boxSizing: 'border-box'
           }}
         >
@@ -1175,9 +1231,11 @@ export default function TabCarte({
             id="stack-partners-map"
             style={{
               width: '100%',
+              maxWidth: '100%',
               height: '100%',
               borderRadius: '15px',
-              overflow: 'hidden'
+              overflow: 'hidden',
+              boxSizing: 'border-box'
             }}
           />
 
@@ -1259,7 +1317,7 @@ export default function TabCarte({
 
         {/* PANNEAU LATÉRAL DROIT : FICHE DU SALON SÉLECTIONNÉ OU LISTE FILTRABLE */}
         <div
-          className="sp-glass-panel"
+          className="sp-glass-panel sp-carte-side-panel"
           style={{
             height: isMobile ? 'auto' : '610px',
             maxHeight: isMobile ? 'none' : '610px',
@@ -1268,7 +1326,10 @@ export default function TabCarte({
             boxSizing: 'border-box',
             display: 'flex',
             flexDirection: 'column',
-            overflowY: isMobile ? 'visible' : 'auto'
+            overflowY: isMobile ? 'visible' : 'auto',
+            width: '100%',
+            maxWidth: '100%',
+            minWidth: 0
           }}
         >
           {selectedSalonMap ? (
@@ -1671,7 +1732,12 @@ export default function TabCarte({
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
-                  marginBottom: '10px'
+                  marginBottom: '10px',
+                  flexWrap: 'wrap',
+                  gap: '6px',
+                  width: '100%',
+                  maxWidth: '100%',
+                  boxSizing: 'border-box'
                 }}
               >
                 <span style={{ fontSize: '12px', fontWeight: '800', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
@@ -1695,7 +1761,11 @@ export default function TabCarte({
                     padding: '7px 12px',
                     borderRadius: '12px',
                     marginBottom: '10px',
-                    background: 'rgba(255, 255, 255, 0.88)'
+                    background: 'rgba(255, 255, 255, 0.88)',
+                    width: '100%',
+                    maxWidth: '100%',
+                    minWidth: 0,
+                    boxSizing: 'border-box'
                   }}
                 >
                   <Icon.Search />
@@ -1709,6 +1779,7 @@ export default function TabCarte({
                       background: 'transparent',
                       outline: 'none',
                       width: '100%',
+                      minWidth: 0,
                       fontSize: '12.5px',
                       fontWeight: '600',
                       color: '#0f172a'
@@ -1733,6 +1804,11 @@ export default function TabCarte({
                   gap: '8px',
                   maxHeight: isMobile ? '360px' : 'none',
                   overflowY: 'auto',
+                  overflowX: 'hidden',
+                  width: '100%',
+                  maxWidth: '100%',
+                  minWidth: 0,
+                  boxSizing: 'border-box',
                   paddingRight: '2px'
                 }}
               >
@@ -1767,7 +1843,11 @@ export default function TabCarte({
                           display: 'flex',
                           justifyContent: 'space-between',
                           alignItems: 'center',
-                          gap: '10px'
+                          gap: '10px',
+                          width: '100%',
+                          maxWidth: '100%',
+                          minWidth: 0,
+                          boxSizing: 'border-box'
                         }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flex: 1 }}>
