@@ -16,8 +16,24 @@ export default function Navigation({
   return (
     <>
       <style>{`
+        /* ========================================================================== */
+        /* ANCIEN FOND ARCHIVÉ (BLEU / ÉMERAUDE / AMBRE) - RESTAURATION DIRECTE SI SOUHAITÉ :
         html, body, #root {
           background-color: #dce5f2 !important;
+        }
+        .sp-aurora-bg {
+          background-color: #dce5f2;
+          background-image:
+            radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.28) 0px, transparent 52%),
+            radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.24) 0px, transparent 52%),
+            radial-gradient(at 100% 100%, rgba(245, 158, 11, 0.18) 0px, transparent 52%),
+            radial-gradient(at 0% 100%, rgba(14, 165, 233, 0.24) 0px, transparent 52%);
+        }
+        ========================================================================== */
+
+        /* NOUVEAU THÈME FOND : ORCHIDÉE PASTEL, ROSE POUDRÉ & PÊCHE CHAUD */
+        html, body, #root {
+          background-color: #f7ebf5 !important;
           color: #0f172a;
           margin: 0;
           padding: 0;
@@ -28,12 +44,15 @@ export default function Navigation({
           inset: 0;
           z-index: 0;
           pointer-events: none;
-          background-color: #dce5f2;
+          background-color: #f7ebf5;
           background-image:
-            radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.28) 0px, transparent 52%),
-            radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.24) 0px, transparent 52%),
-            radial-gradient(at 100% 100%, rgba(245, 158, 11, 0.18) 0px, transparent 52%),
-            radial-gradient(at 0% 100%, rgba(14, 165, 233, 0.24) 0px, transparent 52%);
+            radial-gradient(at 0% 0%, rgba(238, 182, 231, 0.85) 0px, transparent 54%),
+            radial-gradient(at 100% 0%, rgba(239, 190, 195, 0.78) 0px, transparent 52%),
+            radial-gradient(at 100% 100%, rgba(254, 222, 196, 0.92) 0px, transparent 56%),
+            radial-gradient(at 0% 100%, rgba(223, 191, 232, 0.78) 0px, transparent 52%),
+            radial-gradient(at 55% 16%, rgba(239, 170, 189, 0.72) 0px, transparent 48%),
+            radial-gradient(at 82% 58%, rgba(250, 218, 208, 0.72) 0px, transparent 50%),
+            radial-gradient(at 25% 45%, rgba(245, 230, 245, 0.50) 0px, transparent 45%);
         }
         .sp-glass-panel {
           position: relative;
