@@ -85,6 +85,17 @@ export default function TabCarte({
 }) {
   const [rechercheLocaleListe, setRechercheLocaleListe] = useState('');
 
+  // Remise a zero automatique du scroll au chargement de l'onglet Carte
+  useEffect(() => {
+    try {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      if (document.documentElement) document.documentElement.scrollTop = 0;
+      if (document.body) document.body.scrollTop = 0;
+    } catch (e) {
+      window.scrollTo(0, 0);
+    }
+  }, []);
+
   // Salons dans le rayon actif
   const inRadiusSalons = useMemo(
     () => (mapSalons || []).filter((s) => parseFloat(s.distance_km) <= mapRadius),
@@ -450,7 +461,7 @@ export default function TabCarte({
               lineHeight: 1.1
             }}
           >
-            Carte des prospects
+            Carte et prospection
           </h1>
           {!isMobile && (
             <span style={{ fontSize: '13.5px', color: '#64748b', fontWeight: '500' }}>
