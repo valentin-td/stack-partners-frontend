@@ -1419,8 +1419,6 @@ export default function Dashboard() {
             setOptimizedRoute={setOptimizedRoute}
             isOptimizingRoute={isOptimizingRoute}
             handleOptimizeTournee={handleOptimizeTournee}
-            setFactureData={setFactureData}
-            setShowFactureForm={setShowFactureForm}
             setActiveTab={setActiveTab}
             isSuperAdmin={isSuperAdmin}
             isMobile={isMobile}

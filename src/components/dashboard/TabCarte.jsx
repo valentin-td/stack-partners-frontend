@@ -78,8 +78,6 @@ export default function TabCarte({
   setOptimizedRoute,
   isOptimizingRoute,
   handleOptimizeTournee,
-  setFactureData,
-  setShowFactureForm,
   setActiveTab,
   isSuperAdmin,
   isMobile,
@@ -1690,39 +1688,6 @@ export default function TabCarte({
                     </button>
                   </form>
                 )}
-
-              {selectedSalonMap.statut_carte === 'PROSPECTE_MOI' && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setFactureData({
-                      nom_salon: selectedSalonMap.nom_salon,
-                      siret_salon: selectedSalonMap.siret,
-                      adresse_salon: `${selectedSalonMap.adresse}, ${selectedSalonMap.code_postal} ${selectedSalonMap.ville}`
-                    });
-                    setShowFactureForm(true);
-                    setActiveTab('factures');
-                  }}
-                  style={{
-                    width: '100%',
-                    marginTop: 'auto',
-                    padding: '12px',
-                    borderRadius: '999px',
-                    border: 'none',
-                    backgroundColor: '#111827',
-                    color: '#ffffff',
-                    fontSize: '13px',
-                    fontWeight: '800',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  <Icon.Factures /> Créer la facture 99 € HT
-                </button>
-              )}
             </>
           ) : (
             /* VUE 2 : LISTE DES SALONS DANS LE RAYON AVEC RECHERCHE RAPIDE */

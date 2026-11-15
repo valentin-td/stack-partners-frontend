@@ -476,43 +476,72 @@ export default function TabFactures({
               })}
             </div>
 
-            <div
-              className="sp-glass-pill"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '7px 13px',
-                borderRadius: '999px',
-                width: isMobile ? '100%' : '235px',
-                boxSizing: 'border-box'
-              }}
-            >
-              <Icon.Search />
-              <input
-                type="text"
-                placeholder="N° facture, salon, SIRET..."
-                value={rechercheFacture}
-                onChange={(e) => setRechercheFacture(e.target.value)}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: isMobile ? '100%' : 'auto', flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
+              <div
+                className="sp-glass-pill"
                 style={{
-                  border: 'none',
-                  background: 'transparent',
-                  outline: 'none',
-                  width: '100%',
-                  fontSize: '12.5px',
-                  color: '#0f172a',
-                  fontFamily: 'inherit'
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '7px 13px',
+                  borderRadius: '999px',
+                  width: isMobile ? '100%' : '235px',
+                  boxSizing: 'border-box'
                 }}
-              />
-              {rechercheFacture && (
-                <button
-                  type="button"
-                  onClick={() => setRechercheFacture('')}
-                  style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: '11px', padding: 0 }}
-                >
-                  X
-                </button>
-              )}
+              >
+                <Icon.Search />
+                <input
+                  type="text"
+                  placeholder="N° facture, salon, SIRET..."
+                  value={rechercheFacture}
+                  onChange={(e) => setRechercheFacture(e.target.value)}
+                  style={{
+                    border: 'none',
+                    background: 'transparent',
+                    outline: 'none',
+                    width: '100%',
+                    fontSize: '12.5px',
+                    color: '#0f172a',
+                    fontFamily: 'inherit'
+                  }}
+                />
+                {rechercheFacture && (
+                  <button
+                    type="button"
+                    onClick={() => setRechercheFacture('')}
+                    style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: '11px', padding: 0 }}
+                  >
+                    X
+                  </button>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowFactureForm(true)}
+                style={{
+                  height: '38px',
+                  padding: '0 16px',
+                  borderRadius: '999px',
+                  backgroundColor: '#111827',
+                  color: '#ffffff',
+                  border: 'none',
+                  fontSize: '12.5px',
+                  fontWeight: '800',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  cursor: 'pointer',
+                  boxShadow: '0 6px 16px -3px rgba(17, 24, 39, 0.22)',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
+                  width: isMobile ? '100%' : 'auto'
+                }}
+              >
+                <Icon.Plus />
+                <span>Nouvelle Facture</span>
+              </button>
             </div>
           </div>
 
@@ -898,6 +927,31 @@ export default function TabFactures({
                 </div>
               ))}
             </div>
+
+            <button
+              type="button"
+              onClick={() => setShowFactureForm(true)}
+              style={{
+                width: '100%',
+                marginTop: '16px',
+                padding: '11px',
+                borderRadius: '999px',
+                border: 'none',
+                backgroundColor: '#111827',
+                color: '#ffffff',
+                fontSize: '12.5px',
+                fontWeight: '800',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                cursor: 'pointer',
+                boxShadow: '0 6px 16px -3px rgba(17, 24, 39, 0.22)'
+              }}
+            >
+              <Icon.Plus />
+              <span>Créer une facture</span>
+            </button>
           </div>
         </div>
       </div>
