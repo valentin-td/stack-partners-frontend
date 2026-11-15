@@ -38,10 +38,10 @@ export default function TabProspects({
 }) {
   const [filtreStatut, setFiltreStatut] = useState('TOUS'); // 'TOUS' | 'PROTEGES' | 'SIGNES' | 'EXPIRES'
   const [rechercheLead, setRechercheLead] = useState('');
+  const [afficherInfosSiret, setAfficherInfosSiret] = useState(false);
 
   const listeProspects = Array.isArray(prospects) ? prospects : [];
 
-  // Calcul des KPIs du pipeline commercial
   const { nbTotal, nbProteges, nbSignes, nbExpires, nbUrgents, tauxConversion, relancesPrioritaires } = useMemo(() => {
     let proteges = 0;
     let signes = 0;
@@ -63,7 +63,6 @@ export default function TabProspects({
     const total = listeProspects.length;
     const conv = total > 0 ? Math.round((signes / total) * 100) : 0;
 
-    // Tri des prospects protégés par urgence (jours restants croissants)
     const prioritaires = [...listeProspects]
       .filter((p) => p.statut_prospect !== 'SIGNE' && p.est_protege)
       .sort((a, b) => (parseInt(a.jours_restants, 10) || 0) - (parseInt(b.jours_restants, 10) || 0))
@@ -80,7 +79,6 @@ export default function TabProspects({
     };
   }, [listeProspects]);
 
-  // Filtrage par onglet et par recherche texte
   const prospectsFiltres = useMemo(() => {
     const q = rechercheLead.trim().toLowerCase();
 
@@ -107,14 +105,16 @@ export default function TabProspects({
   return (
     <div
       style={{
-        paddingBottom: isMobile ? 'calc(125px + env(safe-area-inset-bottom, 0px))' : '24px',
+        paddingBottom: isMobile ? 'calc(95px + env(safe-area-inset-bottom, 0px))' : '24px',
         width: '100%',
-        boxSizing: 'border-box'
+        boxSizing: 'border-box',
+        position: 'relative',
+        zIndex: 1
       }}
     >
       <style>{`
         .sp-lead-row {
-          background: linear-gradient(145deg, rgba(255, 255, 255, 0.92) 0%, rgba(255, 255, 255, 0.68) 100%);
+          background: linear-gradient(145deg, rgba(255, 255, 255, 0.94) 0%, rgba(255, 255, 255, 0.72) 100%);
           border: 1px solid rgba(255, 255, 255, 0.96);
           box-shadow: 0 4px 14px -4px rgba(15, 23, 42, 0.04), inset 0 1px 0 #ffffff;
           border-radius: 18px;
@@ -171,13 +171,11 @@ export default function TabProspects({
         }
       `}</style>
 
-      {/* =================================================================== */}
-      {/* 1. EN-TÊTE MES PROSPECTS (COMPACT SUR 1 LIGNE SUR IPHONE)           */}
-      {/* =================================================================== */}
+      {/* 1. EN-TÊTE MES PROSPECTS */}
       <header
         style={{
           display: 'flex',
-          flexDirection: isMobile ? 'row' : 'row',
+          flexDirection: 'row',
           justifyContent: 'space-between',
           alignItems: isMobile ? 'center' : 'flex-end',
           gap: '10px',
@@ -185,25 +183,27 @@ export default function TabProspects({
         }}
       >
         <div style={{ minWidth: 0 }}>
-          <span
-            className="sp-glass-pill"
-            style={{
-              display: 'inline-block',
-              padding: isMobile ? '3px 10px' : '4px 12px',
-              borderRadius: '999px',
-              fontSize: isMobile ? '9.5px' : '10.5px',
-              fontWeight: '800',
-              letterSpacing: '0.06em',
-              textTransform: 'uppercase',
-              color: '#64748b',
-              marginBottom: isMobile ? '4px' : '6px'
-            }}
-          >
-            {isMobile ? 'Exclusivité 45 Jours' : 'Pipeline Commercial & Exclusivité 45 Jours'}
-          </span>
+          {!isMobile && (
+            <span
+              className="sp-glass-pill"
+              style={{
+                display: 'inline-block',
+                padding: '4px 12px',
+                borderRadius: '999px',
+                fontSize: '10.5px',
+                fontWeight: '800',
+                letterSpacing: '0.06em',
+                textTransform: 'uppercase',
+                color: '#64748b',
+                marginBottom: '6px'
+              }}
+            >
+              Pipeline Commercial & Exclusivité 45 Jours
+            </span>
+          )}
           <h1
             style={{
-              fontSize: isMobile ? '23px' : '30px',
+              fontSize: isMobile ? '22px' : '30px',
               fontWeight: '800',
               margin: isMobile ? '0' : '0 0 4px 0',
               letterSpacing: '-0.03em',
@@ -224,13 +224,13 @@ export default function TabProspects({
           type="button"
           onClick={() => setShowProspectForm(true)}
           style={{
-            height: isMobile ? '38px' : '42px',
-            padding: isMobile ? '0 15px' : '0 20px',
+            height: isMobile ? '36px' : '42px',
+            padding: isMobile ? '0 14px' : '0 20px',
             borderRadius: '999px',
             backgroundColor: '#111827',
             color: '#ffffff',
             border: 'none',
-            fontSize: isMobile ? '12.5px' : '13px',
+            fontSize: isMobile ? '12px' : '13px',
             fontWeight: '800',
             display: 'inline-flex',
             alignItems: 'center',
@@ -247,35 +247,32 @@ export default function TabProspects({
         </button>
       </header>
 
-      {/* =================================================================== */}
-      {/* 2. LES 4 KPIS DU PIPELINE (GRILLE 2x2 COMPACTE SUR IPHONE)          */}
-      {/* =================================================================== */}
+      {/* 2. LES 4 KPIS DU PIPELINE */}
       <div
         style={{
           display: 'grid',
           gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
-          gap: isMobile ? '9px' : '16px',
-          marginBottom: isMobile ? '14px' : '22px'
+          gap: isMobile ? '8px' : '16px',
+          marginBottom: isMobile ? '12px' : '22px'
         }}
       >
-        {/* KPI 1 : Total Leads déclarés */}
         <div
           className="sp-glass-panel"
           style={{
-            padding: isMobile ? '13px 13px' : '20px 22px',
+            padding: isMobile ? '11px 12px' : '20px 22px',
             borderRadius: isMobile ? '18px' : '24px',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
-            gap: isMobile ? '8px' : '12px',
+            gap: isMobile ? '6px' : '12px',
             minWidth: 0
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px' }}>
             <div
               style={{
-                width: isMobile ? '32px' : '40px',
-                height: isMobile ? '32px' : '40px',
+                width: isMobile ? '30px' : '40px',
+                height: isMobile ? '30px' : '40px',
                 borderRadius: '50%',
                 background: 'rgba(15, 23, 42, 0.08)',
                 color: '#0f172a',
@@ -287,48 +284,37 @@ export default function TabProspects({
             >
               <Icon.Prospects />
             </div>
-            <span
-              className="sp-glass-pill"
-              style={{
-                padding: isMobile ? '2px 7px' : '3px 9px',
-                borderRadius: '999px',
-                fontSize: isMobile ? '9.5px' : '10.5px',
-                fontWeight: '700',
-                color: '#64748b',
-                whiteSpace: 'nowrap'
-              }}
-            >
+            <span className="sp-glass-pill" style={{ padding: '2px 7px', borderRadius: '999px', fontSize: '9.5px', fontWeight: '700', color: '#64748b' }}>
               Portefeuille
             </span>
           </div>
           <div>
-            <div style={{ fontSize: isMobile ? '21px' : '28px', fontWeight: '800', color: '#0f172a', lineHeight: 1.05, fontVariantNumeric: 'tabular-nums' }}>
+            <div style={{ fontSize: isMobile ? '20px' : '28px', fontWeight: '800', color: '#0f172a', lineHeight: 1.05, fontVariantNumeric: 'tabular-nums' }}>
               {nbTotal}
             </div>
-            <div style={{ fontSize: isMobile ? '11px' : '12.5px', fontWeight: '600', color: '#64748b', marginTop: '3px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <div style={{ fontSize: isMobile ? '11px' : '12.5px', fontWeight: '600', color: '#64748b', marginTop: '2px' }}>
               Leads déclarés
             </div>
           </div>
         </div>
 
-        {/* KPI 2 : Leads Protégés (45j) */}
         <div
           className="sp-glass-panel"
           style={{
-            padding: isMobile ? '13px 13px' : '20px 22px',
+            padding: isMobile ? '11px 12px' : '20px 22px',
             borderRadius: isMobile ? '18px' : '24px',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
-            gap: isMobile ? '8px' : '12px',
+            gap: isMobile ? '6px' : '12px',
             minWidth: 0
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px' }}>
             <div
               style={{
-                width: isMobile ? '32px' : '40px',
-                height: isMobile ? '32px' : '40px',
+                width: isMobile ? '30px' : '40px',
+                height: isMobile ? '30px' : '40px',
                 borderRadius: '50%',
                 background: 'rgba(99, 102, 241, 0.12)',
                 border: '1px solid rgba(99, 102, 241, 0.25)',
@@ -341,48 +327,37 @@ export default function TabProspects({
             >
               <Icon.Lock />
             </div>
-            <span
-              style={{
-                padding: isMobile ? '2px 7px' : '3px 9px',
-                borderRadius: '999px',
-                fontSize: isMobile ? '9.5px' : '10.5px',
-                fontWeight: '800',
-                background: 'rgba(99, 102, 241, 0.12)',
-                color: '#4f46e5',
-                whiteSpace: 'nowrap'
-              }}
-            >
+            <span style={{ padding: '2px 7px', borderRadius: '999px', fontSize: '9.5px', fontWeight: '800', background: 'rgba(99, 102, 241, 0.12)', color: '#4f46e5' }}>
               45 jours
             </span>
           </div>
           <div>
-            <div style={{ fontSize: isMobile ? '21px' : '28px', fontWeight: '800', color: '#4f46e5', lineHeight: 1.05, fontVariantNumeric: 'tabular-nums' }}>
+            <div style={{ fontSize: isMobile ? '20px' : '28px', fontWeight: '800', color: '#4f46e5', lineHeight: 1.05, fontVariantNumeric: 'tabular-nums' }}>
               {nbProteges}
             </div>
-            <div style={{ fontSize: isMobile ? '11px' : '12.5px', fontWeight: '600', color: '#64748b', marginTop: '3px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <div style={{ fontSize: isMobile ? '11px' : '12.5px', fontWeight: '600', color: '#64748b', marginTop: '2px' }}>
               {isMobile ? 'Protégés actifs' : 'Sous protection active'}
             </div>
           </div>
         </div>
 
-        {/* KPI 3 : Fins de protection proches */}
         <div
           className="sp-glass-panel"
           style={{
-            padding: isMobile ? '13px 13px' : '20px 22px',
+            padding: isMobile ? '11px 12px' : '20px 22px',
             borderRadius: isMobile ? '18px' : '24px',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
-            gap: isMobile ? '8px' : '12px',
+            gap: isMobile ? '6px' : '12px',
             minWidth: 0
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px' }}>
             <div
               style={{
-                width: isMobile ? '32px' : '40px',
-                height: isMobile ? '32px' : '40px',
+                width: isMobile ? '30px' : '40px',
+                height: isMobile ? '30px' : '40px',
                 borderRadius: '50%',
                 background: 'rgba(245, 158, 11, 0.15)',
                 border: '1px solid rgba(245, 158, 11, 0.3)',
@@ -393,52 +368,41 @@ export default function TabProspects({
                 flexShrink: 0
               }}
             >
-              <svg viewBox="0 0 24 24" width={isMobile ? '15' : '18'} height={isMobile ? '15' : '18'} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg viewBox="0 0 24 24" width={isMobile ? '14' : '18'} height={isMobile ? '14' : '18'} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
               </svg>
             </div>
-            <span
-              style={{
-                padding: isMobile ? '2px 7px' : '3px 9px',
-                borderRadius: '999px',
-                fontSize: isMobile ? '9.5px' : '10.5px',
-                fontWeight: '800',
-                background: 'rgba(245, 158, 11, 0.15)',
-                color: '#b45309',
-                whiteSpace: 'nowrap'
-              }}
-            >
+            <span style={{ padding: '2px 7px', borderRadius: '999px', fontSize: '9.5px', fontWeight: '800', background: 'rgba(245, 158, 11, 0.15)', color: '#b45309' }}>
               ≤ 14 jours
             </span>
           </div>
           <div>
-            <div style={{ fontSize: isMobile ? '21px' : '28px', fontWeight: '800', color: nbUrgents > 0 ? '#d97706' : '#0f172a', lineHeight: 1.05, fontVariantNumeric: 'tabular-nums' }}>
+            <div style={{ fontSize: isMobile ? '20px' : '28px', fontWeight: '800', color: nbUrgents > 0 ? '#d97706' : '#0f172a', lineHeight: 1.05, fontVariantNumeric: 'tabular-nums' }}>
               {nbUrgents}
             </div>
-            <div style={{ fontSize: isMobile ? '11px' : '12.5px', fontWeight: '600', color: '#64748b', marginTop: '3px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <div style={{ fontSize: isMobile ? '11px' : '12.5px', fontWeight: '600', color: '#64748b', marginTop: '2px' }}>
               {isMobile ? 'À relancer' : 'À relancer rapidement'}
             </div>
           </div>
         </div>
 
-        {/* KPI 4 : Salons Signés (Convertis) */}
         <div
           className="sp-glass-panel"
           style={{
-            padding: isMobile ? '13px 13px' : '20px 22px',
+            padding: isMobile ? '11px 12px' : '20px 22px',
             borderRadius: isMobile ? '18px' : '24px',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
-            gap: isMobile ? '8px' : '12px',
+            gap: isMobile ? '6px' : '12px',
             minWidth: 0
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px' }}>
             <div
               style={{
-                width: isMobile ? '32px' : '40px',
-                height: isMobile ? '32px' : '40px',
+                width: isMobile ? '30px' : '40px',
+                height: isMobile ? '30px' : '40px',
                 borderRadius: '50%',
                 background: 'rgba(16, 185, 129, 0.14)',
                 border: '1px solid rgba(16, 185, 129, 0.3)',
@@ -451,39 +415,27 @@ export default function TabProspects({
             >
               <Icon.Check />
             </div>
-            <span
-              style={{
-                padding: isMobile ? '2px 7px' : '3px 9px',
-                borderRadius: '999px',
-                fontSize: isMobile ? '9.5px' : '10.5px',
-                fontWeight: '800',
-                background: 'rgba(16, 185, 129, 0.14)',
-                color: '#059669',
-                whiteSpace: 'nowrap'
-              }}
-            >
+            <span style={{ padding: '2px 7px', borderRadius: '999px', fontSize: '9.5px', fontWeight: '800', background: 'rgba(16, 185, 129, 0.14)', color: '#059669' }}>
               {tauxConversion}% conv.
             </span>
           </div>
           <div>
-            <div style={{ fontSize: isMobile ? '21px' : '28px', fontWeight: '800', color: '#059669', lineHeight: 1.05, fontVariantNumeric: 'tabular-nums' }}>
+            <div style={{ fontSize: isMobile ? '20px' : '28px', fontWeight: '800', color: '#059669', lineHeight: 1.05, fontVariantNumeric: 'tabular-nums' }}>
               {nbSignes}
             </div>
-            <div style={{ fontSize: isMobile ? '11px' : '12.5px', fontWeight: '600', color: '#64748b', marginTop: '3px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <div style={{ fontSize: isMobile ? '11px' : '12.5px', fontWeight: '600', color: '#64748b', marginTop: '2px' }}>
               Salons signés
             </div>
           </div>
         </div>
       </div>
 
-      {/* =================================================================== */}
-      {/* 3. GRILLE BENTO 2 COLONNES (LISTE DES PROSPECTS | PRIORITÉS)        */}
-      {/* =================================================================== */}
+      {/* 3. GRILLE BENTO 2 COLONNES */}
       <div
         style={{
           display: 'grid',
           gridTemplateColumns: isMobile ? '1fr' : '1.45fr 1fr',
-          gap: isMobile ? '14px' : '20px',
+          gap: isMobile ? '12px' : '20px',
           alignItems: 'start'
         }}
       >
@@ -496,15 +448,14 @@ export default function TabProspects({
             minWidth: 0
           }}
         >
-          {/* Barre d'outils : Filtres de statut + Recherche */}
           <div
             style={{
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: isMobile ? 'stretch' : 'center',
               flexDirection: isMobile ? 'column' : 'row',
-              gap: '10px',
-              marginBottom: isMobile ? '12px' : '16px'
+              gap: '8px',
+              marginBottom: '12px'
             }}
           >
             <div
@@ -588,22 +539,21 @@ export default function TabProspects({
             </div>
           </div>
 
-          {/* Liste des prospects en cartes structurées */}
           {prospectsFiltres.length === 0 ? (
             <div
               className="sp-glass-pill"
               style={{
-                padding: isMobile ? '28px 14px' : '40px 18px',
-                borderRadius: '18px',
+                padding: isMobile ? '22px 14px' : '40px 18px',
+                borderRadius: '16px',
                 textAlign: 'center',
                 color: '#64748b',
-                fontSize: '13px'
+                fontSize: '12.5px'
               }}
             >
-              <strong style={{ display: 'block', fontSize: '14.5px', color: '#0f172a', marginBottom: '4px' }}>
+              <strong style={{ display: 'block', fontSize: '14px', color: '#0f172a', marginBottom: '4px' }}>
                 Aucun prospect dans cette vue
               </strong>
-              <span style={{ display: 'block', marginBottom: '16px' }}>
+              <span style={{ display: 'block', marginBottom: '14px' }}>
                 Déclarez un salon pour bloquer son numéro SIRET à votre nom pendant 45 jours.
               </span>
               <button
@@ -654,7 +604,6 @@ export default function TabProspects({
                         gap: isMobile ? '10px' : '14px'
                       }}
                     >
-                      {/* Identité du salon & Coordonnées (Avatar aligné en haut à gauche sur iPhone) */}
                       <div style={{ display: 'flex', alignItems: 'flex-start', gap: '11px', minWidth: 0, flex: 1 }}>
                         <div
                           style={{
@@ -726,50 +675,72 @@ export default function TabProspects({
                           >
                             {villePropre && <span style={{ fontWeight: '700', color: '#334155' }}>{villePropre}</span>}
                             {p.siret_prospect && (
-                              <span style={{ fontFamily: 'monospace', fontSize: '10.5px', background: 'rgba(15,23,42,0.05)', padding: '1px 6px', borderRadius: '6px' }}>
-                                SIRET : {p.siret_prospect}
+                              <span
+                                style={{
+                                  fontFamily: 'inherit',
+                                  fontWeight: '700',
+                                  fontSize: '10.5px',
+                                  background: 'rgba(15, 23, 42, 0.06)',
+                                  color: '#475569',
+                                  padding: '1px 7px',
+                                  borderRadius: '6px'
+                                }}
+                              >
+                                SIRET {p.siret_prospect}
                               </span>
                             )}
                             <span>• {formatDate(p.date_declaration)}</span>
                           </div>
 
+                          {/* Capsules E-mail & Téléphone équilibrées */}
                           <div
                             style={{
                               display: 'flex',
                               alignItems: 'center',
-                              justifyContent: 'space-between',
-                              gap: '10px',
+                              gap: '6px',
                               flexWrap: 'wrap',
-                              marginTop: '5px',
-                              fontSize: '11.5px'
+                              marginTop: '7px'
                             }}
                           >
                             {p.email_gerant && (
                               <a
                                 href={`mailto:${p.email_gerant}`}
+                                className="sp-glass-pill"
                                 style={{
-                                  color: '#475569',
+                                  color: '#334155',
                                   textDecoration: 'none',
                                   fontWeight: '600',
+                                  fontSize: '11px',
+                                  padding: '3px 9px',
+                                  borderRadius: '999px',
                                   display: 'inline-flex',
                                   alignItems: 'center',
-                                  gap: '4px',
-                                  minWidth: 0,
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                  whiteSpace: 'nowrap'
+                                  gap: '5px',
+                                  maxWidth: '100%',
+                                  overflow: 'hidden'
                                 }}
                               >
-                                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0 }}>
+                                <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0 }}>
                                   <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" />
                                 </svg>
-                                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.email_gerant.toLowerCase()}</span>
+                                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                  {p.email_gerant.toLowerCase()}
+                                </span>
                               </a>
                             )}
                             {p.telephone_salon && (
                               <a
                                 href={`tel:${p.telephone_salon}`}
-                                style={{ color: '#059669', textDecoration: 'none', fontWeight: '800', flexShrink: 0 }}
+                                style={{
+                                  color: '#059669',
+                                  background: 'rgba(16, 185, 129, 0.12)',
+                                  padding: '3px 9px',
+                                  borderRadius: '999px',
+                                  fontSize: '11px',
+                                  textDecoration: 'none',
+                                  fontWeight: '800',
+                                  flexShrink: 0
+                                }}
                               >
                                 {p.telephone_salon}
                               </a>
@@ -778,19 +749,19 @@ export default function TabProspects({
                         </div>
                       </div>
 
-                      {/* Jauge de protection 45j & Bouton Onboarding */}
+                      {/* Jauge de protection 45j étendue & Bouton Onboarding */}
                       <div
                         style={{
                           display: 'flex',
                           alignItems: 'center',
-                          justifyContent: isMobile ? 'space-between' : 'flex-end',
+                          justifyContent: 'space-between',
                           gap: '12px',
                           paddingTop: isMobile ? '9px' : 0,
                           borderTop: isMobile ? '1px solid rgba(148, 163, 184, 0.16)' : 'none',
                           flexShrink: 0
                         }}
                       >
-                        <div style={{ minWidth: '105px', textAlign: isMobile ? 'left' : 'right' }}>
+                        <div style={{ flex: isMobile ? 1 : 'initial', minWidth: '110px', textAlign: isMobile ? 'left' : 'right' }}>
                           <div
                             style={{
                               fontSize: '11.5px',
@@ -800,9 +771,9 @@ export default function TabProspects({
                               fontVariantNumeric: 'tabular-nums'
                             }}
                           >
-                            {estSigne ? 'Converti OK' : estProtege ? `${joursRestants}j restants` : 'Protection échue'}
+                            {estSigne ? 'Converti OK' : estProtege ? `${joursRestants}j d'exclusivité` : 'Protection échue'}
                           </div>
-                          <div style={{ height: '5px', width: '105px', background: 'rgba(148, 163, 184, 0.2)', borderRadius: '999px', overflow: 'hidden' }}>
+                          <div style={{ height: '5px', width: isMobile ? '100%' : '110px', maxWidth: '150px', background: 'rgba(148, 163, 184, 0.2)', borderRadius: '999px', overflow: 'hidden' }}>
                             <div
                               style={{
                                 height: '100%',
@@ -831,7 +802,8 @@ export default function TabProspects({
                               gap: '6px',
                               cursor: 'pointer',
                               boxShadow: '0 6px 16px -4px rgba(17, 24, 39, 0.22)',
-                              whiteSpace: 'nowrap'
+                              whiteSpace: 'nowrap',
+                              flexShrink: 0
                             }}
                           >
                             <Icon.ArrowUpRight />
@@ -847,9 +819,8 @@ export default function TabProspects({
           )}
         </div>
 
-        {/* COLONNE DROITE : PRIORITÉS DE RELANCE & RÈGLES D'EXCLUSIVITÉ */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '14px' : '18px' }}>
-          {/* Carte 1 : Relances prioritaires (Sur mobile, affichée uniquement s'il y a des urgences <= 14j pour éviter le doublon avec la liste) */}
+        {/* COLONNE DROITE : PRIORITÉS DE RELANCE & RÈGLES D'EXCLUSIVITÉ (REPLIABLE SUR IPHONE) */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '12px' : '18px' }}>
           {(!isMobile || nbUrgents > 0) && (
             <div className="sp-glass-panel" style={{ padding: isMobile ? '16px 14px' : '20px 22px', borderRadius: isMobile ? '20px' : '24px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
@@ -865,10 +836,7 @@ export default function TabProspects({
               </div>
 
               {relancesPrioritaires.length === 0 ? (
-                <div
-                  className="sp-glass-pill"
-                  style={{ padding: '18px 14px', borderRadius: '16px', textAlign: 'center', fontSize: '12.5px', color: '#64748b' }}
-                >
+                <div className="sp-glass-pill" style={{ padding: '18px 14px', borderRadius: '16px', textAlign: 'center', fontSize: '12.5px', color: '#64748b' }}>
                   Aucun prospect en attente d'onboarding.
                 </div>
               ) : (
@@ -922,70 +890,86 @@ export default function TabProspects({
             </div>
           )}
 
-          {/* Carte 2 : Fonctionnement de la protection 45 jours */}
-          <div className="sp-glass-panel" style={{ padding: isMobile ? '16px 14px' : '20px 22px', borderRadius: isMobile ? '20px' : '24px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-              <Icon.Shield />
-              <h3 style={{ margin: 0, fontSize: '15.5px', fontWeight: '800', color: '#0f172a' }}>
-                Protection SIRET (45 jours)
-              </h3>
+          {/* Carte Protection SIRET (Accordéon compact sur iPhone, complet sur Desktop) */}
+          <div className="sp-glass-panel" style={{ padding: isMobile ? '13px 14px' : '20px 22px', borderRadius: isMobile ? '18px' : '24px' }}>
+            <div
+              onClick={() => isMobile && setAfficherInfosSiret(!afficherInfosSiret)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                cursor: isMobile ? 'pointer' : 'default',
+                marginBottom: !isMobile || afficherInfosSiret ? '12px' : 0
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Icon.Shield />
+                <h3 style={{ margin: 0, fontSize: isMobile ? '14px' : '15.5px', fontWeight: '800', color: '#0f172a' }}>
+                  Protection SIRET (45 jours) • 20 % HT
+                </h3>
+              </div>
+              {isMobile && (
+                <span style={{ fontSize: '11.5px', fontWeight: '800', color: '#64748b' }}>
+                  {afficherInfosSiret ? 'Masquer ▲' : 'Règles ▼'}
+                </span>
+              )}
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {[
-                {
-                  num: '1',
-                  titre: 'Verrouillage immédiat',
-                  desc: "Le SIRET du salon est bloqué à votre nom pendant 45 jours. Aucun autre agent ne peut le démarcher."
-                },
-                {
-                  num: '2',
-                  titre: 'Onboarding en 1 clic',
-                  desc: "Dès l'accord du gérant, cliquez sur « Onboarding » pour générer automatiquement son espace salon."
-                },
-                {
-                  num: '3',
-                  titre: 'Commission 20 % HT (24 mois)',
-                  desc: "Le salon est rattaché définitivement à votre portefeuille dès son premier abonnement payant."
-                }
-              ].map((step) => (
-                <div key={step.num} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-                  <span
-                    style={{
-                      width: '22px',
-                      height: '22px',
-                      borderRadius: '50%',
-                      background: '#111827',
-                      color: '#ffffff',
-                      fontSize: '11px',
-                      fontWeight: '800',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                      marginTop: '1px'
-                    }}
-                  >
-                    {step.num}
-                  </span>
-                  <div>
-                    <strong style={{ display: 'block', fontSize: '12.5px', color: '#0f172a', marginBottom: '2px' }}>
-                      {step.titre}
-                    </strong>
-                    <span style={{ fontSize: '11.5px', color: '#64748b', lineHeight: 1.4, display: 'block' }}>
-                      {step.desc}
+            {(!isMobile || afficherInfosSiret) && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {[
+                  {
+                    num: '1',
+                    titre: 'Verrouillage immédiat',
+                    desc: 'Le SIRET du salon est bloqué à votre nom pendant 45 jours. Aucun autre agent ne peut le démarcher.'
+                  },
+                  {
+                    num: '2',
+                    titre: 'Onboarding en 1 clic',
+                    desc: "Dès l'accord du gérant, cliquez sur « Onboarding » pour générer automatiquement son espace salon."
+                  },
+                  {
+                    num: '3',
+                    titre: 'Commission 20 % HT (24 mois)',
+                    desc: 'Le salon est rattaché définitivement à votre portefeuille dès son premier abonnement payant.'
+                  }
+                ].map((step) => (
+                  <div key={step.num} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                    <span
+                      style={{
+                        width: '22px',
+                        height: '22px',
+                        borderRadius: '50%',
+                        background: '#111827',
+                        color: '#ffffff',
+                        fontSize: '11px',
+                        fontWeight: '800',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                        marginTop: '1px'
+                      }}
+                    >
+                      {step.num}
                     </span>
+                    <div>
+                      <strong style={{ display: 'block', fontSize: '12.5px', color: '#0f172a', marginBottom: '2px' }}>
+                        {step.titre}
+                      </strong>
+                      <span style={{ fontSize: '11.5px', color: '#64748b', lineHeight: 1.4, display: 'block' }}>
+                        {step.desc}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* =================================================================== */}
-      {/* 4. MODALE : RÉSERVER UN LEAD (OPTIMISÉE IPHONE & DESKTOP)           */}
-      {/* =================================================================== */}
+      {/* 4. MODALE : RÉSERVER UN LEAD */}
       {showProspectForm && (
         <div className="sp-modal-backdrop" onClick={() => setShowProspectForm(false)}>
           <div
@@ -993,7 +977,6 @@ export default function TabProspects({
             onClick={(e) => e.stopPropagation()}
             style={{ padding: isMobile ? '18px 15px 22px 15px' : '28px' }}
           >
-            {/* En-tête de la modale */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: isMobile ? '14px' : '20px', gap: '10px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '11px', minWidth: 0 }}>
                 <div
@@ -1068,7 +1051,6 @@ export default function TabProspects({
                 alignItems: 'stretch'
               }}
             >
-              {/* Colonne gauche : Coordonnées du salon */}
               <div className="sp-glass-panel" style={{ padding: isMobile ? '14px' : '20px', borderRadius: '18px', display: 'flex', flexDirection: 'column', gap: isMobile ? '10px' : '13px' }}>
                 {!isMobile && (
                   <div style={{ fontSize: '13.5px', fontWeight: '800', color: '#0f172a' }}>
@@ -1161,7 +1143,6 @@ export default function TabProspects({
                 </div>
               </div>
 
-              {/* Colonne droite : Aperçu complet sur Desktop / Bandeau résumé compact sur iPhone */}
               <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '12px' }}>
                 {isMobile ? (
                   <div
@@ -1247,7 +1228,6 @@ export default function TabProspects({
                   </div>
                 )}
 
-                {/* Boutons Annuler / Verrouiller (Sans retour à la ligne sur iPhone) */}
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <button
                     type="button"
