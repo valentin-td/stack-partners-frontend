@@ -253,6 +253,13 @@ export default function Dashboard() {
 
   // Synchronisation des donnees selon l onglet actif
   useEffect(() => {
+    try {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      if (document.documentElement) document.documentElement.scrollTop = 0;
+      if (document.body) document.body.scrollTop = 0;
+    } catch (e) {
+      window.scrollTo(0, 0);
+    }
     fetchProfil();
     if (activeTab === 'bord') fetchStats();
     if (activeTab === 'factures') fetchFactures();

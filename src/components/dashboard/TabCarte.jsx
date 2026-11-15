@@ -87,13 +87,18 @@ export default function TabCarte({
 
   // Remise a zero automatique du scroll au chargement de l'onglet Carte
   useEffect(() => {
-    try {
+    const resetScroll = () => {
       window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
       if (document.documentElement) document.documentElement.scrollTop = 0;
       if (document.body) document.body.scrollTop = 0;
-    } catch (e) {
-      window.scrollTo(0, 0);
-    }
+    };
+    resetScroll();
+    const t1 = setTimeout(resetScroll, 60);
+    const t2 = setTimeout(resetScroll, 250);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
   }, []);
 
   // Salons dans le rayon actif
@@ -165,7 +170,7 @@ export default function TabCarte({
     if (!window.__stackMap) {
       if (container._leaflet_id) container._leaflet_id = null;
       const zoomByRadius = mapRadius <= 2 ? 14 : mapRadius <= 5 ? 13 : mapRadius <= 15 ? 11 : 10;
-      const map = L.map(container, { zoomControl: false, preferCanvas: true }).setView(
+      const map = L.map(container, { zoomControl: false, preferCanvas: true, keyboard: false }).setView(
         [mapCenter.lat, mapCenter.lng],
         zoomByRadius
       );
@@ -429,7 +434,8 @@ export default function TabCarte({
           width: '100%',
           maxWidth: '100%',
           minWidth: 0,
-          boxSizing: 'border-box'
+          boxSizing: 'border-box',
+          position: 'relative'
         }}
       >
         <div style={{ minWidth: 0 }}>
@@ -448,7 +454,7 @@ export default function TabCarte({
                 marginBottom: '6px'
               }}
             >
-              Prospection Terrain
+              Prospection Terrain • Carte & Géolocalisation
             </span>
           )}
           <h1
@@ -461,7 +467,7 @@ export default function TabCarte({
               lineHeight: 1.1
             }}
           >
-            Carte et prospection
+            Carte & Prospection
           </h1>
           {!isMobile && (
             <span style={{ fontSize: '13.5px', color: '#64748b', fontWeight: '500' }}>

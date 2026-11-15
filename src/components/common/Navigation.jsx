@@ -282,22 +282,64 @@ export default function Navigation({
             </button>
 
             <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: '5px', overflowY: 'auto' }}>
-              <button type="button" onClick={() => setActiveTab('bord')} style={navBtnStyle(activeTab === 'bord')}>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('bord');
+                  window.scrollTo(0, 0);
+                }}
+                style={navBtnStyle(activeTab === 'bord')}
+              >
                 <Icon.Bord /> Tableau de bord
               </button>
-              <button type="button" onClick={() => setActiveTab('prospects')} style={navBtnStyle(activeTab === 'prospects')}>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('prospects');
+                  window.scrollTo(0, 0);
+                }}
+                style={navBtnStyle(activeTab === 'prospects')}
+              >
                 <Icon.Prospects /> Mes Prospects
               </button>
-              <button type="button" onClick={() => setActiveTab('carte')} style={navBtnStyle(activeTab === 'carte')}>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('carte');
+                  window.scrollTo(0, 0);
+                }}
+                style={navBtnStyle(activeTab === 'carte')}
+              >
                 <Icon.MapPin /> Carte & Prospection
               </button>
-              <button type="button" onClick={() => setActiveTab('factures')} style={navBtnStyle(activeTab === 'factures')}>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('factures');
+                  window.scrollTo(0, 0);
+                }}
+                style={navBtnStyle(activeTab === 'factures')}
+              >
                 <Icon.Factures /> Factures Onboarding
               </button>
-              <button type="button" onClick={() => setActiveTab('stock')} style={navBtnStyle(activeTab === 'stock')}>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('stock');
+                  window.scrollTo(0, 0);
+                }}
+                style={navBtnStyle(activeTab === 'stock')}
+              >
                 <Icon.Stock /> Stock & TPE
               </button>
-              <button type="button" onClick={() => setActiveTab('academie')} style={navBtnStyle(activeTab === 'academie')}>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('academie');
+                  window.scrollTo(0, 0);
+                }}
+                style={navBtnStyle(activeTab === 'academie')}
+              >
                 <Icon.Academie /> Académie & Tutos
               </button>
 
@@ -306,7 +348,10 @@ export default function Navigation({
                   <div style={{ margin: '10px 4px', borderTop: '1px solid rgba(148, 163, 184, 0.22)' }} />
                   <button
                     type="button"
-                    onClick={() => setActiveTab('godmode')}
+                    onClick={() => {
+                      setActiveTab('godmode');
+                      window.scrollTo(0, 0);
+                    }}
                     className={activeTab === 'godmode' ? '' : 'sp-glass-pill'}
                     style={{
                       ...navBtnStyle(activeTab === 'godmode'),
@@ -392,7 +437,10 @@ export default function Navigation({
               <button
                 key={item.key}
                 type="button"
-                onClick={() => setActiveTab(item.key)}
+                onClick={() => {
+                  setActiveTab(item.key);
+                  window.scrollTo(0, 0);
+                }}
                 style={{
                   background: active ? '#111827' : 'transparent',
                   border: 'none',
