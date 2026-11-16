@@ -3,6 +3,8 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { Icon } from '../common/Icons';
+import AmbianceSelectorPartner from './AmbianceSelectorPartner';
+import { AMBIANCES_PARTNER_JOUR, AMBIANCES_PARTNER_NUIT } from '../../constants/ambiances';
 
 const isDateExpired = (dateStr) => {
   if (!dateStr) return false;
@@ -14,6 +16,8 @@ const isDateExpired = (dateStr) => {
 };
 
 export default function TabProfil({
+  agent = {},
+  stats = {},
   profilData = {},
   setProfilData,
   submitEtapeConformite,
@@ -27,9 +31,15 @@ export default function TabProfil({
   quizAnswers = {},
   setQuizAnswers,
   handleQuizSubmit,
-  isMobile
+  isMobile,
+  isDarkMode = false,
+  themeJour = 'AURORA',
+  themeNuit = 'CARBONE',
+  onToggleTheme = () => {},
+  onChoisirThemeJour = () => {},
+  onChoisirThemeNuit = () => {}
 }) {
-  // Évaluation dynamique du statut de chacune des 5 étapes
+  // Évaluation dynamique du statut de chacune des étapes
   const statutsEtapes = useMemo(() => {
     const e1Ok = Boolean(profilData.contrat_signe && profilData.statut_contrat === 'VALIDE');
 
@@ -75,9 +85,10 @@ export default function TabProfil({
       2: { ok: e2Ok, expire: idExp, label: idExp ? 'ID expirée' : e2Ok ? 'Complet' : 'À compléter' },
       3: { ok: e3Ok, expire: urssafExp, label: urssafExp ? 'Expirée' : e3Ok ? 'Valide' : 'À compléter' },
       4: { ok: e4Ok, expire: rcExp, label: rcExp ? 'RC Pro expirée' : e4Ok ? 'Valide' : 'À compléter' },
-      5: { ok: e5Ok, expire: false, label: e5Ok ? 'Certifié' : 'À valider' }
+      5: { ok: e5Ok, expire: false, label: e5Ok ? 'Certifié' : 'À valider' },
+      6: { ok: true, expire: false, label: isDarkMode ? 'Nuit' : 'Jour' }
     };
-  }, [profilData, quizAnswers]);
+  }, [profilData, quizAnswers, isDarkMode]);
 
   // Détermination automatique de la première étape nécessitant une action
   const premiereEtapePrioritaire = useMemo(() => {
@@ -93,8 +104,8 @@ export default function TabProfil({
     setEtapeActive(premiereEtapePrioritaire);
   }, [premiereEtapePrioritaire]);
 
-  const nbEtapesValides = Object.values(statutsEtapes).filter((s) => s.ok && !s.expire).length;
-  const pctConformite = Math.round((nbEtapesValides / 5) * 100);
+  const nbEtapesValides = Object.values(statutsEtapes).filter((s) => s.ok && !s.expire).length - 1; // 5 étapes légales
+  const pctConformite = Math.round((Math.max(0, nbEtapesValides) / 5) * 100);
 
   const ETAPES_CONFIG = [
     {
@@ -137,6 +148,16 @@ export default function TabProfil({
       titre: 'Quiz NF525 & Contact',
       sousTitre: 'Certification fiscale & Mobile actif',
       resume: profilData.telephone ? `Mobile : ${profilData.telephone}` : '4 questions réglementaires'
+    },
+    {
+      num: 6,
+      court: 'Ambiance',
+      titre: 'Ambiance & Thèmes',
+      sousTitre: 'Fond d\'écran & Nuances Nuit',
+      resume: isDarkMode
+        ? `Mode Nuit • ${AMBIANCES_PARTNER_NUIT[themeNuit]?.nom || 'Carbone'}`
+        : `Mode Jour • ${AMBIANCES_PARTNER_JOUR[themeJour]?.nom || 'Verre Aurora'}`,
+      isAmbiance: true
     }
   ];
 
@@ -460,6 +481,58 @@ export default function TabProfil({
           </div>
         </div>
       )}
+
+      {/* =================================================================== */}
+      {/* 2.bis SÉLECTEUR DE VUE : DOSSIER LÉGAL KYC VS AMBIANCE & THÈMES     */}
+      {/* =================================================================== */}
+      <div
+        style={{
+          display: 'inline-flex',
+          padding: '4px',
+          background: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : '#e2e8f0',
+          borderRadius: '999px',
+          gap: '6px',
+          marginBottom: isMobile ? '12px' : '18px',
+          border: isDarkMode ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid rgba(148, 163, 184, 0.22)',
+          flexWrap: 'wrap'
+        }}
+      >
+        <button
+          type="button"
+          onClick={() => setEtapeActive((prev) => (prev === 6 ? premiereEtapePrioritaire : prev))}
+          style={{
+            padding: isMobile ? '6px 14px' : '7px 18px',
+            borderRadius: '999px',
+            border: 'none',
+            background: etapeActive !== 6 ? (isDarkMode ? '#ffffff' : '#0f172a') : 'transparent',
+            color: etapeActive !== 6 ? (isDarkMode ? '#0f172a' : '#ffffff') : (isDarkMode ? '#94a3b8' : '#64748b'),
+            fontSize: isMobile ? '11.5px' : '12.5px',
+            fontWeight: '800',
+            cursor: 'pointer',
+            transition: 'all 0.16s ease'
+          }}
+        >
+          Dossier de Conformité KYC ({nbEtapesValides}/5)
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setEtapeActive(6)}
+          style={{
+            padding: isMobile ? '6px 14px' : '7px 18px',
+            borderRadius: '999px',
+            border: 'none',
+            background: etapeActive === 6 ? (isDarkMode ? '#ffffff' : '#0f172a') : 'transparent',
+            color: etapeActive === 6 ? (isDarkMode ? '#0f172a' : '#ffffff') : (isDarkMode ? '#94a3b8' : '#64748b'),
+            fontSize: isMobile ? '11.5px' : '12.5px',
+            fontWeight: '800',
+            cursor: 'pointer',
+            transition: 'all 0.16s ease'
+          }}
+        >
+          Ambiance & Thèmes d'application
+        </button>
+      </div>
 
       {/* =================================================================== */}
       {/* 3. ARCHITECTURE RESPONSIVE : RUBAN D'ONGLETS SUR IPHONE / 2 COL PC  */}
@@ -1533,6 +1606,23 @@ export default function TabProfil({
                 <span>Valider le Quiz NF525 & Terminer</span>
               </button>
             </form>
+          )}
+
+          {/* =============================================================== */}
+          {/* ÉTAPE 6 : AMBIANCE & THÈMES DE L'APPLICATION                    */}
+          {/* =============================================================== */}
+          {etapeActive === 6 && (
+            <AmbianceSelectorPartner
+              agent={agent}
+              stats={stats}
+              isDarkMode={isDarkMode}
+              themeJour={themeJour}
+              themeNuit={themeNuit}
+              onChoisirThemeJour={onChoisirThemeJour}
+              onChoisirThemeNuit={onChoisirThemeNuit}
+              onToggleTheme={onToggleTheme}
+              isMobile={isMobile}
+            />
           )}
         </div>
       </div>

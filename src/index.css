@@ -1,73 +1,79 @@
 /* src/index.css */
 /* Styles globaux haute performance pour STACK Partners (Zero-Jank 60/120 FPS) */
+/* Support dynamique des ambiances Jour & Nuit haute visibilité */
 
 :root {
   --sp-text-main: #0f172a;
   --sp-text-muted: #64748b;
+  --sp-bg-app: #dce5f2;
+  --sp-gradient-app: radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.22) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.18) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(245, 158, 11, 0.14) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, rgba(14, 165, 233, 0.18) 0px, transparent 50%);
   --sp-bg-card: rgba(255, 255, 255, 0.90);
-  --sp-border-card: rgba(255, 255, 255, 0.92);
+  --sp-border-card: 1px solid rgba(255, 255, 255, 0.92);
 }
 
 *, *::before, *::after {
   box-sizing: border-box;
 }
 
-/* FOND AMBIANT AURORA STACK PARTNERS (BLEU ACIER, INDIGO, ÉMERAUDE & AMBRE) */
+/* FOND AMBIANT DYNAMIQUE STACK PARTNERS (ADAPTÉ AU THÈME CHOISI) */
 html, body, #root {
   margin: 0;
   padding: 0;
   width: 100%;
   min-height: 100vh;
-  background-color: #dce5f2;
-  color: #0f172a;
+  background-color: var(--sp-bg-app, #dce5f2);
+  color: var(--sp-text-main, #0f172a);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   overflow-x: hidden;
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
-/* Couche de fond ambiante Aurora sur GPU dédié - Ne repeint JAMAIS lors du scroll */
-.sp-ambient-bg {
+/* Couche de fond ambiante sur GPU dédié - Ne repeint JAMAIS lors du scroll */
+.sp-ambient-bg, .sp-aurora-bg {
   position: fixed;
   inset: 0;
   width: 100vw;
   height: 100vh;
   z-index: -1;
   pointer-events: none;
-  background-color: #dce5f2;
-  background-image:
-    radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.22) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.18) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, rgba(245, 158, 11, 0.14) 0px, transparent 50%),
-    radial-gradient(at 0% 100%, rgba(14, 165, 233, 0.18) 0px, transparent 50%);
+  background-color: var(--sp-bg-app, #dce5f2);
+  background-image: var(--sp-gradient-app);
   transform: translateZ(0);
   will-change: transform;
+  transition: background-color 0.25s ease;
 }
 
-/* Panneaux Verre Cristal optimises GPU */
+/* Panneaux Verre Cristal optimisés GPU */
 .sp-glass-panel {
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.90) 0%, rgba(255, 255, 255, 0.72) 100%);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border-top: 1.5px solid rgba(255, 255, 255, 0.98);
-  border-left: 1.5px solid rgba(255, 255, 255, 0.92);
-  border-right: 1px solid rgba(255, 255, 255, 0.60);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.50);
-  box-shadow: 0 10px 28px -6px rgba(15, 23, 42, 0.05), inset 0 1px 0 0 #ffffff;
+  background: var(--sp-bg-card, linear-gradient(145deg, rgba(255, 255, 255, 0.90) 0%, rgba(255, 255, 255, 0.72) 100%));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: var(--sp-border-card, 1px solid rgba(255, 255, 255, 0.92));
+  border-top: var(--sp-border-card-top, 1.5px solid rgba(255, 255, 255, 0.98));
+  border-left: var(--sp-border-card-left, 1.5px solid rgba(255, 255, 255, 0.92));
+  box-shadow: var(--sp-shadow-card, 0 10px 28px -6px rgba(15, 23, 42, 0.05), inset 0 1px 0 0 #ffffff);
   border-radius: 24px;
   box-sizing: border-box;
   max-width: 100%;
   transform: translateZ(0);
+  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* Pilules et badges haute fluidite (sans blur repete) */
+/* Pilules et badges haute fluidité */
 .sp-glass-pill {
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.82) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.96);
+  background: var(--sp-bg-pill, linear-gradient(145deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.82) 100%));
+  border: var(--sp-border-pill, 1px solid rgba(255, 255, 255, 0.96));
   box-shadow: 0 2px 6px rgba(15, 23, 42, 0.03), inset 0 1px 0 #ffffff;
   box-sizing: border-box;
   max-width: 100%;
+  color: var(--sp-text-main, #0f172a);
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
 .sp-nav-btn {
@@ -80,13 +86,13 @@ html, body, #root {
 
 /* Cartes salons pour la carte interactive */
 .sp-salon-card {
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.94) 0%, rgba(255, 255, 255, 0.80) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.96);
+  background: var(--sp-bg-card, linear-gradient(145deg, rgba(255, 255, 255, 0.94) 0%, rgba(255, 255, 255, 0.80) 100%));
+  border: var(--sp-border-card, 1px solid rgba(255, 255, 255, 0.96));
   box-shadow: 0 3px 10px -3px rgba(15, 23, 42, 0.04), inset 0 1px 0 #ffffff;
   border-radius: 16px;
   padding: 11px 13px;
   cursor: pointer;
-  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background-color 0.2s ease;
   box-sizing: border-box;
   max-width: 100%;
   min-width: 0;
@@ -95,12 +101,11 @@ html, body, #root {
 
 .sp-salon-card:hover {
   transform: translateY(-1px);
-  background: rgba(255, 255, 255, 0.98);
   box-shadow: 0 8px 18px -4px rgba(15, 23, 42, 0.08), inset 0 1px 0 #ffffff;
 }
 
 .sp-salon-card.in-route {
-  border: 1.5px solid #111827;
+  border: 1.5px solid var(--sp-text-main, #111827);
 }
 
 .sp-map-input {
@@ -108,18 +113,53 @@ html, body, #root {
   box-sizing: border-box;
   height: 40px;
   padding: 0 13px;
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(148, 163, 184, 0.3);
+  background: var(--sp-bg-input, rgba(255, 255, 255, 0.9));
+  border: var(--sp-border-input, 1px solid rgba(148, 163, 184, 0.3));
   border-radius: 12px;
   font-size: 13px;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--sp-text-main, #0f172a);
   outline: none;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 
 .sp-map-input:focus {
-  border-color: #0f172a;
+  border-color: var(--sp-btn-primary, #0f172a);
   background: #ffffff;
+}
+
+/* RÈGLES SPÉCIFIQUES MODE SOMBRE (NUIT) */
+html.dark-mode {
+  color-scheme: dark;
+}
+
+html.dark-mode body, html.dark-mode #root {
+  color: #f8fafc;
+}
+
+html.dark-mode h1,
+html.dark-mode h2,
+html.dark-mode h3,
+html.dark-mode h4,
+html.dark-mode strong {
+  color: #f8fafc !important;
+}
+
+html.dark-mode .sp-kyc-input,
+html.dark-mode .sp-map-input,
+html.dark-mode input,
+html.dark-mode select {
+  background: var(--sp-bg-input, rgba(30, 34, 42, 0.95)) !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.14) !important;
+}
+
+html.dark-mode .sp-kyc-label {
+  color: #cbd5e1 !important;
+}
+
+html.dark-mode .sp-nav-btn:hover {
+  background-color: rgba(255, 255, 255, 0.10);
 }
 
 @keyframes spin {

@@ -1,5 +1,6 @@
 // src/components/common/Navigation.jsx
 // Barre de navigation desktop (dock flottant en verre dépoli) et mobile (en-tête + barre flottante)
+// Support dynamique des thèmes Jour & Nuit STACK Partner
 
 import { Icon } from './Icons';
 import { navBtnStyle } from '../../styles/commonStyles';
@@ -11,51 +12,26 @@ export default function Navigation({
   agent,
   profilData,
   isSuperAdmin,
-  onLogout
+  onLogout,
+  isDarkMode = false,
+  onToggleTheme = () => {}
 }) {
   return (
     <>
       <style>{`
-        html, body, #root {
-          background-color: #dce5f2 !important;
-          color: #0f172a;
-          margin: 0;
-          padding: 0;
-        }
-        /* Calque fixe compatible iOS Safari pour conserver l'effet Aurora sur toute la hauteur */
-        .sp-aurora-bg {
+        /* Calque fixe fluide pour conserver l'ambiance active sur toute la hauteur */
+        .sp-aurora-bg, .sp-ambient-bg {
           position: fixed;
           inset: 0;
           z-index: 0;
           pointer-events: none;
-          background-color: #dce5f2;
-          background-image:
-            radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.28) 0px, transparent 52%),
-            radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.24) 0px, transparent 52%),
-            radial-gradient(at 100% 100%, rgba(245, 158, 11, 0.18) 0px, transparent 52%),
-            radial-gradient(at 0% 100%, rgba(14, 165, 233, 0.24) 0px, transparent 52%);
-        }
-        .sp-glass-panel {
-          position: relative;
-          z-index: 1;
-          background: linear-gradient(145deg, rgba(255, 255, 255, 0.86) 0%, rgba(255, 255, 255, 0.62) 100%);
-          backdrop-filter: blur(18px);
-          -webkit-backdrop-filter: blur(18px);
-          border-top: 1.5px solid rgba(255, 255, 255, 0.98);
-          border-left: 1.5px solid rgba(255, 255, 255, 0.94);
-          border-right: 1px solid rgba(255, 255, 255, 0.6);
-          border-bottom: 1px solid rgba(255, 255, 255, 0.5);
-          box-shadow: 0 10px 28px -8px rgba(15, 23, 42, 0.06), inset 0 1px 0 0 #ffffff;
-          border-radius: 22px;
-        }
-        .sp-glass-pill {
-          background: linear-gradient(145deg, rgba(255, 255, 255, 0.94) 0%, rgba(255, 255, 255, 0.72) 100%);
-          border: 1px solid rgba(255, 255, 255, 0.96);
-          box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04), inset 0 1px 0 #ffffff;
+          background-color: var(--sp-bg-app, #dce5f2);
+          background-image: var(--sp-gradient-app);
+          transition: background-color 0.25s ease;
         }
       `}</style>
 
-      {/* Fond Aurora fixe sur iOS et Desktop */}
+      {/* Fond d'ambiance fixe sur iOS et Desktop */}
       <div className="sp-aurora-bg" />
 
       {/* EN-TÊTE MOBILE FIXE ET FLOU AVEC SAFE-AREA IPHONE */}
@@ -68,10 +44,10 @@ export default function Navigation({
             right: 0,
             width: '100%',
             zIndex: 9000,
-            background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.90) 0%, rgba(255, 255, 255, 0.78) 100%)',
+            background: 'var(--sp-mobile-header-bg, linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(255, 255, 255, 0.82) 100%))',
             backdropFilter: 'blur(20px)',
             WebkitBackdropFilter: 'blur(20px)',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.92)',
+            borderBottom: 'var(--sp-border-card, 1px solid rgba(255, 255, 255, 0.92))',
             boxShadow: '0 4px 20px -4px rgba(15, 23, 42, 0.08), inset 0 -1px 0 rgba(148, 163, 184, 0.08)',
             paddingTop: 'max(env(safe-area-inset-top, 0px), 12px)',
             paddingLeft: 'max(env(safe-area-inset-left, 0px), 14px)',
@@ -86,7 +62,7 @@ export default function Navigation({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              gap: '10px'
+              gap: '8px'
             }}
           >
             <div
@@ -107,11 +83,11 @@ export default function Navigation({
                 style={{
                   fontSize: '10.5px',
                   fontWeight: '800',
-                  color: '#64748b',
+                  color: isDarkMode ? '#94a3b8' : '#64748b',
                   padding: '2px 8px',
                   borderRadius: '999px',
-                  background: 'rgba(15, 23, 42, 0.06)',
-                  border: '1px solid rgba(148, 163, 184, 0.2)',
+                  background: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(15, 23, 42, 0.06)',
+                  border: isDarkMode ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid rgba(148, 163, 184, 0.2)',
                   letterSpacing: '0.03em',
                   textTransform: 'uppercase'
                 }}
@@ -120,7 +96,44 @@ export default function Navigation({
               </span>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              {/* Bouton Thème Jour / Nuit Rapide Mobile */}
+              <button
+                type="button"
+                onClick={onToggleTheme}
+                title={isDarkMode ? 'Passer en mode jour' : 'Passer en mode nuit'}
+                className="sp-glass-pill"
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  padding: 0,
+                  color: 'var(--sp-text-main, #0f172a)'
+                }}
+              >
+                {isDarkMode ? (
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="5" />
+                    <line x1="12" y1="1" x2="12" y2="3" />
+                    <line x1="12" y1="21" x2="12" y2="23" />
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                    <line x1="1" y1="12" x2="3" y2="12" />
+                    <line x1="21" y1="12" x2="23" y2="12" />
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                  </svg>
+                )}
+              </button>
+
               <button
                 type="button"
                 onClick={() => setActiveTab('profil')}
@@ -129,21 +142,21 @@ export default function Navigation({
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '6px',
-                  padding: '6px 12px',
+                  padding: '5px 11px',
                   borderRadius: '999px',
-                  background: activeTab === 'profil' ? '#111827' : undefined,
-                  color: activeTab === 'profil' ? '#ffffff' : '#0f172a',
-                  fontSize: '12px',
+                  background: activeTab === 'profil' ? 'var(--sp-btn-primary, #111827)' : undefined,
+                  color: activeTab === 'profil' ? 'var(--sp-btn-primary-text, #ffffff)' : 'var(--sp-text-main, #0f172a)',
+                  fontSize: '11.5px',
                   fontWeight: '800',
                   cursor: 'pointer',
-                  border: activeTab === 'profil' ? '1px solid #111827' : '1px solid rgba(255, 255, 255, 0.96)',
+                  border: activeTab === 'profil' ? '1px solid var(--sp-btn-primary, #111827)' : undefined,
                   boxShadow: '0 2px 8px rgba(15, 23, 42, 0.05)'
                 }}
               >
                 <span
                   style={{
-                    width: '7px',
-                    height: '7px',
+                    width: '6px',
+                    height: '6px',
                     borderRadius: '50%',
                     backgroundColor: profilData?.autorise_a_vendre ? '#10b981' : '#f59e0b',
                     boxShadow: profilData?.autorise_a_vendre ? '0 0 6px #10b981' : '0 0 6px #f59e0b'
@@ -153,13 +166,14 @@ export default function Navigation({
                   {agent?.prenom || agent?.nom || 'Profil'}
                 </span>
               </button>
+
               <button
                 type="button"
                 onClick={onLogout}
                 title="Déconnexion"
                 style={{
-                  width: '34px',
-                  height: '34px',
+                  width: '32px',
+                  height: '32px',
                   borderRadius: '50%',
                   backgroundColor: 'rgba(239, 68, 68, 0.1)',
                   color: '#dc2626',
@@ -214,7 +228,7 @@ export default function Navigation({
                 alt="STACK"
                 style={{ height: '30px', width: 'auto', objectFit: 'contain', display: 'inline-block' }}
               />
-              <div style={{ fontSize: '11.5px', fontWeight: '600', color: '#64748b', marginTop: '4px' }}>
+              <div style={{ fontSize: '11.5px', fontWeight: '600', color: isDarkMode ? '#94a3b8' : '#64748b', marginTop: '4px' }}>
                 Partenaires
               </div>
             </div>
@@ -226,11 +240,11 @@ export default function Navigation({
               style={{
                 width: '100%',
                 textAlign: 'left',
-                background: activeTab === 'profil' ? '#111827' : undefined,
-                border: activeTab === 'profil' ? '1px solid #111827' : undefined,
+                background: activeTab === 'profil' ? 'var(--sp-nav-active-bg, #111827)' : undefined,
+                border: activeTab === 'profil' ? '1px solid var(--sp-nav-active-bg, #111827)' : undefined,
                 borderRadius: '16px',
                 padding: '11px 14px',
-                marginBottom: '22px',
+                marginBottom: '16px',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -254,7 +268,7 @@ export default function Navigation({
                     style={{
                       fontSize: '13px',
                       fontWeight: '800',
-                      color: activeTab === 'profil' ? '#ffffff' : '#0f172a',
+                      color: activeTab === 'profil' ? 'var(--sp-nav-active-color, #ffffff)' : 'var(--sp-text-main, #0f172a)',
                       textTransform: 'capitalize',
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
@@ -267,20 +281,21 @@ export default function Navigation({
                 <div
                   style={{
                     fontSize: '11px',
-                    color: activeTab === 'profil' ? '#94a3b8' : '#64748b',
+                    color: activeTab === 'profil' ? (isDarkMode ? '#0f172a' : '#cbd5e1') : 'var(--sp-text-muted, #64748b)',
                     marginTop: '3px',
                     fontFamily: 'monospace',
                     fontWeight: '600'
                   }}
                 >
-                  {agent?.code}
+                  {agent?.code || 'STK-PARTNER'}
                 </div>
               </div>
-              <div style={{ color: activeTab === 'profil' ? '#ffffff' : '#64748b', flexShrink: 0 }}>
+              <div style={{ color: activeTab === 'profil' ? 'var(--sp-nav-active-color, #ffffff)' : 'var(--sp-text-muted, #64748b)', flexShrink: 0 }}>
                 <Icon.User />
               </div>
             </button>
 
+            {/* Navigation des modules principaux */}
             <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: '5px', overflowY: 'auto' }}>
               <button
                 type="button"
@@ -345,7 +360,7 @@ export default function Navigation({
 
               {isSuperAdmin && (
                 <>
-                  <div style={{ margin: '10px 4px', borderTop: '1px solid rgba(148, 163, 184, 0.22)' }} />
+                  <div style={{ margin: '10px 4px', borderTop: isDarkMode ? '1px solid rgba(255, 255, 255, 0.10)' : '1px solid rgba(148, 163, 184, 0.22)' }} />
                   <button
                     type="button"
                     onClick={() => {
@@ -367,8 +382,8 @@ export default function Navigation({
                         fontWeight: '800',
                         padding: '2px 7px',
                         borderRadius: '999px',
-                        backgroundColor: activeTab === 'godmode' ? 'rgba(255,255,255,0.2)' : 'rgba(15, 23, 42, 0.08)',
-                        color: activeTab === 'godmode' ? '#ffffff' : '#334155'
+                        backgroundColor: activeTab === 'godmode' ? 'rgba(255,255,255,0.2)' : (isDarkMode ? 'rgba(255, 255, 255, 0.12)' : 'rgba(15, 23, 42, 0.08)'),
+                        color: activeTab === 'godmode' ? '#ffffff' : (isDarkMode ? '#f8fafc' : '#334155')
                       }}
                     >
                       ADMIN
@@ -378,11 +393,55 @@ export default function Navigation({
               )}
             </div>
 
+            {/* Bouton de bascule Mode Jour / Nuit Desktop */}
+            <button
+              type="button"
+              onClick={onToggleTheme}
+              className="sp-glass-pill"
+              style={{
+                marginTop: '10px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '9px 14px',
+                cursor: 'pointer',
+                borderRadius: '14px',
+                fontSize: '12px',
+                fontWeight: '700',
+                border: 'none',
+                color: 'var(--sp-text-main, #0f172a)'
+              }}
+            >
+              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {isDarkMode ? (
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="5" />
+                    <line x1="12" y1="1" x2="12" y2="3" />
+                    <line x1="12" y1="21" x2="12" y2="23" />
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                    <line x1="1" y1="12" x2="3" y2="12" />
+                    <line x1="21" y1="12" x2="23" y2="12" />
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                  </svg>
+                )}
+                <span>{isDarkMode ? 'Mode Nuit actif' : 'Mode Jour actif'}</span>
+              </span>
+              <span style={{ fontSize: '10px', color: isDarkMode ? '#94a3b8' : '#64748b' }}>
+                Bascule ›
+              </span>
+            </button>
+
             <button
               type="button"
               onClick={onLogout}
               style={{
-                marginTop: '12px',
+                marginTop: '8px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -390,10 +449,10 @@ export default function Navigation({
                 background: 'rgba(254, 226, 226, 0.65)',
                 color: '#dc2626',
                 border: '1px solid rgba(252, 165, 165, 0.5)',
-                padding: '11px 14px',
+                padding: '10px 14px',
                 cursor: 'pointer',
-                borderRadius: '16px',
-                fontSize: '13px',
+                borderRadius: '14px',
+                fontSize: '12.5px',
                 fontWeight: '700',
                 transition: 'all 0.15s ease'
               }}
@@ -413,10 +472,10 @@ export default function Navigation({
             left: '12px',
             right: '12px',
             zIndex: 8900,
-            background: 'rgba(255, 255, 255, 0.88)',
+            background: 'var(--sp-mobile-bottom-bg, rgba(255, 255, 255, 0.88))',
             backdropFilter: 'blur(22px)',
             WebkitBackdropFilter: 'blur(22px)',
-            border: '1.5px solid #ffffff',
+            border: 'var(--sp-border-card, 1.5px solid #ffffff)',
             borderRadius: '24px',
             display: 'grid',
             gridTemplateColumns: `repeat(${isSuperAdmin ? 6 : 5}, 1fr)`,
@@ -442,7 +501,7 @@ export default function Navigation({
                   window.scrollTo(0, 0);
                 }}
                 style={{
-                  background: active ? '#111827' : 'transparent',
+                  background: active ? 'var(--sp-btn-primary, #111827)' : 'transparent',
                   border: 'none',
                   borderRadius: '18px',
                   padding: '6px 2px',
@@ -451,7 +510,7 @@ export default function Navigation({
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '2px',
-                  color: active ? '#ffffff' : '#64748b',
+                  color: active ? 'var(--sp-btn-primary-text, #ffffff)' : (isDarkMode ? '#94a3b8' : '#64748b'),
                   fontWeight: active ? '800' : '600',
                   fontSize: '10px',
                   cursor: 'pointer',

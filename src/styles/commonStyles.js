@@ -1,20 +1,21 @@
 // src/styles/commonStyles.js
-// Styles communs et réutilisables pour STACK Partners — Thème Verre Cristal & Aurora
+// Styles communs et réutilisables pour STACK Partners — Support dynamique des ambiances Jour & Nuit
 
 export const getCardStyle = (isMobile) => ({
-  background: 'linear-gradient(145deg, rgba(255, 255, 255, 0.90) 0%, rgba(255, 255, 255, 0.72) 100%)',
-  backdropFilter: 'blur(8px)',
-  WebkitBackdropFilter: 'blur(8px)',
+  background: 'var(--sp-bg-card, linear-gradient(145deg, rgba(255, 255, 255, 0.90) 0%, rgba(255, 255, 255, 0.72) 100%))',
+  backdropFilter: 'blur(12px)',
+  WebkitBackdropFilter: 'blur(12px)',
   transform: 'translateZ(0)',
   borderRadius: isMobile ? '20px' : '24px',
-  borderTop: '1.5px solid rgba(255, 255, 255, 0.98)',
-  borderLeft: '1.5px solid rgba(255, 255, 255, 0.92)',
-  borderRight: '1px solid rgba(255, 255, 255, 0.60)',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.50)',
+  borderTop: 'var(--sp-border-card-top, 1.5px solid rgba(255, 255, 255, 0.98))',
+  borderLeft: 'var(--sp-border-card-left, 1.5px solid rgba(255, 255, 255, 0.92))',
+  borderRight: 'var(--sp-border-card-right, 1px solid rgba(255, 255, 255, 0.60))',
+  borderBottom: 'var(--sp-border-card-bottom, 1px solid rgba(255, 255, 255, 0.50))',
   padding: isMobile ? '18px 16px' : '24px',
-  boxShadow: '0 10px 28px -6px rgba(15, 23, 42, 0.05), inset 0 1px 0 0 #ffffff',
+  boxShadow: 'var(--sp-shadow-card, 0 10px 28px -6px rgba(15, 23, 42, 0.05), inset 0 1px 0 0 #ffffff)',
   marginBottom: isMobile ? '16px' : '22px',
-  boxSizing: 'border-box'
+  boxSizing: 'border-box',
+  color: 'var(--sp-text-main, #0f172a)'
 });
 
 export const inputStyle = {
@@ -22,13 +23,13 @@ export const inputStyle = {
   width: '100%',
   boxSizing: 'border-box',
   padding: '11px 14px',
-  background: 'rgba(255, 255, 255, 0.85)',
-  border: '1px solid rgba(255, 255, 255, 0.95)',
-  boxShadow: '0 2px 6px rgba(15, 23, 42, 0.03), inset 0 1px 0 #ffffff',
+  background: 'var(--sp-bg-input, rgba(255, 255, 255, 0.92))',
+  border: 'var(--sp-border-input, 1px solid rgba(148, 163, 184, 0.32))',
+  boxShadow: 'var(--sp-shadow-input, 0 2px 6px rgba(15, 23, 42, 0.03), inset 0 1px 0 #ffffff)',
   borderRadius: '13px',
   fontSize: '13.5px',
   fontWeight: '500',
-  color: '#0f172a',
+  color: 'var(--sp-text-main, #0f172a)',
   outline: 'none'
 };
 
@@ -38,8 +39,8 @@ export const primaryBtn = {
   justifyContent: 'center',
   gap: '8px',
   padding: '11px 18px',
-  backgroundColor: '#111827',
-  color: '#ffffff',
+  backgroundColor: 'var(--sp-btn-primary, #111827)',
+  color: 'var(--sp-btn-primary-text, #ffffff)',
   border: 'none',
   borderRadius: '999px',
   fontSize: '13px',
@@ -55,10 +56,10 @@ export const secondaryBtn = {
   justifyContent: 'center',
   gap: '6px',
   padding: '9px 15px',
-  background: 'linear-gradient(145deg, rgba(255, 255, 255, 0.92) 0%, rgba(255, 255, 255, 0.68) 100%)',
-  color: '#111827',
-  border: '1px solid rgba(255, 255, 255, 0.96)',
-  boxShadow: '0 2px 8px rgba(15, 23, 42, 0.04), inset 0 1px 0 #ffffff',
+  background: 'var(--sp-bg-pill, linear-gradient(145deg, rgba(255, 255, 255, 0.92) 0%, rgba(255, 255, 255, 0.68) 100%))',
+  color: 'var(--sp-text-main, #111827)',
+  border: 'var(--sp-border-pill, 1px solid rgba(255, 255, 255, 0.96))',
+  boxShadow: '0 2px 8px rgba(15, 23, 42, 0.04), inset 0 1px 0 #ffffff)',
   borderRadius: '999px',
   fontSize: '12.5px',
   fontWeight: '700',
@@ -71,8 +72,8 @@ export const navBtnStyle = (isActive) => ({
   alignItems: 'center',
   gap: '12px',
   padding: '12px 16px',
-  backgroundColor: isActive ? '#111827' : 'transparent',
-  color: isActive ? '#ffffff' : '#475569',
+  backgroundColor: isActive ? 'var(--sp-nav-active-bg, #111827)' : 'transparent',
+  color: isActive ? 'var(--sp-nav-active-color, #ffffff)' : 'var(--sp-text-muted, #475569)',
   fontWeight: isActive ? '700' : '600',
   fontSize: '13.5px',
   border: 'none',

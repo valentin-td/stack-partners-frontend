@@ -18,6 +18,7 @@ import TabGodMode from './components/dashboard/TabGodMode';
 import ModalSignatureContrat from './components/dashboard/ModalSignatureContrat';
 import { partnersApi } from './api/partnersApi';
 import { DEFAULT_TUTORIALS } from './constants/tutorials';
+import { chargerAmbiancePartner, appliquerAmbiancePartner } from './constants/ambiances';
 
 export default function Dashboard() {
   const agent = useMemo(() => {
@@ -31,6 +32,55 @@ export default function Dashboard() {
 
   const [activeTab, setActiveTab] = useState('bord');
   const [toastMsg, setToastMsg] = useState(null);
+
+  // Ambiance & Confort Visuel STACK Partner (Jour & Nuit)
+  const [themeState, setThemeState] = useState(() => chargerAmbiancePartner());
+
+  useEffect(() => {
+    appliquerAmbiancePartner({
+      isDarkMode: themeState.isDarkMode,
+      themeJourCle: themeState.themeJour,
+      themeNuitCle: themeState.themeNuit,
+      broadcast: true
+    });
+  }, [themeState]);
+
+  const toggleTheme = () => {
+    setThemeState((prev) => {
+      const nextDark = !prev.isDarkMode;
+      appliquerAmbiancePartner({
+        isDarkMode: nextDark,
+        themeJourCle: prev.themeJour,
+        themeNuitCle: prev.themeNuit,
+        broadcast: true
+      });
+      return { ...prev, isDarkMode: nextDark };
+    });
+  };
+
+  const handleChoisirThemeJour = (cle) => {
+    setThemeState((prev) => {
+      appliquerAmbiancePartner({
+        isDarkMode: false,
+        themeJourCle: cle,
+        themeNuitCle: prev.themeNuit,
+        broadcast: true
+      });
+      return { ...prev, isDarkMode: false, themeJour: cle };
+    });
+  };
+
+  const handleChoisirThemeNuit = (cle) => {
+    setThemeState((prev) => {
+      appliquerAmbiancePartner({
+        isDarkMode: true,
+        themeJourCle: prev.themeJour,
+        themeNuitCle: cle,
+        broadcast: true
+      });
+      return { ...prev, isDarkMode: true, themeNuit: cle };
+    });
+  };
 
   // Detection responsive temps reel avec debouncing haute performance (aucun lag au scroll)
   const [isMobile, setIsMobile] = useState(
@@ -1361,6 +1411,8 @@ export default function Dashboard() {
         profilData={profilData}
         isSuperAdmin={isSuperAdmin}
         onLogout={logout}
+        isDarkMode={themeState.isDarkMode}
+        onToggleTheme={toggleTheme}
       />
 
       {/* Zone de contenu principale */}
@@ -1522,6 +1574,8 @@ export default function Dashboard() {
         {/* Onglet 7 : Profil & Dossier KYC */}
         {activeTab === 'profil' && (
           <TabProfil
+            agent={agent}
+            stats={stats}
             profilData={profilData}
             setProfilData={setProfilData}
             submitEtapeConformite={submitEtapeConformite}
@@ -1540,6 +1594,12 @@ export default function Dashboard() {
             secondaryBtn={secondaryBtn}
             inputStyle={inputStyle}
             cardStyle={cardStyle}
+            isDarkMode={themeState.isDarkMode}
+            themeJour={themeState.themeJour}
+            themeNuit={themeState.themeNuit}
+            onToggleTheme={toggleTheme}
+            onChoisirThemeJour={handleChoisirThemeJour}
+            onChoisirThemeNuit={handleChoisirThemeNuit}
           />
         )}
 
