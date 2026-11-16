@@ -1,24 +1,24 @@
 // src/constants/ambiances.js
 // Palettes et ambiances STACK Partner haute lisibilité (Jour & Nuit)
-// Identiques aux ambiances du salon, adaptées au confort visuel des agents commerciaux
+// Calibrées pour travailler 10h/jour sans fatigue oculaire
 
 export const AMBIANCES_PARTNER_JOUR = {
-  AURORA: {
-    nom: 'Verre Aurora',
-    sousTitre: 'STACK Partenaires Pastel (Signature)',
-    bg: '#dce5f2',
-    dot: '#6366f1',
-    sidebarDock: 'linear-gradient(160deg, rgba(255, 255, 255, 0.88) 0%, rgba(232, 240, 249, 0.74) 100%)',
-    sidebarBorder: 'rgba(99, 102, 241, 0.22)',
+  LIN: {
+    nom: 'Lin & Travertin',
+    sousTitre: 'Cabinet Élégant & Architecte (Recommandé)',
+    bg: '#f3f1ed',
+    dot: '#a89f91',
+    sidebarDock: 'linear-gradient(160deg, rgba(255, 255, 255, 0.88) 0%, rgba(243, 239, 233, 0.76) 100%)',
+    sidebarBorder: 'rgba(168, 159, 145, 0.24)',
     sidebarBorderTop: 'rgba(255, 255, 255, 0.98)',
-    sidebarActive: 'linear-gradient(145deg, #1e1b4b 0%, #0f172a 100%)',
-    sidebarActiveBorder: 'rgba(99, 102, 241, 0.38)',
+    sidebarActive: 'rgba(16, 185, 129, 0.13)',
+    sidebarActiveBorder: 'rgba(16, 185, 129, 0.38)',
     sidebarLogoBg: 'rgba(255, 255, 255, 0.95)',
     gradient: `
-      radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.24) 0px, transparent 52%),
-      radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.20) 0px, transparent 52%),
-      radial-gradient(at 100% 100%, rgba(245, 158, 11, 0.16) 0px, transparent 52%),
-      radial-gradient(at 0% 100%, rgba(14, 165, 233, 0.20) 0px, transparent 52%)
+      radial-gradient(at 0% 0%, rgba(214, 203, 187, 0.34) 0px, transparent 55%),
+      radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.05) 0px, transparent 55%),
+      radial-gradient(at 100% 100%, rgba(217, 199, 178, 0.28) 0px, transparent 55%),
+      radial-gradient(at 0% 100%, rgba(231, 229, 228, 0.55) 0px, transparent 55%)
     `
   },
   SAUGE: {
@@ -26,35 +26,17 @@ export const AMBIANCES_PARTNER_JOUR = {
     sousTitre: 'Spa Botanique & Naturel',
     bg: '#edf2f0',
     dot: '#10b981',
-    sidebarDock: 'linear-gradient(160deg, rgba(255, 255, 255, 0.88) 0%, rgba(236, 243, 239, 0.74) 100%)',
+    sidebarDock: 'linear-gradient(160deg, rgba(255, 255, 255, 0.88) 0%, rgba(236, 243, 239, 0.76) 100%)',
     sidebarBorder: 'rgba(16, 185, 129, 0.20)',
     sidebarBorderTop: 'rgba(255, 255, 255, 0.98)',
-    sidebarActive: 'linear-gradient(145deg, #13271f 0%, #0c1a14 100%)',
-    sidebarActiveBorder: 'rgba(16, 185, 129, 0.35)',
+    sidebarActive: 'rgba(16, 185, 129, 0.14)',
+    sidebarActiveBorder: 'rgba(16, 185, 129, 0.40)',
     sidebarLogoBg: 'rgba(255, 255, 255, 0.95)',
     gradient: `
-      radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.12) 0px, transparent 55%),
-      radial-gradient(at 100% 0%, rgba(148, 163, 184, 0.16) 0px, transparent 55%),
-      radial-gradient(at 100% 100%, rgba(20, 184, 166, 0.10) 0px, transparent 55%),
-      radial-gradient(at 0% 100%, rgba(203, 213, 225, 0.45) 0px, transparent 55%)
-    `
-  },
-  LIN: {
-    nom: 'Lin & Travertin',
-    sousTitre: 'Cabinet Élégant & Architecte',
-    bg: '#f3f1ed',
-    dot: '#a89f91',
-    sidebarDock: 'linear-gradient(160deg, rgba(255, 255, 255, 0.88) 0%, rgba(243, 239, 233, 0.74) 100%)',
-    sidebarBorder: 'rgba(168, 159, 145, 0.24)',
-    sidebarBorderTop: 'rgba(255, 255, 255, 0.98)',
-    sidebarActive: 'linear-gradient(145deg, #25211c 0%, #171410 100%)',
-    sidebarActiveBorder: 'rgba(168, 159, 145, 0.40)',
-    sidebarLogoBg: 'rgba(255, 255, 255, 0.95)',
-    gradient: `
-      radial-gradient(at 0% 0%, rgba(214, 203, 187, 0.36) 0px, transparent 55%),
-      radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.05) 0px, transparent 55%),
-      radial-gradient(at 100% 100%, rgba(217, 199, 178, 0.30) 0px, transparent 55%),
-      radial-gradient(at 0% 100%, rgba(231, 229, 228, 0.6) 0px, transparent 55%)
+      radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.10) 0px, transparent 55%),
+      radial-gradient(at 100% 0%, rgba(148, 163, 184, 0.14) 0px, transparent 55%),
+      radial-gradient(at 100% 100%, rgba(20, 184, 166, 0.08) 0px, transparent 55%),
+      radial-gradient(at 0% 100%, rgba(203, 213, 225, 0.42) 0px, transparent 55%)
     `
   },
   ARDOISE: {
@@ -62,17 +44,17 @@ export const AMBIANCES_PARTNER_JOUR = {
     sousTitre: 'Studio Moderne & Linear',
     bg: '#eef2f6',
     dot: '#64748b',
-    sidebarDock: 'linear-gradient(160deg, rgba(255, 255, 255, 0.88) 0%, rgba(235, 241, 248, 0.74) 100%)',
+    sidebarDock: 'linear-gradient(160deg, rgba(255, 255, 255, 0.88) 0%, rgba(235, 241, 248, 0.76) 100%)',
     sidebarBorder: 'rgba(148, 163, 184, 0.24)',
     sidebarBorderTop: 'rgba(255, 255, 255, 0.98)',
-    sidebarActive: 'linear-gradient(145deg, #182232 0%, #0f1722 100%)',
-    sidebarActiveBorder: 'rgba(148, 163, 184, 0.38)',
+    sidebarActive: 'rgba(16, 185, 129, 0.13)',
+    sidebarActiveBorder: 'rgba(16, 185, 129, 0.38)',
     sidebarLogoBg: 'rgba(255, 255, 255, 0.95)',
     gradient: `
-      radial-gradient(at 0% 0%, rgba(148, 163, 184, 0.20) 0px, transparent 55%),
-      radial-gradient(at 100% 0%, rgba(56, 189, 248, 0.08) 0px, transparent 55%),
-      radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.06) 0px, transparent 55%),
-      radial-gradient(at 0% 100%, rgba(203, 213, 225, 0.5) 0px, transparent 55%)
+      radial-gradient(at 0% 0%, rgba(148, 163, 184, 0.16) 0px, transparent 55%),
+      radial-gradient(at 100% 0%, rgba(56, 189, 248, 0.06) 0px, transparent 55%),
+      radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.05) 0px, transparent 55%),
+      radial-gradient(at 0% 100%, rgba(203, 213, 225, 0.45) 0px, transparent 55%)
     `
   },
   CACHEMIRE: {
@@ -80,17 +62,35 @@ export const AMBIANCES_PARTNER_JOUR = {
     sousTitre: 'Nuance Chaude & Chaleureuse',
     bg: '#f4f0ee',
     dot: '#d4b8ab',
-    sidebarDock: 'linear-gradient(160deg, rgba(255, 255, 255, 0.88) 0%, rgba(246, 239, 235, 0.74) 100%)',
+    sidebarDock: 'linear-gradient(160deg, rgba(255, 255, 255, 0.88) 0%, rgba(246, 239, 235, 0.76) 100%)',
     sidebarBorder: 'rgba(212, 184, 171, 0.28)',
     sidebarBorderTop: 'rgba(255, 255, 255, 0.98)',
-    sidebarActive: 'linear-gradient(145deg, #2d2220 0%, #1b1311 100%)',
-    sidebarActiveBorder: 'rgba(212, 184, 171, 0.42)',
+    sidebarActive: 'rgba(16, 185, 129, 0.13)',
+    sidebarActiveBorder: 'rgba(16, 185, 129, 0.38)',
     sidebarLogoBg: 'rgba(255, 255, 255, 0.95)',
     gradient: `
-      radial-gradient(at 0% 0%, rgba(224, 205, 196, 0.34) 0px, transparent 55%),
-      radial-gradient(at 100% 0%, rgba(235, 225, 218, 0.48) 0px, transparent 55%),
-      radial-gradient(at 100% 100%, rgba(214, 195, 185, 0.26) 0px, transparent 55%),
-      radial-gradient(at 0% 100%, rgba(245, 240, 236, 0.65) 0px, transparent 55%)
+      radial-gradient(at 0% 0%, rgba(224, 205, 196, 0.32) 0px, transparent 55%),
+      radial-gradient(at 100% 0%, rgba(235, 225, 218, 0.45) 0px, transparent 55%),
+      radial-gradient(at 100% 100%, rgba(214, 195, 185, 0.24) 0px, transparent 55%),
+      radial-gradient(at 0% 100%, rgba(245, 240, 236, 0.60) 0px, transparent 55%)
+    `
+  },
+  AURORA: {
+    nom: 'Verre Aurora (Adouci)',
+    sousTitre: 'Pastel Soyeux Anti-Éblouissement',
+    bg: '#eaeff7',
+    dot: '#6366f1',
+    sidebarDock: 'linear-gradient(160deg, rgba(255, 255, 255, 0.88) 0%, rgba(238, 243, 250, 0.76) 100%)',
+    sidebarBorder: 'rgba(99, 102, 241, 0.18)',
+    sidebarBorderTop: 'rgba(255, 255, 255, 0.98)',
+    sidebarActive: 'rgba(16, 185, 129, 0.13)',
+    sidebarActiveBorder: 'rgba(16, 185, 129, 0.38)',
+    sidebarLogoBg: 'rgba(255, 255, 255, 0.95)',
+    gradient: `
+      radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.11) 0px, transparent 55%),
+      radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.09) 0px, transparent 55%),
+      radial-gradient(at 100% 100%, rgba(245, 158, 11, 0.07) 0px, transparent 55%),
+      radial-gradient(at 0% 100%, rgba(14, 165, 233, 0.09) 0px, transparent 55%)
     `
   }
 };
@@ -98,82 +98,74 @@ export const AMBIANCES_PARTNER_JOUR = {
 export const AMBIANCES_PARTNER_NUIT = {
   CARBONE: {
     nom: '1. Carbone & Obsidienne',
-    sousTitre: 'Noir Pur Oled & Émeraude (Recommandé)',
+    sousTitre: 'Noir Mat & Émeraude (Recommandé)',
     bg: '#0b0d10',
     card: 'linear-gradient(145deg, rgba(24, 26, 31, 0.92) 0%, rgba(17, 19, 23, 0.86) 100%)',
     pill: 'linear-gradient(145deg, rgba(34, 37, 44, 0.92) 0%, rgba(26, 29, 36, 0.86) 100%)',
     dot: '#10b981',
     sidebarDock: 'linear-gradient(160deg, rgba(22, 24, 29, 0.96) 0%, rgba(14, 16, 20, 0.92) 100%)',
-    sidebarBorder: 'rgba(255, 255, 255, 0.10)',
-    sidebarBorderTop: 'rgba(255, 255, 255, 0.20)',
-    sidebarActive: 'linear-gradient(145deg, #10b981 0%, #059669 100%)',
-    sidebarActiveBorder: 'rgba(16, 185, 129, 0.60)',
+    sidebarBorder: 'rgba(255, 255, 255, 0.09)',
+    sidebarBorderTop: 'rgba(255, 255, 255, 0.16)',
+    sidebarActive: 'rgba(16, 185, 129, 0.16)',
+    sidebarActiveBorder: 'rgba(16, 185, 129, 0.45)',
     sidebarLogoBg: 'rgba(30, 34, 42, 0.95)',
     gradient: `
-      radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.12) 0px, transparent 50%),
-      radial-gradient(at 100% 0%, rgba(59, 130, 246, 0.10) 0px, transparent 50%),
-      radial-gradient(at 100% 100%, rgba(148, 163, 184, 0.05) 0px, transparent 50%),
-      radial-gradient(at 0% 100%, rgba(15, 23, 42, 0.9) 0px, transparent 65%)
+      radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.08) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, rgba(148, 163, 184, 0.05) 0px, transparent 50%)
     `
   },
   ESPRESSO: {
     nom: '2. Espresso & Bronze',
-    sousTitre: 'Café Lounge & Ambre Chaud',
+    sousTitre: 'Café Lounge & Zéro Lumière Bleue',
     bg: '#100c0a',
     card: 'linear-gradient(145deg, rgba(32, 26, 23, 0.92) 0%, rgba(23, 18, 16, 0.86) 100%)',
     pill: 'linear-gradient(145deg, rgba(46, 37, 33, 0.92) 0%, rgba(33, 26, 23, 0.86) 100%)',
     dot: '#d97706',
     sidebarDock: 'linear-gradient(160deg, rgba(28, 22, 19, 0.96) 0%, rgba(19, 15, 13, 0.92) 100%)',
-    sidebarBorder: 'rgba(217, 119, 6, 0.20)',
-    sidebarBorderTop: 'rgba(255, 255, 255, 0.18)',
-    sidebarActive: 'linear-gradient(145deg, #d97706 0%, #b45309 100%)',
-    sidebarActiveBorder: 'rgba(217, 119, 6, 0.60)',
+    sidebarBorder: 'rgba(217, 119, 6, 0.18)',
+    sidebarBorderTop: 'rgba(255, 255, 255, 0.15)',
+    sidebarActive: 'rgba(217, 119, 6, 0.18)',
+    sidebarActiveBorder: 'rgba(217, 119, 6, 0.45)',
     sidebarLogoBg: 'rgba(40, 31, 27, 0.95)',
     gradient: `
-      radial-gradient(at 0% 0%, rgba(217, 119, 6, 0.15) 0px, transparent 50%),
-      radial-gradient(at 100% 0%, rgba(180, 83, 9, 0.10) 0px, transparent 50%),
-      radial-gradient(at 100% 100%, rgba(120, 53, 15, 0.12) 0px, transparent 50%),
-      radial-gradient(at 0% 100%, rgba(20, 15, 12, 0.9) 0px, transparent 65%)
+      radial-gradient(at 0% 0%, rgba(217, 119, 6, 0.09) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, rgba(120, 53, 15, 0.08) 0px, transparent 50%)
     `
   },
   MINUIT: {
     nom: '3. Minuit & Saphir',
-    sousTitre: 'Nuit Bleue Profonde & Étoilée',
+    sousTitre: 'Nuit Bleue Profonde & Feutrée',
     bg: '#0a0d14',
     card: 'linear-gradient(145deg, rgba(20, 26, 38, 0.92) 0%, rgba(14, 19, 29, 0.86) 100%)',
     pill: 'linear-gradient(145deg, rgba(30, 38, 54, 0.92) 0%, rgba(21, 28, 41, 0.86) 100%)',
     dot: '#38bdf8',
     sidebarDock: 'linear-gradient(160deg, rgba(17, 23, 35, 0.96) 0%, rgba(11, 15, 24, 0.92) 100%)',
-    sidebarBorder: 'rgba(56, 189, 248, 0.20)',
-    sidebarBorderTop: 'rgba(255, 255, 255, 0.18)',
-    sidebarActive: 'linear-gradient(145deg, #0284c7 0%, #0369a1 100%)',
-    sidebarActiveBorder: 'rgba(56, 189, 248, 0.60)',
+    sidebarBorder: 'rgba(56, 189, 248, 0.16)',
+    sidebarBorderTop: 'rgba(255, 255, 255, 0.15)',
+    sidebarActive: 'rgba(56, 189, 248, 0.16)',
+    sidebarActiveBorder: 'rgba(56, 189, 248, 0.45)',
     sidebarLogoBg: 'rgba(25, 34, 50, 0.95)',
     gradient: `
-      radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.15) 0px, transparent 50%),
-      radial-gradient(at 100% 0%, rgba(99, 102, 241, 0.12) 0px, transparent 50%),
-      radial-gradient(at 100% 100%, rgba(14, 165, 233, 0.10) 0px, transparent 50%),
-      radial-gradient(at 0% 100%, rgba(10, 13, 20, 0.9) 0px, transparent 65%)
+      radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.09) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, rgba(99, 102, 241, 0.08) 0px, transparent 50%)
     `
   },
   MONOCHROME: {
     nom: '4. Monochrome Titane',
-    sousTitre: 'Gris Neutre Spatial & Minimaliste',
-    bg: '#121214',
-    card: 'linear-gradient(145deg, rgba(28, 28, 32, 0.92) 0%, rgba(20, 20, 24, 0.86) 100%)',
-    pill: 'linear-gradient(145deg, rgba(40, 40, 46, 0.92) 0%, rgba(30, 30, 35, 0.86) 100%)',
+    sousTitre: 'Gris Neutre Anti-Fatigue',
+    bg: '#141619',
+    card: 'linear-gradient(145deg, rgba(31, 34, 39, 0.92) 0%, rgba(24, 26, 30, 0.88) 100%)',
+    pill: 'linear-gradient(145deg, rgba(43, 47, 54, 0.92) 0%, rgba(32, 35, 41, 0.86) 100%)',
     dot: '#94a3b8',
-    sidebarDock: 'linear-gradient(160deg, rgba(25, 25, 29, 0.96) 0%, rgba(16, 16, 19, 0.92) 100%)',
-    sidebarBorder: 'rgba(255, 255, 255, 0.10)',
-    sidebarBorderTop: 'rgba(255, 255, 255, 0.18)',
-    sidebarActive: 'linear-gradient(145deg, #475569 0%, #334155 100%)',
-    sidebarActiveBorder: 'rgba(148, 163, 184, 0.60)',
+    sidebarDock: 'linear-gradient(160deg, rgba(25, 27, 31, 0.96) 0%, rgba(18, 20, 23, 0.92) 100%)',
+    sidebarBorder: 'rgba(255, 255, 255, 0.09)',
+    sidebarBorderTop: 'rgba(255, 255, 255, 0.15)',
+    sidebarActive: 'rgba(148, 163, 184, 0.16)',
+    sidebarActiveBorder: 'rgba(148, 163, 184, 0.45)',
     sidebarLogoBg: 'rgba(35, 35, 41, 0.95)',
     gradient: `
-      radial-gradient(at 0% 0%, rgba(148, 163, 184, 0.12) 0px, transparent 50%),
-      radial-gradient(at 100% 0%, rgba(255, 255, 255, 0.05) 0px, transparent 50%),
-      radial-gradient(at 100% 100%, rgba(100, 116, 139, 0.08) 0px, transparent 50%),
-      radial-gradient(at 0% 100%, rgba(18, 18, 20, 0.9) 0px, transparent 65%)
+      radial-gradient(at 0% 0%, rgba(148, 163, 184, 0.07) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, rgba(255, 255, 255, 0.04) 0px, transparent 50%)
     `
   },
   OBSIDIENNE_FOREST: {
@@ -184,52 +176,52 @@ export const AMBIANCES_PARTNER_NUIT = {
     pill: 'linear-gradient(145deg, rgba(29, 44, 37, 0.92) 0%, rgba(20, 32, 26, 0.86) 100%)',
     dot: '#059669',
     sidebarDock: 'linear-gradient(160deg, rgba(18, 27, 22, 0.96) 0%, rgba(12, 18, 15, 0.92) 100%)',
-    sidebarBorder: 'rgba(16, 185, 129, 0.20)',
-    sidebarBorderTop: 'rgba(255, 255, 255, 0.18)',
-    sidebarActive: 'linear-gradient(145deg, #059669 0%, #047857 100%)',
-    sidebarActiveBorder: 'rgba(16, 185, 129, 0.60)',
+    sidebarBorder: 'rgba(16, 185, 129, 0.18)',
+    sidebarBorderTop: 'rgba(255, 255, 255, 0.15)',
+    sidebarActive: 'rgba(16, 185, 129, 0.16)',
+    sidebarActiveBorder: 'rgba(16, 185, 129, 0.45)',
     sidebarLogoBg: 'rgba(24, 37, 30, 0.95)',
     gradient: `
-      radial-gradient(at 0% 0%, rgba(5, 150, 105, 0.15) 0px, transparent 50%),
-      radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.10) 0px, transparent 50%),
-      radial-gradient(at 100% 100%, rgba(6, 95, 70, 0.12) 0px, transparent 50%),
-      radial-gradient(at 0% 100%, rgba(10, 15, 13, 0.9) 0px, transparent 65%)
+      radial-gradient(at 0% 0%, rgba(5, 150, 105, 0.10) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, rgba(6, 95, 70, 0.08) 0px, transparent 50%)
     `
   }
 };
 
 /**
  * Charge les préférences d'ambiance sauvegardées dans le localStorage.
+ * Utilise 'LIN' (Lin & Travertin) par défaut pour un confort visuel optimal.
  */
 export const chargerAmbiancePartner = () => {
   if (typeof window === 'undefined') {
-    return { isDarkMode: false, themeJour: 'AURORA', themeNuit: 'CARBONE' };
+    return { isDarkMode: false, themeJour: 'LIN', themeNuit: 'CARBONE' };
   }
   try {
     const rawDark = localStorage.getItem('stack_partner_is_dark');
     const isDarkMode = rawDark !== null ? rawDark === 'true' : false;
-    const themeJour = localStorage.getItem('stack_partner_theme_jour') || 'AURORA';
-    const themeNuit = localStorage.getItem('stack_partner_theme_nuit') || 'CARBONE';
+    const savedJour = localStorage.getItem('stack_partner_theme_jour');
+    const themeJour = savedJour && AMBIANCES_PARTNER_JOUR[savedJour] ? savedJour : 'LIN';
+    const savedNuit = localStorage.getItem('stack_partner_theme_nuit');
+    const themeNuit = savedNuit && AMBIANCES_PARTNER_NUIT[savedNuit] ? savedNuit : 'CARBONE';
     return { isDarkMode, themeJour, themeNuit };
   } catch (e) {
-    return { isDarkMode: false, themeJour: 'AURORA', themeNuit: 'CARBONE' };
+    return { isDarkMode: false, themeJour: 'LIN', themeNuit: 'CARBONE' };
   }
 };
 
 /**
  * Applique l'ambiance globale à STACK Partner en temps réel.
- * Met à jour le DOM, injecte les variables CSS, active la classe .dark-mode et diffuse un événement.
  */
 export const appliquerAmbiancePartner = ({
   isDarkMode = false,
-  themeJourCle = 'AURORA',
+  themeJourCle = 'LIN',
   themeNuitCle = 'CARBONE',
   broadcast = true
 } = {}) => {
   if (typeof window === 'undefined' || typeof document === 'undefined') return;
 
   try {
-    const cleJour = AMBIANCES_PARTNER_JOUR[themeJourCle] ? themeJourCle : 'AURORA';
+    const cleJour = AMBIANCES_PARTNER_JOUR[themeJourCle] ? themeJourCle : 'LIN';
     const cleNuit = AMBIANCES_PARTNER_NUIT[themeNuitCle] ? themeNuitCle : 'CARBONE';
     const isDark = Boolean(isDarkMode);
 
@@ -243,7 +235,6 @@ export const appliquerAmbiancePartner = ({
     const ambianceNuit = AMBIANCES_PARTNER_NUIT[cleNuit];
     const activeAmbiance = isDark ? ambianceNuit : ambianceJour;
 
-    // Bascule de la classe .dark-mode sur <html> et <body>
     if (isDark) {
       document.documentElement.classList.add('dark-mode');
       document.body.classList.add('dark-mode');
@@ -252,7 +243,6 @@ export const appliquerAmbiancePartner = ({
       document.body.classList.remove('dark-mode');
     }
 
-    // Injection ou mise à jour de la feuille de style dynamique dédiée
     let styleTag = document.getElementById('stack-partner-dynamic-ambiance-styles');
     if (!styleTag) {
       styleTag = document.createElement('style');
@@ -271,31 +261,31 @@ export const appliquerAmbiancePartner = ({
       html:not(.dark-mode), body:not(.dark-mode) {
         --sp-bg-app: ${ambianceJour.bg} !important;
         --sp-gradient-app: ${ambianceJour.gradient} !important;
-        --sp-bg-card: color-mix(in srgb, #ffffff 88%, ${ambianceJour.bg} 12%) !important;
-        --sp-border-card: 1px solid rgba(148, 163, 184, 0.28) !important;
-        --sp-border-card-top: 1.5px solid rgba(255, 255, 255, 0.98) !important;
-        --sp-border-card-left: 1.5px solid rgba(255, 255, 255, 0.92) !important;
-        --sp-border-card-right: 1px solid rgba(148, 163, 184, 0.20) !important;
-        --sp-border-card-bottom: 1px solid rgba(148, 163, 184, 0.20) !important;
-        --sp-shadow-card: 0 10px 28px -6px rgba(15, 23, 42, 0.05), inset 0 1px 0 0 #ffffff !important;
+        --sp-bg-card: color-mix(in srgb, #ffffff 86%, ${ambianceJour.bg} 14%) !important;
+        --sp-border-card: 1px solid rgba(148, 163, 184, 0.24) !important;
+        --sp-border-card-top: 1.5px solid rgba(255, 255, 255, 0.96) !important;
+        --sp-border-card-left: 1.5px solid rgba(255, 255, 255, 0.90) !important;
+        --sp-border-card-right: 1px solid rgba(148, 163, 184, 0.18) !important;
+        --sp-border-card-bottom: 1px solid rgba(148, 163, 184, 0.18) !important;
+        --sp-shadow-card: 0 8px 24px -8px rgba(15, 23, 42, 0.05), inset 0 1px 0 0 #ffffff !important;
         --sp-bg-pill: color-mix(in srgb, #ffffff 92%, ${ambianceJour.bg} 8%) !important;
         --sp-border-pill: 1px solid rgba(148, 163, 184, 0.24) !important;
-        --sp-text-main: #0f172a !important;
+        --sp-text-main: #18181b !important;
         --sp-text-muted: #64748b !important;
-        --sp-bg-input: rgba(255, 255, 255, 0.92) !important;
-        --sp-border-input: 1px solid rgba(148, 163, 184, 0.32) !important;
+        --sp-bg-input: rgba(255, 255, 255, 0.94) !important;
+        --sp-border-input: 1px solid rgba(148, 163, 184, 0.30) !important;
         --sp-shadow-input: 0 2px 6px rgba(15, 23, 42, 0.03), inset 0 1px 0 #ffffff !important;
-        --sp-btn-primary: #111827 !important;
+        --sp-btn-primary: #18181b !important;
         --sp-btn-primary-text: #ffffff !important;
         --sp-sidebar-dock: ${ambianceJour.sidebarDock} !important;
         --sp-sidebar-border: ${ambianceJour.sidebarBorder} !important;
         --sp-sidebar-border-top: ${ambianceJour.sidebarBorderTop} !important;
         --sp-sidebar-active: ${ambianceJour.sidebarActive} !important;
         --sp-sidebar-active-border: ${ambianceJour.sidebarActiveBorder} !important;
-        --sp-nav-active-bg: #111827 !important;
-        --sp-nav-active-color: #ffffff !important;
+        --sp-nav-active-bg: rgba(16, 185, 129, 0.13) !important;
+        --sp-nav-active-color: #059669 !important;
         --sp-mobile-header-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(255, 255, 255, 0.82) 100%) !important;
-        --sp-mobile-bottom-bg: rgba(255, 255, 255, 0.90) !important;
+        --sp-mobile-bottom-bg: rgba(255, 255, 255, 0.92) !important;
         background-color: ${ambianceJour.bg} !important;
       }
 
@@ -304,32 +294,32 @@ export const appliquerAmbiancePartner = ({
         --sp-bg-app: ${ambianceNuit.bg} !important;
         --sp-gradient-app: ${ambianceNuit.gradient} !important;
         --sp-bg-card: ${ambianceNuit.card || 'rgba(24, 26, 31, 0.92)'} !important;
-        --sp-border-card: 1px solid rgba(255, 255, 255, 0.10) !important;
-        --sp-border-card-top: 1.5px solid rgba(255, 255, 255, 0.16) !important;
-        --sp-border-card-left: 1.5px solid rgba(255, 255, 255, 0.12) !important;
-        --sp-border-card-right: 1px solid rgba(255, 255, 255, 0.08) !important;
-        --sp-border-card-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
-        --sp-shadow-card: 0 16px 40px -8px rgba(0, 0, 0, 0.60) !important;
+        --sp-border-card: 1px solid rgba(255, 255, 255, 0.09) !important;
+        --sp-border-card-top: 1px solid rgba(255, 255, 255, 0.14) !important;
+        --sp-border-card-left: 1px solid rgba(255, 255, 255, 0.10) !important;
+        --sp-border-card-right: 1px solid rgba(255, 255, 255, 0.06) !important;
+        --sp-border-card-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+        --sp-shadow-card: 0 14px 34px -8px rgba(0, 0, 0, 0.55) !important;
         --sp-bg-pill: ${ambianceNuit.pill || 'rgba(34, 37, 44, 0.92)'} !important;
-        --sp-border-pill: 1px solid rgba(255, 255, 255, 0.12) !important;
-        --sp-text-main: #f8fafc !important;
+        --sp-border-pill: 1px solid rgba(255, 255, 255, 0.11) !important;
+        --sp-text-main: #f4f4f5 !important;
         --sp-text-muted: #94a3b8 !important;
         --sp-bg-input: rgba(30, 34, 42, 0.95) !important;
         --sp-border-input: 1px solid rgba(255, 255, 255, 0.14) !important;
         --sp-shadow-input: 0 2px 8px rgba(0, 0, 0, 0.35) !important;
-        --sp-btn-primary: #ffffff !important;
-        --sp-btn-primary-text: #0f172a !important;
+        --sp-btn-primary: #f4f4f5 !important;
+        --sp-btn-primary-text: #0b0d10 !important;
         --sp-sidebar-dock: ${ambianceNuit.sidebarDock} !important;
         --sp-sidebar-border: ${ambianceNuit.sidebarBorder} !important;
         --sp-sidebar-border-top: ${ambianceNuit.sidebarBorderTop} !important;
         --sp-sidebar-active: ${ambianceNuit.sidebarActive} !important;
         --sp-sidebar-active-border: ${ambianceNuit.sidebarActiveBorder} !important;
-        --sp-nav-active-bg: #ffffff !important;
-        --sp-nav-active-color: #0f172a !important;
+        --sp-nav-active-bg: rgba(16, 185, 129, 0.16) !important;
+        --sp-nav-active-color: #34d399 !important;
         --sp-mobile-header-bg: linear-gradient(180deg, rgba(17, 20, 26, 0.94) 0%, rgba(12, 14, 18, 0.88) 100%) !important;
         --sp-mobile-bottom-bg: rgba(20, 24, 32, 0.94) !important;
         background-color: ${ambianceNuit.bg} !important;
-        color: #f8fafc !important;
+        color: #f4f4f5 !important;
       }
 
       /* Synchronisation dynamique des fonds d'ambiance */
@@ -341,8 +331,8 @@ export const appliquerAmbiancePartner = ({
 
       /* Synchronisation des cartes et pilules */
       html:not(.dark-mode) .sp-glass-panel, body:not(.dark-mode) .sp-glass-panel {
-        background: color-mix(in srgb, #ffffff 88%, ${ambianceJour.bg} 12%) !important;
-        border: 1px solid rgba(148, 163, 184, 0.28) !important;
+        background: color-mix(in srgb, #ffffff 86%, ${ambianceJour.bg} 14%) !important;
+        border: 1px solid rgba(148, 163, 184, 0.22) !important;
       }
       html:not(.dark-mode) .sp-glass-pill, body:not(.dark-mode) .sp-glass-pill {
         background: color-mix(in srgb, #ffffff 92%, ${ambianceJour.bg} 8%) !important;
@@ -351,29 +341,40 @@ export const appliquerAmbiancePartner = ({
 
       html.dark-mode .sp-glass-panel, body.dark-mode .sp-glass-panel {
         background: ${ambianceNuit.card} !important;
-        border: 1px solid rgba(255, 255, 255, 0.10) !important;
-        border-top: 1.5px solid rgba(255, 255, 255, 0.16) !important;
-        box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.60) !important;
-        color: #f8fafc !important;
+        border: 1px solid rgba(255, 255, 255, 0.09) !important;
+        border-top: 1px solid rgba(255, 255, 255, 0.14) !important;
+        box-shadow: 0 14px 34px -8px rgba(0, 0, 0, 0.55) !important;
+        color: #f4f4f5 !important;
       }
       html.dark-mode .sp-glass-pill, body.dark-mode .sp-glass-pill {
         background: ${ambianceNuit.pill} !important;
-        border: 1px solid rgba(255, 255, 255, 0.12) !important;
-        color: #f8fafc !important;
+        border: 1px solid rgba(255, 255, 255, 0.11) !important;
+        color: #f4f4f5 !important;
+      }
+
+      /* Carte maîtresse Obsidienne Émeraude */
+      .sp-glass-panel-dark {
+        background:
+          radial-gradient(120% 120% at 95% 10%, rgba(16, 185, 129, 0.26) 0%, rgba(16, 185, 129, 0) 58%),
+          linear-gradient(145deg, #162420 0%, #0f1715 100%) !important;
+        border: 1px solid rgba(52, 211, 153, 0.28) !important;
+        box-shadow: 0 12px 28px -8px rgba(15, 23, 21, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.14) !important;
+        border-radius: 20px !important;
+        color: #ffffff !important;
       }
 
       /* Textes et titres en mode Nuit */
       html.dark-mode h1, html.dark-mode h2, html.dark-mode h3, html.dark-mode h4 {
-        color: #f8fafc !important;
+        color: #f4f4f5 !important;
       }
       html.dark-mode .sp-step-nav-card {
         background: ${ambianceNuit.pill} !important;
         border: 1px solid rgba(255, 255, 255, 0.10) !important;
-        color: #f8fafc !important;
+        color: #f4f4f5 !important;
       }
       html.dark-mode .sp-step-nav-card.active {
-        background: rgba(255, 255, 255, 0.15) !important;
-        border: 1.5px solid #ffffff !important;
+        background: rgba(16, 185, 129, 0.16) !important;
+        border: 1.5px solid #10b981 !important;
       }
       html.dark-mode .sp-kyc-input, html.dark-mode .sp-map-input, html.dark-mode input, html.dark-mode select {
         background: rgba(30, 34, 42, 0.95) !important;
@@ -385,12 +386,11 @@ export const appliquerAmbiancePartner = ({
       }
       html.dark-mode .sp-salon-card {
         background: ${ambianceNuit.card} !important;
-        border: 1px solid rgba(255, 255, 255, 0.10) !important;
-        color: #f8fafc !important;
+        border: 1px solid rgba(255, 255, 255, 0.09) !important;
+        color: #f4f4f5 !important;
       }
     `;
 
-    // Métadonnées système pour PWA et barre d'état
     let metaThemeColor = document.querySelector('meta[name="theme-color"]');
     if (!metaThemeColor) {
       metaThemeColor = document.createElement('meta');
