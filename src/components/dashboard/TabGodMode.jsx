@@ -1,6 +1,7 @@
 // src/components/dashboard/TabGodMode.jsx
 // Onglet 7 : God Mode (Super-Admin) - Audit des pieces KYC, validation commissions, logistique TPE
 
+import { useState } from 'react';
 import { Icon } from '../common/Icons';
 import { formatDate } from '../../utils/formatters';
 
@@ -31,6 +32,34 @@ export default function TabGodMode({
   inputStyle,
   cardStyle
 }) {
+  const [commandeAExpedier, setCommandeAExpedier] = useState(null);
+  const [transporteurChoisi, setTransporteurChoisi] = useState('Colissimo');
+  const [numeroSuiviSaisi, setNumeroSuiviSaisi] = useState('');
+  const [envoiExpeditionEnCours, setEnvoiExpeditionEnCours] = useState(false);
+
+  const ouvrirModaleExpedition = (cmd) => {
+    setCommandeAExpedier(cmd);
+    setTransporteurChoisi(cmd.transporteur || 'Colissimo');
+    setNumeroSuiviSaisi(cmd.numero_suivi || '');
+  };
+
+  const validerExpeditionModal = async (e) => {
+    if (e) e.preventDefault();
+    if (!commandeAExpedier) return;
+    setEnvoiExpeditionEnCours(true);
+    try {
+      const ok = await handleExpedierTpe(commandeAExpedier.id_commande, {
+        transporteur: transporteurChoisi,
+        numero_suivi: numeroSuiviSaisi
+      });
+      if (ok !== false) {
+        setCommandeAExpedier(null);
+      }
+    } finally {
+      setEnvoiExpeditionEnCours(false);
+    }
+  };
+
   return (
     <>
       {/* En-tete Executive Noir & Argent */}
@@ -482,13 +511,13 @@ export default function TabGodMode({
         Logistique : Commandes TPE à Expédier ({adminTpeCommandes.filter((c) => c.statut === 'EN_ATTENTE').length})
       </div>
       <div style={{ ...cardStyle, padding: 0, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-        <table style={{ width: '100%', minWidth: '600px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13.5px' }}>
+        <table style={{ width: '100%', minWidth: '700px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13.5px' }}>
           <thead style={{ backgroundColor: '#f9fafb', borderBottom: '1px solid #e5e7eb', color: '#6b7280', fontSize: '11.5px', textTransform: 'uppercase' }}>
             <tr>
               <th style={{ padding: '14px 18px' }}>Agent</th>
               <th style={{ padding: '14px 18px' }}>Date</th>
-              <th style={{ padding: '14px 18px' }}>Quantité & Adresse</th>
-              <th style={{ padding: '14px 18px' }}>Statut</th>
+              <th style={{ padding: '14px 18px' }}>Quantité & Matériel</th>
+              <th style={{ padding: '14px 18px' }}>Statut & Suivi</th>
               <th style={{ padding: '14px 18px' }}>Action</th>
             </tr>
           </thead>
@@ -496,59 +525,281 @@ export default function TabGodMode({
             {adminTpeCommandes.length === 0 ? (
               <tr>
                 <td colSpan="5" style={{ padding: '24px', textAlign: 'center', color: '#6b7280' }}>
-                  Aucune commande TPE en attente.
+                  Aucune commande TPE enregistrée.
                 </td>
               </tr>
             ) : (
-              adminTpeCommandes.map((c) => (
-                <tr key={c.id_commande} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                  <td style={{ padding: '14px 18px', fontWeight: '700' }}>
-                    {c.prenom} {c.nom}
-                  </td>
-                  <td style={{ padding: '14px 18px', color: '#6b7280' }}>
-                    {formatDate(c.date_commande)}
-                  </td>
-                  <td style={{ padding: '14px 18px' }}>
-                    <strong style={{ color: '#111827' }}>{c.quantite} TPE Stripe</strong>
-                    <br />
-                    <span style={{ fontSize: '12.5px', color: '#4b5563' }}>{c.adresse_livraison}</span>
-                    {c.note && (
-                      <div style={{ fontSize: '12px', color: '#d97706', marginTop: '2px' }}>
-                        Note: {c.note}
+              adminTpeCommandes.map((c) => {
+                const estExpediee = c.statut === 'EXPEDIEE';
+                const modeleLabel = c.modele_tpe === 'STRIPE_S700' ? 'Stripe Reader S700' : 'Stripe Reader T600';
+                return (
+                  <tr key={c.id_commande} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                    <td style={{ padding: '14px 18px' }}>
+                      <strong style={{ color: '#0f172a', display: 'block' }}>{c.prenom} {c.nom}</strong>
+                      <span style={{ fontSize: '12px', color: '#64748b' }}>{c.email}</span>
+                      {c.telephone && <div style={{ fontSize: '11.5px', color: '#94a3b8' }}>{c.telephone}</div>}
+                    </td>
+                    <td style={{ padding: '14px 18px', color: '#6b7280' }}>
+                      <div>{formatDate(c.date_commande)}</div>
+                      {estExpediee && c.date_expedition && (
+                        <span style={{ fontSize: '11.5px', color: '#059669', display: 'block', marginTop: '2px' }}>
+                          Expédié le {formatDate(c.date_expedition)}
+                        </span>
+                      )}
+                    </td>
+                    <td style={{ padding: '14px 18px' }}>
+                      <strong style={{ color: '#111827' }}>{c.quantite}x {modeleLabel}</strong>
+                      <br />
+                      <span style={{ fontSize: '12px', color: '#4b5563' }}>{c.adresse_livraison}</span>
+                      {c.note && (
+                        <div style={{ fontSize: '12px', color: '#d97706', marginTop: '2px' }}>
+                          Note: {c.note}
+                        </div>
+                      )}
+                    </td>
+                    <td style={{ padding: '14px 18px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-start' }}>
+                        <span
+                          style={{
+                            padding: '4px 10px',
+                            borderRadius: '8px',
+                            fontSize: '11.5px',
+                            fontWeight: '700',
+                            backgroundColor: estExpediee ? '#dcfce7' : '#fef3c7',
+                            color: estExpediee ? '#166534' : '#92400e'
+                          }}
+                        >
+                          {estExpediee ? 'Expédiée' : 'En attente'}
+                        </span>
+                        {estExpediee && (
+                          <div style={{ fontSize: '12px', color: '#334155' }}>
+                            <span style={{ fontWeight: '600' }}>{c.transporteur || 'Colissimo'}</span>
+                            {c.numero_suivi ? (
+                              <div style={{ marginTop: '2px' }}>
+                                {c.url_suivi ? (
+                                  <a
+                                    href={c.url_suivi}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    style={{
+                                      color: '#059669',
+                                      fontWeight: '700',
+                                      textDecoration: 'underline',
+                                      fontFamily: 'monospace',
+                                      fontSize: '11.5px',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '3px'
+                                    }}
+                                  >
+                                    N° {c.numero_suivi} ↗
+                                  </a>
+                                ) : (
+                                  <span style={{ fontFamily: 'monospace', fontSize: '11.5px', color: '#64748b' }}>
+                                    N° {c.numero_suivi}
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <div style={{ fontSize: '11px', color: '#94a3b8' }}>Sans numéro de suivi</div>
+                            )}
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </td>
-                  <td style={{ padding: '14px 18px' }}>
-                    <span
-                      style={{
-                        padding: '5px 10px',
-                        borderRadius: '8px',
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        backgroundColor: c.statut === 'EXPEDIEE' ? '#dcfce7' : '#fef3c7',
-                        color: c.statut === 'EXPEDIEE' ? '#166534' : '#92400e'
-                      }}
-                    >
-                      {c.statut === 'EXPEDIEE' ? 'Expédiée' : 'En attente'}
-                    </span>
-                  </td>
-                  <td style={{ padding: '14px 18px' }}>
-                    {c.statut !== 'EXPEDIEE' && (
-                      <button
-                        type="button"
-                        onClick={() => handleExpedierTpe(c.id_commande)}
-                        style={{ ...primaryBtn, padding: '8px 14px', fontSize: '12px' }}
-                      >
-                        <Icon.Check /> Expédier
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))
+                    </td>
+                    <td style={{ padding: '14px 18px' }}>
+                      {!estExpediee ? (
+                        <button
+                          type="button"
+                          onClick={() => ouvrirModaleExpedition(c)}
+                          style={{ ...primaryBtn, padding: '8px 14px', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                        >
+                          <Icon.Check /> Expédier
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => ouvrirModaleExpedition(c)}
+                          style={{ ...secondaryBtn, padding: '6px 12px', fontSize: '11.5px' }}
+                        >
+                          Modifier le suivi
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
       </div>
+
+      {/* MODALE D'EXPÉDITION ET SUIVI DE COLIS TPE */}
+      {commandeAExpedier && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.65)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 99999,
+            padding: '16px'
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !envoiExpeditionEnCours) {
+              setCommandeAExpedier(null);
+            }
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: '#ffffff',
+              borderRadius: '20px',
+              maxWidth: '520px',
+              width: '100%',
+              padding: isMobile ? '20px' : '26px 28px',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+              boxSizing: 'border-box'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '17px', fontWeight: '800', color: '#0f172a' }}>
+                  {commandeAExpedier.statut === 'EXPEDIEE' ? 'Modifier le suivi du colis' : 'Expédier la commande TPE'}
+                </h3>
+                <span style={{ fontSize: '12px', color: '#64748b' }}>
+                  Commande #{commandeAExpedier.id_commande} • {commandeAExpedier.prenom} {commandeAExpedier.nom}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => !envoiExpeditionEnCours && setCommandeAExpedier(null)}
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  border: '1px solid #e2e8f0',
+                  background: '#f8fafc',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#64748b',
+                  fontSize: '13px',
+                  fontWeight: '700'
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Récapitulatif de la commande */}
+            <div style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '14px 16px', marginBottom: '18px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                <span style={{ fontSize: '12px', color: '#64748b' }}>Matériel :</span>
+                <strong style={{ fontSize: '13px', color: '#0f172a' }}>
+                  {commandeAExpedier.quantite}x {commandeAExpedier.modele_tpe === 'STRIPE_S700' ? 'Stripe Reader S700' : 'Stripe Reader T600'}
+                </strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px', gap: '10px' }}>
+                <span style={{ fontSize: '12px', color: '#64748b', flexShrink: 0 }}>Livraison :</span>
+                <span style={{ fontSize: '12.5px', color: '#0f172a', textAlign: 'right' }}>
+                  {commandeAExpedier.adresse_livraison || "Adresse professionnelle"}
+                </span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '12px', color: '#64748b' }}>Impact stock :</span>
+                <span style={{ fontSize: '12px', fontWeight: '800', color: '#059669' }}>
+                  +{commandeAExpedier.quantite} TPE crédité(s) à l'agent
+                </span>
+              </div>
+            </div>
+
+            <form onSubmit={validerExpeditionModal}>
+              {/* Choix du transporteur */}
+              <div style={{ marginBottom: '14px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#334155', marginBottom: '6px' }}>
+                  Transporteur
+                </label>
+                <select
+                  value={transporteurChoisi}
+                  onChange={(e) => setTransporteurChoisi(e.target.value)}
+                  style={{
+                    ...inputStyle,
+                    width: '100%',
+                    height: '42px',
+                    backgroundColor: '#ffffff',
+                    boxSizing: 'border-box'
+                  }}
+                >
+                  <option value="Colissimo">Colissimo (La Poste)</option>
+                  <option value="Chronopost">Chronopost</option>
+                  <option value="DHL Express">DHL Express</option>
+                  <option value="UPS">UPS</option>
+                  <option value="Mondial Relay">Mondial Relay</option>
+                  <option value="Autre">Autre / Coursier</option>
+                </select>
+              </div>
+
+              {/* Numéro de suivi */}
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#334155', marginBottom: '6px' }}>
+                  Numéro de suivi du colis
+                </label>
+                <input
+                  type="text"
+                  placeholder="ex: 6A12345678901 ou 1Z9999999999999999"
+                  value={numeroSuiviSaisi}
+                  onChange={(e) => setNumeroSuiviSaisi(e.target.value)}
+                  style={{
+                    ...inputStyle,
+                    width: '100%',
+                    height: '42px',
+                    backgroundColor: '#ffffff',
+                    fontFamily: 'monospace',
+                    boxSizing: 'border-box'
+                  }}
+                />
+                <span style={{ display: 'block', fontSize: '11px', color: '#64748b', marginTop: '4px' }}>
+                  L'URL de suivi direct sera automatiquement calculée et envoyée par e-mail à l'agent commercial.
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '20px' }}>
+                <button
+                  type="button"
+                  disabled={envoiExpeditionEnCours}
+                  onClick={() => setCommandeAExpedier(null)}
+                  style={{ ...secondaryBtn, padding: '10px 18px', fontSize: '13px' }}
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  disabled={envoiExpeditionEnCours}
+                  style={{
+                    ...primaryBtn,
+                    padding: '10px 20px',
+                    fontSize: '13px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  <Icon.Check />
+                  {envoiExpeditionEnCours ? 'Enregistrement...' : 'Confirmer l\'expédition'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </>
   );
 }

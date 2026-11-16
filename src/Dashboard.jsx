@@ -1200,21 +1200,28 @@ export default function Dashboard() {
     }
   };
 
-  const handleExpedierTpe = async (id) => {
+  const handleExpedierTpe = async (id, payload = {}) => {
     try {
       const res = await fetch(`${API_URL}/admin/tpe-commandes/${id}/expedier`, {
         method: 'PATCH',
-        headers: { Authorization: `Bearer ${token}` }
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
       });
       if (res.ok) {
-        notify('Commande expédiée ! Le stock de l agent a été automatiquement crédité.');
+        notify("Commande expédiée avec succès ! Lien de suivi généré et stock de l'agent crédité.");
         fetchAdminData();
+        return true;
       } else {
         const data = await res.json();
         notify(data.error || "Erreur lors de l'expédition", true);
+        return false;
       }
     } catch (e) {
       notify('Erreur réseau.', true);
+      return false;
     }
   };
 

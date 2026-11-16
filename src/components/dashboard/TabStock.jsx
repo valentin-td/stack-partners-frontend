@@ -1068,6 +1068,23 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
                               >
                                 {formatDate(cmd.date_commande)} • {cmd.adresse_livraison}
                               </span>
+                              {estExpediee && cmd.numero_suivi && (
+                                <div style={{ marginTop: '4px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                  <span style={{ fontSize: '11px', fontWeight: '700', color: '#0f172a' }}>
+                                    {cmd.transporteur || 'Colissimo'} : <span style={{ fontFamily: 'monospace' }}>{cmd.numero_suivi}</span>
+                                  </span>
+                                  {cmd.url_suivi && (
+                                    <a
+                                      href={cmd.url_suivi}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      style={{ fontSize: '11px', color: '#059669', fontWeight: '800', textDecoration: 'underline' }}
+                                    >
+                                      Suivre mon colis ↗
+                                    </a>
+                                  )}
+                                </div>
+                              )}
                             </div>
                           </div>
 
