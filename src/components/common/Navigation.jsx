@@ -1,9 +1,8 @@
 // src/components/common/Navigation.jsx
 // Barre de navigation desktop (dock flottant en verre dépoli) et mobile (en-tête + barre flottante)
-// Support dynamique des thèmes Jour & Nuit STACK Partner
+// Ergonomie Salon Premium : zéro bouton noir ou rouge agressif, confort visuel longue durée
 
 import { Icon } from './Icons';
-import { navBtnStyle } from '../../styles/commonStyles';
 
 export default function Navigation({
   isMobile,
@@ -16,18 +15,71 @@ export default function Navigation({
   isDarkMode = false,
   onToggleTheme = () => {}
 }) {
+  // Style doux et non agressif pour les éléments de navigation de la barre latérale
+  const getSoftNavBtnStyle = (isActive) => ({
+    width: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: '10px',
+    padding: '10px 13px',
+    borderRadius: '13px',
+    border: isActive
+      ? isDarkMode
+        ? '1px solid rgba(16, 185, 129, 0.42)'
+        : '1px solid rgba(16, 185, 129, 0.35)'
+      : '1px solid transparent',
+    background: isActive
+      ? isDarkMode
+        ? 'rgba(16, 185, 129, 0.16)'
+        : 'rgba(16, 185, 129, 0.13)'
+      : 'transparent',
+    color: isActive
+      ? isDarkMode
+        ? '#34d399'
+        : '#059669'
+      : 'var(--sp-text-main, #18181b)',
+    fontSize: '13px',
+    fontWeight: isActive ? '800' : '600',
+    cursor: 'pointer',
+    textAlign: 'left',
+    transition: 'all 0.15s ease',
+    boxSizing: 'border-box'
+  });
+
+  const navItems = [
+    { key: 'bord', label: 'Tableau de bord', shortLabel: 'Bord', icon: <Icon.Bord /> },
+    { key: 'prospects', label: 'Mes Prospects', shortLabel: 'Leads', icon: <Icon.Prospects /> },
+    { key: 'carte', label: 'Carte & Prospection', shortLabel: 'Carte', icon: <Icon.MapPin /> },
+    { key: 'factures', label: 'Factures Onboarding', shortLabel: 'Factures', icon: <Icon.Factures /> },
+    { key: 'stock', label: 'Stock & TPE', shortLabel: 'Stock', icon: <Icon.Stock /> },
+    { key: 'academie', label: 'Académie & Tutos', shortLabel: 'Tutos', icon: <Icon.Academie /> }
+  ];
+
   return (
     <>
       <style>{`
-        /* Calque fixe fluide pour conserver l'ambiance active sur toute la hauteur */
         .sp-aurora-bg, .sp-ambient-bg {
           position: fixed;
           inset: 0;
           z-index: 0;
           pointer-events: none;
-          background-color: var(--sp-bg-app, #dce5f2);
+          background-color: var(--sp-bg-app, #f3f1ed);
           background-image: var(--sp-gradient-app);
           transition: background-color 0.25s ease;
+        }
+        .sp-sidebar-link:hover {
+          background: rgba(148, 163, 184, 0.12) !important;
+        }
+        .sp-logout-btn {
+          background: transparent;
+          color: var(--sp-text-muted, #64748b);
+          border: 1px solid var(--sp-border-pill, rgba(148, 163, 184, 0.24));
+        }
+        .sp-logout-btn:hover {
+          background: rgba(220, 38, 38, 0.09) !important;
+          color: #dc2626 !important;
+          border-color: rgba(220, 38, 38, 0.28) !important;
         }
       `}</style>
 
@@ -47,8 +99,8 @@ export default function Navigation({
             background: 'var(--sp-mobile-header-bg, linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(255, 255, 255, 0.82) 100%))',
             backdropFilter: 'blur(20px)',
             WebkitBackdropFilter: 'blur(20px)',
-            borderBottom: 'var(--sp-border-card, 1px solid rgba(255, 255, 255, 0.92))',
-            boxShadow: '0 4px 20px -4px rgba(15, 23, 42, 0.08), inset 0 -1px 0 rgba(148, 163, 184, 0.08)',
+            borderBottom: 'var(--sp-border-card, 1px solid rgba(148, 163, 184, 0.22))',
+            boxShadow: '0 4px 20px -4px rgba(15, 23, 42, 0.06)',
             paddingTop: 'max(env(safe-area-inset-top, 0px), 12px)',
             paddingLeft: 'max(env(safe-area-inset-left, 0px), 14px)',
             paddingRight: 'max(env(safe-area-inset-right, 0px), 14px)',
@@ -81,14 +133,14 @@ export default function Navigation({
               />
               <span
                 style={{
-                  fontSize: '10.5px',
+                  fontSize: '10px',
                   fontWeight: '800',
-                  color: isDarkMode ? '#94a3b8' : '#64748b',
+                  color: 'var(--sp-text-muted, #64748b)',
                   padding: '2px 8px',
                   borderRadius: '999px',
-                  background: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(15, 23, 42, 0.06)',
-                  border: isDarkMode ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid rgba(148, 163, 184, 0.2)',
-                  letterSpacing: '0.03em',
+                  background: isDarkMode ? 'rgba(255, 255, 255, 0.06)' : 'rgba(15, 23, 42, 0.05)',
+                  border: 'var(--sp-border-pill)',
+                  letterSpacing: '0.04em',
                   textTransform: 'uppercase'
                 }}
               >
@@ -97,7 +149,6 @@ export default function Navigation({
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              {/* Bouton Thème Jour / Nuit Rapide Mobile */}
               <button
                 type="button"
                 onClick={onToggleTheme}
@@ -112,7 +163,7 @@ export default function Navigation({
                   justifyContent: 'center',
                   cursor: 'pointer',
                   padding: 0,
-                  color: 'var(--sp-text-main, #0f172a)'
+                  color: 'var(--sp-text-main, #18181b)'
                 }}
               >
                 {isDarkMode ? (
@@ -144,13 +195,12 @@ export default function Navigation({
                   gap: '6px',
                   padding: '5px 11px',
                   borderRadius: '999px',
-                  background: activeTab === 'profil' ? 'var(--sp-btn-primary, #111827)' : undefined,
-                  color: activeTab === 'profil' ? 'var(--sp-btn-primary-text, #ffffff)' : 'var(--sp-text-main, #0f172a)',
+                  background: activeTab === 'profil' ? 'rgba(16, 185, 129, 0.14)' : undefined,
+                  color: activeTab === 'profil' ? '#059669' : 'var(--sp-text-main, #18181b)',
                   fontSize: '11.5px',
                   fontWeight: '800',
                   cursor: 'pointer',
-                  border: activeTab === 'profil' ? '1px solid var(--sp-btn-primary, #111827)' : undefined,
-                  boxShadow: '0 2px 8px rgba(15, 23, 42, 0.05)'
+                  border: activeTab === 'profil' ? '1px solid rgba(16, 185, 129, 0.4)' : undefined
                 }}
               >
                 <span
@@ -158,8 +208,7 @@ export default function Navigation({
                     width: '6px',
                     height: '6px',
                     borderRadius: '50%',
-                    backgroundColor: profilData?.autorise_a_vendre ? '#10b981' : '#f59e0b',
-                    boxShadow: profilData?.autorise_a_vendre ? '0 0 6px #10b981' : '0 0 6px #f59e0b'
+                    backgroundColor: profilData?.autorise_a_vendre ? '#10b981' : '#f59e0b'
                   }}
                 />
                 <span style={{ textTransform: 'capitalize' }}>
@@ -171,19 +220,17 @@ export default function Navigation({
                 type="button"
                 onClick={onLogout}
                 title="Déconnexion"
+                className="sp-glass-pill"
                 style={{
                   width: '32px',
                   height: '32px',
                   borderRadius: '50%',
-                  backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                  color: '#dc2626',
-                  border: '1px solid rgba(239, 68, 68, 0.24)',
+                  color: 'var(--sp-text-muted, #64748b)',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  padding: 0,
-                  transition: 'background-color 0.15s ease'
+                  padding: 0
                 }}
               >
                 <Icon.Logout />
@@ -197,8 +244,8 @@ export default function Navigation({
       {!isMobile && (
         <div
           style={{
-            width: '256px',
-            padding: '18px 0 18px 18px',
+            width: '248px',
+            padding: '16px 0 16px 16px',
             flexShrink: 0,
             position: 'sticky',
             top: 0,
@@ -211,40 +258,53 @@ export default function Navigation({
             className="sp-glass-panel"
             style={{
               height: '100%',
-              padding: '24px 16px',
+              padding: '20px 14px',
               display: 'flex',
               flexDirection: 'column',
               boxSizing: 'border-box',
-              borderRadius: '28px'
+              borderRadius: '24px'
             }}
           >
-            <div style={{ marginBottom: '20px', textAlign: 'center', padding: '4px 8px' }}>
-              <img
-                src="/stack-logo-light.png"
-                onError={(e) => {
-                  e.currentTarget.onerror = null;
-                  e.currentTarget.src = '/IMG_6804.png';
-                }}
-                alt="STACK"
-                style={{ height: '30px', width: 'auto', objectFit: 'contain', display: 'inline-block' }}
-              />
-              <div style={{ fontSize: '11.5px', fontWeight: '600', color: isDarkMode ? '#94a3b8' : '#64748b', marginTop: '4px' }}>
-                Partenaires
+            {/* En-tête Logo */}
+            <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '2px 6px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <img
+                  src="/stack-logo-light.png"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = '/IMG_6804.png';
+                  }}
+                  alt="STACK"
+                  style={{ height: '24px', width: 'auto', objectFit: 'contain', display: 'block' }}
+                />
               </div>
+              <span style={{
+                fontSize: '10px',
+                fontWeight: '800',
+                letterSpacing: '0.05em',
+                textTransform: 'uppercase',
+                padding: '3px 8px',
+                borderRadius: '999px',
+                background: 'rgba(16, 185, 129, 0.12)',
+                color: isDarkMode ? '#34d399' : '#059669'
+              }}>
+                Partners
+              </span>
             </div>
 
+            {/* Carte Profil Partenaire */}
             <button
               type="button"
               onClick={() => setActiveTab('profil')}
-              className={activeTab === 'profil' ? '' : 'sp-glass-pill'}
+              className="sp-glass-pill"
               style={{
                 width: '100%',
                 textAlign: 'left',
-                background: activeTab === 'profil' ? 'var(--sp-nav-active-bg, #111827)' : undefined,
-                border: activeTab === 'profil' ? '1px solid var(--sp-nav-active-bg, #111827)' : undefined,
-                borderRadius: '16px',
-                padding: '11px 14px',
-                marginBottom: '16px',
+                background: activeTab === 'profil' ? 'rgba(16, 185, 129, 0.14)' : undefined,
+                border: activeTab === 'profil' ? '1.5px solid rgba(16, 185, 129, 0.42)' : undefined,
+                borderRadius: '15px',
+                padding: '10px 12px',
+                marginBottom: '14px',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -260,7 +320,6 @@ export default function Navigation({
                       height: '7px',
                       borderRadius: '50%',
                       backgroundColor: profilData?.autorise_a_vendre ? '#10b981' : '#f59e0b',
-                      boxShadow: profilData?.autorise_a_vendre ? '0 0 6px #10b981' : 'none',
                       flexShrink: 0
                     }}
                   />
@@ -268,7 +327,7 @@ export default function Navigation({
                     style={{
                       fontSize: '13px',
                       fontWeight: '800',
-                      color: activeTab === 'profil' ? 'var(--sp-nav-active-color, #ffffff)' : 'var(--sp-text-main, #0f172a)',
+                      color: activeTab === 'profil' ? (isDarkMode ? '#34d399' : '#059669') : 'var(--sp-text-main, #18181b)',
                       textTransform: 'capitalize',
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
@@ -280,9 +339,9 @@ export default function Navigation({
                 </div>
                 <div
                   style={{
-                    fontSize: '11px',
-                    color: activeTab === 'profil' ? (isDarkMode ? '#0f172a' : '#cbd5e1') : 'var(--sp-text-muted, #64748b)',
-                    marginTop: '3px',
+                    fontSize: '10.5px',
+                    color: 'var(--sp-text-muted, #64748b)',
+                    marginTop: '2px',
                     fontFamily: 'monospace',
                     fontWeight: '600'
                   }}
@@ -290,100 +349,68 @@ export default function Navigation({
                   {agent?.code || 'STK-PARTNER'}
                 </div>
               </div>
-              <div style={{ color: activeTab === 'profil' ? 'var(--sp-nav-active-color, #ffffff)' : 'var(--sp-text-muted, #64748b)', flexShrink: 0 }}>
+              <div style={{ color: activeTab === 'profil' ? '#059669' : 'var(--sp-text-muted, #64748b)', flexShrink: 0 }}>
                 <Icon.User />
               </div>
             </button>
 
-            {/* Navigation des modules principaux */}
-            <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: '5px', overflowY: 'auto' }}>
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab('bord');
-                  window.scrollTo(0, 0);
-                }}
-                style={navBtnStyle(activeTab === 'bord')}
-              >
-                <Icon.Bord /> Tableau de bord
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab('prospects');
-                  window.scrollTo(0, 0);
-                }}
-                style={navBtnStyle(activeTab === 'prospects')}
-              >
-                <Icon.Prospects /> Mes Prospects
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab('carte');
-                  window.scrollTo(0, 0);
-                }}
-                style={navBtnStyle(activeTab === 'carte')}
-              >
-                <Icon.MapPin /> Carte & Prospection
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab('factures');
-                  window.scrollTo(0, 0);
-                }}
-                style={navBtnStyle(activeTab === 'factures')}
-              >
-                <Icon.Factures /> Factures Onboarding
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab('stock');
-                  window.scrollTo(0, 0);
-                }}
-                style={navBtnStyle(activeTab === 'stock')}
-              >
-                <Icon.Stock /> Stock & TPE
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab('academie');
-                  window.scrollTo(0, 0);
-                }}
-                style={navBtnStyle(activeTab === 'academie')}
-              >
-                <Icon.Academie /> Académie & Tutos
-              </button>
+            {/* Navigation des modules principaux (Sans barre noire agressive) */}
+            <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: '4px', overflowY: 'auto' }}>
+              {navItems.map((item) => {
+                const isActif = activeTab === item.key;
+                return (
+                  <button
+                    key={item.key}
+                    type="button"
+                    onClick={() => {
+                      setActiveTab(item.key);
+                      window.scrollTo(0, 0);
+                    }}
+                    className={isActif ? '' : 'sp-sidebar-link'}
+                    style={getSoftNavBtnStyle(isActif)}
+                  >
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                      {item.icon}
+                      <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {item.label}
+                      </span>
+                    </span>
+                    {isActif && (
+                      <span style={{
+                        width: '6px',
+                        height: '6px',
+                        borderRadius: '50%',
+                        background: '#10b981',
+                        flexShrink: 0
+                      }} />
+                    )}
+                  </button>
+                );
+              })}
 
               {isSuperAdmin && (
                 <>
-                  <div style={{ margin: '10px 4px', borderTop: isDarkMode ? '1px solid rgba(255, 255, 255, 0.10)' : '1px solid rgba(148, 163, 184, 0.22)' }} />
+                  <div style={{ margin: '8px 4px', borderTop: isDarkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(148, 163, 184, 0.18)' }} />
                   <button
                     type="button"
                     onClick={() => {
                       setActiveTab('godmode');
                       window.scrollTo(0, 0);
                     }}
-                    className={activeTab === 'godmode' ? '' : 'sp-glass-pill'}
-                    style={{
-                      ...navBtnStyle(activeTab === 'godmode'),
-                      justifyContent: 'space-between'
-                    }}
+                    className={activeTab === 'godmode' ? '' : 'sp-sidebar-link'}
+                    style={getSoftNavBtnStyle(activeTab === 'godmode')}
                   >
                     <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <Icon.Shield /> God Mode
                     </span>
                     <span
                       style={{
-                        fontSize: '9.5px',
+                        fontSize: '9px',
                         fontWeight: '800',
                         padding: '2px 7px',
                         borderRadius: '999px',
-                        backgroundColor: activeTab === 'godmode' ? 'rgba(255,255,255,0.2)' : (isDarkMode ? 'rgba(255, 255, 255, 0.12)' : 'rgba(15, 23, 42, 0.08)'),
-                        color: activeTab === 'godmode' ? '#ffffff' : (isDarkMode ? '#f8fafc' : '#334155')
+                        backgroundColor: activeTab === 'godmode' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(148, 163, 184, 0.14)',
+                        color: activeTab === 'godmode' ? (isDarkMode ? '#34d399' : '#059669') : 'var(--sp-text-muted, #64748b)'
                       }}
                     >
                       ADMIN
@@ -393,26 +420,27 @@ export default function Navigation({
               )}
             </div>
 
-            {/* Bouton de bascule Mode Jour / Nuit Desktop */}
-            <button
-              type="button"
-              onClick={onToggleTheme}
-              className="sp-glass-pill"
-              style={{
-                marginTop: '10px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '9px 14px',
-                cursor: 'pointer',
-                borderRadius: '14px',
-                fontSize: '12px',
-                fontWeight: '700',
-                border: 'none',
-                color: 'var(--sp-text-main, #0f172a)'
-              }}
-            >
-              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {/* Pied de barre latérale : Mode Jour/Nuit + Déconnexion sobre sur la même ligne */}
+            <div style={{ display: 'flex', gap: '6px', marginTop: '10px', paddingTop: '10px', borderTop: isDarkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(148, 163, 184, 0.18)' }}>
+              <button
+                type="button"
+                onClick={onToggleTheme}
+                className="sp-glass-pill"
+                title={isDarkMode ? 'Passer en mode Jour' : 'Passer en mode Nuit'}
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '7px',
+                  padding: '9px 10px',
+                  cursor: 'pointer',
+                  borderRadius: '12px',
+                  fontSize: '12px',
+                  fontWeight: '700',
+                  color: 'var(--sp-text-main, #18181b)'
+                }}
+              >
                 {isDarkMode ? (
                   <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
                     <circle cx="12" cy="12" r="5" />
@@ -430,35 +458,30 @@ export default function Navigation({
                     <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
                   </svg>
                 )}
-                <span>{isDarkMode ? 'Mode Nuit actif' : 'Mode Jour actif'}</span>
-              </span>
-              <span style={{ fontSize: '10px', color: isDarkMode ? '#94a3b8' : '#64748b' }}>
-                Bascule ›
-              </span>
-            </button>
+                <span>{isDarkMode ? 'Mode Nuit' : 'Mode Jour'}</span>
+              </button>
 
-            <button
-              type="button"
-              onClick={onLogout}
-              style={{
-                marginTop: '8px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '10px',
-                background: 'rgba(254, 226, 226, 0.65)',
-                color: '#dc2626',
-                border: '1px solid rgba(252, 165, 165, 0.5)',
-                padding: '10px 14px',
-                cursor: 'pointer',
-                borderRadius: '14px',
-                fontSize: '12.5px',
-                fontWeight: '700',
-                transition: 'all 0.15s ease'
-              }}
-            >
-              <Icon.Logout /> Se déconnecter
-            </button>
+              <button
+                type="button"
+                onClick={onLogout}
+                title="Se déconnecter"
+                className="sp-logout-btn"
+                style={{
+                  width: '38px',
+                  height: '38px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: 0,
+                  cursor: 'pointer',
+                  borderRadius: '12px',
+                  flexShrink: 0,
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <Icon.Logout />
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -472,15 +495,15 @@ export default function Navigation({
             left: '12px',
             right: '12px',
             zIndex: 8900,
-            background: 'var(--sp-mobile-bottom-bg, rgba(255, 255, 255, 0.88))',
+            background: 'var(--sp-mobile-bottom-bg, rgba(255, 255, 255, 0.90))',
             backdropFilter: 'blur(22px)',
             WebkitBackdropFilter: 'blur(22px)',
-            border: 'var(--sp-border-card, 1.5px solid #ffffff)',
+            border: 'var(--sp-border-card, 1px solid rgba(148, 163, 184, 0.22))',
             borderRadius: '24px',
             display: 'grid',
             gridTemplateColumns: `repeat(${isSuperAdmin ? 6 : 5}, 1fr)`,
             padding: '4px 5px',
-            boxShadow: '0 10px 28px rgba(15, 23, 42, 0.12)'
+            boxShadow: '0 10px 28px rgba(15, 23, 42, 0.10)'
           }}
         >
           {[
@@ -501,8 +524,8 @@ export default function Navigation({
                   window.scrollTo(0, 0);
                 }}
                 style={{
-                  background: active ? 'var(--sp-btn-primary, #111827)' : 'transparent',
-                  border: 'none',
+                  background: active ? 'rgba(16, 185, 129, 0.15)' : 'transparent',
+                  border: active ? '1px solid rgba(16, 185, 129, 0.35)' : '1px solid transparent',
                   borderRadius: '18px',
                   padding: '6px 2px',
                   display: 'flex',
@@ -510,7 +533,7 @@ export default function Navigation({
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '2px',
-                  color: active ? 'var(--sp-btn-primary-text, #ffffff)' : (isDarkMode ? '#94a3b8' : '#64748b'),
+                  color: active ? (isDarkMode ? '#34d399' : '#059669') : (isDarkMode ? '#94a3b8' : '#64748b'),
                   fontWeight: active ? '800' : '600',
                   fontSize: '10px',
                   cursor: 'pointer',
