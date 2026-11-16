@@ -241,8 +241,8 @@ export default function AmbianceSelectorPartner({
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div
                       style={{
-                        fontSize: '12px',
-                        fontWeight: '800',
+                        fontSize: '13px',
+                        fontWeight: '700',
                         color: isDarkPreview ? '#ffffff' : '#0f172a',
                         whiteSpace: 'nowrap',
                         overflow: 'hidden',
@@ -251,20 +251,6 @@ export default function AmbianceSelectorPartner({
                     >
                       {item.nom}
                     </div>
-                    {item.sousTitre && (
-                      <div
-                        style={{
-                          fontSize: '10px',
-                          color: isDarkPreview ? '#94a3b8' : '#64748b',
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          marginTop: '1px'
-                        }}
-                      >
-                        {item.sousTitre}
-                      </div>
-                    )}
                   </div>
                   {estSelectionne && (
                     <span style={{ fontSize: '11px', fontWeight: '800', color: isDarkPreview ? '#34d399' : '#059669', flexShrink: 0, display: 'inline-flex', alignItems: 'center' }}>
