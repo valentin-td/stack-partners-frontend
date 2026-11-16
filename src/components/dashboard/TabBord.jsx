@@ -239,191 +239,149 @@ export default function TabBord({
         </div>
       </header>
 
-      {/* 2. LES 4 CARTES KPI (GRILLE 2x2 ULTRA-NETTE SUR IPHONE) */}
+      {/* 2. LES 4 CARTES KPI HIÉRARCHISÉES (CARTE MAÎTRESSE ÉMERAUDE + 3 KPIS ÉPURÉS) */}
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
-          gap: isMobile ? '8px' : '16px',
-          marginBottom: isMobile ? '12px' : '22px'
+          gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : '1.3fr 1fr 1fr 1fr',
+          gap: isMobile ? '8px' : '14px',
+          marginBottom: isMobile ? '12px' : '18px'
         }}
       >
+        {/* KPI 1 (Pièce maîtresse) : Commissions acquises + Progression du palier intégrée */}
         <div
-          className="sp-glass-panel"
+          className="sp-glass-panel-dark"
           style={{
-            padding: isMobile ? '11px 12px' : '20px 22px',
-            borderRadius: isMobile ? '18px' : '24px',
+            gridColumn: isMobile ? '1 / -1' : 'auto',
+            padding: isMobile ? '16px 18px' : '18px 22px',
+            minHeight: isMobile ? '98px' : '110px',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
-            gap: isMobile ? '6px' : '12px',
-            minWidth: 0
+            boxSizing: 'border-box'
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px' }}>
-            <div
-              style={{
-                width: isMobile ? '30px' : '40px',
-                height: isMobile ? '30px' : '40px',
-                borderRadius: '50%',
-                background: 'rgba(99, 102, 241, 0.12)',
-                border: '1px solid rgba(99, 102, 241, 0.25)',
-                color: '#4f46e5',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0
-              }}
-            >
-              <svg viewBox="0 0 24 24" width={isMobile ? '14' : '18'} height={isMobile ? '14' : '18'} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
-              </svg>
-            </div>
-            <span className="sp-glass-pill" style={{ padding: '2px 7px', borderRadius: '999px', fontSize: '9.5px', fontWeight: '700', color: '#64748b' }}>
-              30 jours
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '10.5px', fontWeight: '700', color: 'rgba(255,255,255,0.72)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+              Commissions acquises
+            </span>
+            <span style={{ padding: '2px 8px', borderRadius: '999px', fontSize: '10px', fontWeight: '800', background: 'rgba(16, 185, 129, 0.22)', color: '#34d399' }}>
+              20 % HT récurrent
             </span>
           </div>
+
+          <div style={{ fontSize: isMobile ? '26px' : '29px', fontWeight: '800', color: '#ffffff', lineHeight: 1, fontVariantNumeric: 'tabular-nums', margin: '8px 0' }}>
+            {formatMontant(kpis.commissions_acquises)} <span style={{ fontSize: '13px', fontWeight: '700', color: 'rgba(255,255,255,0.65)' }}>€ HT</span>
+          </div>
+
           <div>
-            <div style={{ fontSize: isMobile ? '20px' : '28px', fontWeight: '800', color: '#0f172a', lineHeight: 1.05, fontVariantNumeric: 'tabular-nums' }}>
-              {nbSalonsEssai}
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10.5px', color: 'rgba(255,255,255,0.75)', fontWeight: '600', marginBottom: '4px' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                <span>
+                  {palierAtteint
+                    ? 'Seuil de déblocage validé'
+                    : `Déblocage : ${nbSalonsActifs}/${seuilDeblocage} salons actifs`}
+                </span>
+                {palierAtteint && (
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                )}
+              </span>
+              <span style={{ color: '#34d399', fontWeight: '800' }}>{pctPalier}%</span>
             </div>
-            <div style={{ fontSize: isMobile ? '11px' : '12.5px', fontWeight: '600', color: '#64748b', marginTop: '2px' }}>
-              Salons en essai
+            <div style={{ height: '4px', width: '100%', background: 'rgba(255,255,255,0.15)', borderRadius: '999px', overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${Math.max(5, pctPalier)}%`, background: '#10b981', borderRadius: '999px' }} />
             </div>
           </div>
         </div>
 
+        {/* KPI 2 : En attente de seuil (Réserve) */}
         <div
           className="sp-glass-panel"
           style={{
-            padding: isMobile ? '11px 12px' : '20px 22px',
-            borderRadius: isMobile ? '18px' : '24px',
+            padding: isMobile ? '13px 14px' : '18px 20px',
+            minHeight: isMobile ? '84px' : '110px',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
-            gap: isMobile ? '6px' : '12px',
-            minWidth: 0
+            boxSizing: 'border-box'
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px' }}>
-            <div
-              style={{
-                width: isMobile ? '30px' : '40px',
-                height: isMobile ? '30px' : '40px',
-                borderRadius: '50%',
-                background: 'rgba(16, 185, 129, 0.14)',
-                border: '1px solid rgba(16, 185, 129, 0.28)',
-                color: '#059669',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0
-              }}
-            >
-              <svg viewBox="0 0 24 24" width={isMobile ? '14' : '18'} height={isMobile ? '14' : '18'} fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><polyline points="16 11 18 13 22 9" />
-              </svg>
+            <span style={{ fontSize: '10.5px', fontWeight: '700', color: 'var(--sp-muted, #64748b)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              En réserve
+            </span>
+            <span style={{ padding: '2px 8px', borderRadius: '999px', fontSize: '10px', fontWeight: '800', background: 'rgba(245, 158, 11, 0.14)', color: '#b45309' }}>
+              Seuil {seuilDeblocage} salons
+            </span>
+          </div>
+          <div>
+            <div style={{ fontSize: isMobile ? '20px' : '27px', fontWeight: '800', color: 'var(--sp-text, #18181b)', lineHeight: 1.05, fontVariantNumeric: 'tabular-nums' }}>
+              {formatMontant(kpis.commissions_en_attente)} <span style={{ fontSize: '11.5px', fontWeight: '700', color: 'var(--sp-muted, #64748b)' }}>€ HT</span>
             </div>
-            <span style={{ padding: '2px 7px', borderRadius: '999px', fontSize: '9.5px', fontWeight: '800', background: 'rgba(16, 185, 129, 0.14)', color: '#059669' }}>
+            <div style={{ fontSize: '11px', fontWeight: '500', color: 'var(--sp-muted, #64748b)', marginTop: '4px' }}>
+              Débloqué au {seuilDeblocage}e salon payant
+            </div>
+          </div>
+        </div>
+
+        {/* KPI 3 : Salons payants (Abonnés) */}
+        <div
+          className="sp-glass-panel"
+          style={{
+            padding: isMobile ? '13px 14px' : '18px 20px',
+            minHeight: isMobile ? '84px' : '110px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            boxSizing: 'border-box'
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontSize: '10.5px', fontWeight: '700', color: 'var(--sp-muted, #64748b)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Salons payants
+            </span>
+            <span style={{ padding: '2px 8px', borderRadius: '999px', fontSize: '10px', fontWeight: '800', background: 'rgba(16, 185, 129, 0.14)', color: '#059669' }}>
               Abonnés
             </span>
           </div>
           <div>
-            <div style={{ fontSize: isMobile ? '20px' : '28px', fontWeight: '800', color: '#059669', lineHeight: 1.05, fontVariantNumeric: 'tabular-nums' }}>
+            <div style={{ fontSize: isMobile ? '20px' : '27px', fontWeight: '800', color: nbSalonsActifs > 0 ? '#059669' : 'var(--sp-text, #18181b)', lineHeight: 1.05, fontVariantNumeric: 'tabular-nums' }}>
               {nbSalonsActifs}
             </div>
-            <div style={{ fontSize: isMobile ? '11px' : '12.5px', fontWeight: '600', color: '#64748b', marginTop: '2px' }}>
-              Salons payants
+            <div style={{ fontSize: '11px', fontWeight: '500', color: 'var(--sp-muted, #64748b)', marginTop: '4px' }}>
+              Commissionnés sur 24 mois
             </div>
           </div>
         </div>
 
+        {/* KPI 4 : Salons en essai (30 jours) */}
         <div
           className="sp-glass-panel"
           style={{
-            padding: isMobile ? '11px 12px' : '20px 22px',
-            borderRadius: isMobile ? '18px' : '24px',
+            padding: isMobile ? '13px 14px' : '18px 20px',
+            minHeight: isMobile ? '84px' : '110px',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
-            gap: isMobile ? '6px' : '12px',
-            minWidth: 0
+            boxSizing: 'border-box'
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px' }}>
-            <div
-              style={{
-                width: isMobile ? '30px' : '40px',
-                height: isMobile ? '30px' : '40px',
-                borderRadius: '50%',
-                background: 'rgba(245, 158, 11, 0.15)',
-                border: '1px solid rgba(245, 158, 11, 0.3)',
-                color: '#d97706',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0
-              }}
-            >
-              <svg viewBox="0 0 24 24" width={isMobile ? '14' : '18'} height={isMobile ? '14' : '18'} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
-              </svg>
-            </div>
-            <span style={{ padding: '2px 7px', borderRadius: '999px', fontSize: '9.5px', fontWeight: '800', background: 'rgba(245, 158, 11, 0.15)', color: '#b45309' }}>
-              Réserve
+            <span style={{ fontSize: '10.5px', fontWeight: '700', color: 'var(--sp-muted, #64748b)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Salons en essai
+            </span>
+            <span className="sp-glass-pill" style={{ padding: '2px 8px', borderRadius: '999px', fontSize: '10px', fontWeight: '700', color: 'var(--sp-muted, #64748b)' }}>
+              30 jours
             </span>
           </div>
           <div>
-            <div style={{ fontSize: isMobile ? '18px' : '26px', fontWeight: '800', color: '#d97706', lineHeight: 1.05, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
-              {formatMontant(kpis.commissions_en_attente)} <span style={{ fontSize: '10.5px', fontWeight: '700', color: '#94a3b8' }}>€ HT</span>
+            <div style={{ fontSize: isMobile ? '20px' : '27px', fontWeight: '800', color: 'var(--sp-text, #18181b)', lineHeight: 1.05, fontVariantNumeric: 'tabular-nums' }}>
+              {nbSalonsEssai}
             </div>
-            <div style={{ fontSize: isMobile ? '11px' : '12.5px', fontWeight: '600', color: '#64748b', marginTop: '2px' }}>
-              En attente de seuil
-            </div>
-          </div>
-        </div>
-
-        <div
-          className="sp-glass-panel"
-          style={{
-            padding: isMobile ? '11px 12px' : '20px 22px',
-            borderRadius: isMobile ? '18px' : '24px',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-            gap: isMobile ? '6px' : '12px',
-            minWidth: 0
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px' }}>
-            <div
-              style={{
-                width: isMobile ? '30px' : '40px',
-                height: isMobile ? '30px' : '40px',
-                borderRadius: '50%',
-                background: 'rgba(15, 23, 42, 0.08)',
-                border: '1px solid rgba(15, 23, 42, 0.14)',
-                color: '#0f172a',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: '800',
-                fontSize: isMobile ? '13.5px' : '16px',
-                flexShrink: 0
-              }}
-            >
-              €
-            </div>
-            <span className="sp-glass-pill" style={{ padding: '2px 7px', borderRadius: '999px', fontSize: '9.5px', fontWeight: '800', color: '#059669' }}>
-              20 % HT
-            </span>
-          </div>
-          <div>
-            <div style={{ fontSize: isMobile ? '18px' : '26px', fontWeight: '800', color: '#0f172a', lineHeight: 1.05, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
-              {formatMontant(kpis.commissions_acquises)} <span style={{ fontSize: '10.5px', fontWeight: '700', color: '#94a3b8' }}>€ HT</span>
-            </div>
-            <div style={{ fontSize: isMobile ? '11px' : '12.5px', fontWeight: '600', color: '#64748b', marginTop: '2px' }}>
-              Commissions acquises
+            <div style={{ fontSize: '11px', fontWeight: '500', color: 'var(--sp-muted, #64748b)', marginTop: '4px' }}>
+              Période d'essai gratuite
             </div>
           </div>
         </div>
@@ -461,7 +419,7 @@ export default function TabBord({
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#0f172a" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" />
               </svg>
-              <h2 style={{ margin: 0, fontSize: isMobile ? '15px' : '16.5px', fontWeight: '800', color: '#0f172a', letterSpacing: '-0.02em' }}>
+              <h2 style={{ margin: 0, fontSize: isMobile ? '15px' : '16px', fontWeight: '800', color: 'var(--sp-text, #18181b)', letterSpacing: '-0.02em' }}>
                 Commissions mensuelles (20 % HT)
               </h2>
             </div>
@@ -488,13 +446,13 @@ export default function TabBord({
                     type="button"
                     onClick={() => setFiltreCommissions(tab.id)}
                     style={{
-                      border: 'none',
-                      background: actif ? '#111827' : 'transparent',
-                      color: actif ? '#ffffff' : '#64748b',
-                      padding: '5px 10px',
+                      border: actif ? '1px solid rgba(16, 185, 129, 0.4)' : 'none',
+                      background: actif ? 'rgba(16, 185, 129, 0.14)' : 'transparent',
+                      color: actif ? '#059669' : 'var(--sp-muted, #64748b)',
+                      padding: '5px 11px',
                       borderRadius: '999px',
                       fontSize: '11px',
-                      fontWeight: '700',
+                      fontWeight: actif ? '800' : '700',
                       cursor: 'pointer',
                       textAlign: 'center'
                     }}
@@ -671,10 +629,43 @@ export default function TabBord({
               </h2>
             </div>
 
-            <span className="sp-glass-pill" style={{ padding: '3px 9px', borderRadius: '999px', fontSize: '10px', fontWeight: '700', color: '#64748b', whiteSpace: 'nowrap' }}>
+            <span className="sp-glass-pill" style={{ padding: '3px 9px', borderRadius: '999px', fontSize: '10px', fontWeight: '700', color: 'var(--sp-muted, #64748b)', whiteSpace: 'nowrap' }}>
               Durée 24 mois
             </span>
           </div>
+
+          {salonsListe.length > 2 && (
+            <div
+              className="sp-glass-pill"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '7px 12px',
+                borderRadius: '999px',
+                marginBottom: '10px'
+              }}
+            >
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="var(--sp-muted, #64748b)" strokeWidth="2.2">
+                <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              <input
+                type="text"
+                placeholder="Rechercher un salon affilié..."
+                value={rechercheSalon}
+                onChange={(e) => setRechercheSalon(e.target.value)}
+                style={{
+                  border: 'none',
+                  background: 'transparent',
+                  outline: 'none',
+                  width: '100%',
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  color: 'var(--sp-text, #18181b)'
+                }}
+              />
+            </div>
+          )}
 
           {salonsFiltres.length === 0 ? (
             <div

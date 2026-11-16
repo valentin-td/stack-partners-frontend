@@ -65,6 +65,19 @@ html, body, #root {
   transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
+/* Panneau Maître Obsidienne Émeraude */
+.sp-glass-panel-dark {
+  background: linear-gradient(145deg, #181a1f 0%, #111317 100%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-top: 1.5px solid rgba(255, 255, 255, 0.22);
+  box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.35);
+  border-radius: 24px;
+  box-sizing: border-box;
+  max-width: 100%;
+  color: #ffffff;
+  transform: translateZ(0);
+}
+
 /* Pilules et badges haute fluidité */
 .sp-glass-pill {
   background: var(--sp-bg-pill, linear-gradient(145deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.82) 100%));
