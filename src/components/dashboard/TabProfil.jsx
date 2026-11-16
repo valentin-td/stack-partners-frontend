@@ -37,7 +37,7 @@ export default function TabProfil({
     const e2Ok = Boolean(
       profilData.siret_agent &&
       profilData.numero_rsac &&
-      profilData.fichier_identite &&
+      (profilData.fichier_identite || profilData.statut_identite === 'VALIDE') &&
       profilData.fichier_rsac &&
       !idExp
     );
@@ -140,45 +140,54 @@ export default function TabProfil({
     }
   ];
 
-  // Composant d'upload de fichier stylisé en Verre Cristal
-  const renderCustomFileUploader = (fieldName, labelBtn, currentFile, badgeLabel) => (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', minWidth: 0 }}>
-      <label
-        className="sp-glass-pill"
-        style={{
-          height: '40px',
-          padding: '0 13px',
-          borderRadius: '12px',
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '7px',
-          fontSize: '12px',
-          fontWeight: '700',
-          color: '#0f172a',
-          cursor: 'pointer',
-          background: 'rgba(255, 255, 255, 0.92)',
-          boxSizing: 'border-box',
-          maxWidth: '100%'
-        }}
-      >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-          <polyline points="17 8 12 3 7 8" />
-          <line x1="12" y1="3" x2="12" y2="15" />
-        </svg>
-        <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          {currentFile ? 'Remplacer le fichier' : labelBtn}
-        </span>
-        <input
-          type="file"
-          accept=".pdf,image/*"
-          onChange={(e) => handleFileUpload(e, fieldName)}
-          style={{ display: 'none' }}
-        />
-      </label>
-      {renderFilePreviewBadge && renderFilePreviewBadge(currentFile, badgeLabel)}
-    </div>
-  );
+  const handleAutoSave = (etape, customPayload = null) => {
+    if (typeof submitEtapeConformite === 'function') {
+      submitEtapeConformite(etape, customPayload || profilData);
+    }
+  };
+
+  // Composant d'upload de fichier stylisé en Verre Cristal avec auto-sauvegarde
+  const renderCustomFileUploader = (fieldName, labelBtn, currentFile, badgeLabel) => {
+    const isRgpdValide = fieldName === 'fichier_identite' && !currentFile && profilData.statut_identite === 'VALIDE';
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', minWidth: 0 }}>
+        <label
+          className="sp-glass-pill"
+          style={{
+            height: '40px',
+            padding: '0 13px',
+            borderRadius: '12px',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '7px',
+            fontSize: '12px',
+            fontWeight: '700',
+            color: '#0f172a',
+            cursor: 'pointer',
+            background: 'rgba(255, 255, 255, 0.92)',
+            boxSizing: 'border-box',
+            maxWidth: '100%'
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="17 8 12 3 7 8" />
+            <line x1="12" y1="3" x2="12" y2="15" />
+          </svg>
+          <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {isRgpdValide ? "Pièce d'identité validée (RGPD)" : currentFile ? 'Remplacer le fichier' : labelBtn}
+          </span>
+          <input
+            type="file"
+            accept=".pdf,image/*"
+            onChange={(e) => handleFileUpload(e, fieldName)}
+            style={{ display: 'none' }}
+          />
+        </label>
+        {renderFilePreviewBadge && renderFilePreviewBadge(currentFile, badgeLabel)}
+      </div>
+    );
+  };
 
   return (
     <div
@@ -833,6 +842,7 @@ export default function TabProfil({
                       type="date"
                       value={profilData.date_naissance ? profilData.date_naissance.slice(0, 10) : ''}
                       onChange={(e) => setProfilData({ ...profilData, date_naissance: e.target.value })}
+                      onBlur={() => handleAutoSave(2)}
                       className="sp-kyc-input"
                     />
                   </div>
@@ -842,6 +852,7 @@ export default function TabProfil({
                       type="date"
                       value={profilData.date_expiration_identite ? profilData.date_expiration_identite.slice(0, 10) : ''}
                       onChange={(e) => setProfilData({ ...profilData, date_expiration_identite: e.target.value })}
+                      onBlur={() => handleAutoSave(2)}
                       className="sp-kyc-input"
                     />
                   </div>
@@ -865,6 +876,7 @@ export default function TabProfil({
                       placeholder="Ex : 12345678901234"
                       value={profilData.siret_agent || ''}
                       onChange={(e) => setProfilData({ ...profilData, siret_agent: e.target.value })}
+                      onBlur={() => handleAutoSave(2)}
                       className="sp-kyc-input"
                     />
                   </div>
@@ -873,7 +885,11 @@ export default function TabProfil({
                       <label className="sp-kyc-label">Forme juridique</label>
                       <select
                         value={profilData.forme_juridique || 'EI'}
-                        onChange={(e) => setProfilData({ ...profilData, forme_juridique: e.target.value })}
+                        onChange={(e) => {
+                          const updated = { ...profilData, forme_juridique: e.target.value };
+                          setProfilData(updated);
+                          handleAutoSave(2, updated);
+                        }}
                         className="sp-kyc-input"
                       >
                         <option value="EI">EI / Micro</option>
@@ -886,6 +902,7 @@ export default function TabProfil({
                         type="date"
                         value={profilData.date_debut_activite ? profilData.date_debut_activite.slice(0, 10) : ''}
                         onChange={(e) => setProfilData({ ...profilData, date_debut_activite: e.target.value })}
+                        onBlur={() => handleAutoSave(2)}
                         className="sp-kyc-input"
                       />
                     </div>
@@ -898,6 +915,7 @@ export default function TabProfil({
                     placeholder="Numéro, rue, code postal et ville"
                     value={profilData.adresse_pro || ''}
                     onChange={(e) => setProfilData({ ...profilData, adresse_pro: e.target.value })}
+                    onBlur={() => handleAutoSave(2)}
                     className="sp-kyc-input"
                   />
                 </div>
@@ -916,6 +934,7 @@ export default function TabProfil({
                       placeholder="Ex : 902 145 789"
                       value={profilData.numero_rsac || ''}
                       onChange={(e) => setProfilData({ ...profilData, numero_rsac: e.target.value })}
+                      onBlur={() => handleAutoSave(2)}
                       className="sp-kyc-input"
                     />
                   </div>
@@ -926,6 +945,7 @@ export default function TabProfil({
                       placeholder="Ex : Strasbourg"
                       value={profilData.greffe_rsac || ''}
                       onChange={(e) => setProfilData({ ...profilData, greffe_rsac: e.target.value })}
+                      onBlur={() => handleAutoSave(2)}
                       className="sp-kyc-input"
                     />
                   </div>
@@ -935,6 +955,7 @@ export default function TabProfil({
                       type="date"
                       value={profilData.date_emission_rsac ? profilData.date_emission_rsac.slice(0, 10) : ''}
                       onChange={(e) => setProfilData({ ...profilData, date_emission_rsac: e.target.value })}
+                      onBlur={() => handleAutoSave(2)}
                       className="sp-kyc-input"
                     />
                   </div>
@@ -945,15 +966,22 @@ export default function TabProfil({
                 </div>
               </div>
 
-              {/* Barre d'actions sur une seule ligne */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+              {/* Barre d'actions avec enregistrement automatique */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#059669', fontWeight: '700' }}>
+                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10b981', display: 'inline-block' }} />
+                  <span>Enregistrement automatique actif</span>
+                </div>
+
                 <button
                   type="button"
-                  disabled={!profilData.contrat_signe}
-                  onClick={() => submitEtapeConformite(2)}
+                  onClick={() => {
+                    handleAutoSave(2);
+                    setEtapeActive(3);
+                  }}
                   style={{
-                    flex: isMobile ? 1.4 : 'initial',
-                    padding: '12px 18px',
+                    flex: isMobile ? 1 : 'initial',
+                    padding: '12px 22px',
                     borderRadius: '999px',
                     border: 'none',
                     backgroundColor: '#111827',
@@ -964,32 +992,12 @@ export default function TabProfil({
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: '7px',
-                    cursor: profilData.contrat_signe ? 'pointer' : 'not-allowed',
+                    cursor: 'pointer',
                     boxShadow: '0 8px 20px -4px rgba(17, 24, 39, 0.22)',
                     whiteSpace: 'nowrap'
                   }}
                 >
-                  <Icon.Check />
-                  <span>Enregistrer l'Étape 2</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setEtapeActive(3)}
-                  className="sp-glass-pill"
-                  style={{
-                    flex: isMobile ? 1 : 'initial',
-                    padding: '12px 14px',
-                    borderRadius: '999px',
-                    fontSize: '12px',
-                    fontWeight: '800',
-                    color: '#0f172a',
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap',
-                    textAlign: 'center'
-                  }}
-                >
-                  Étape 3 (URSSAF) →
+                  <span>Étape 3 (URSSAF) →</span>
                 </button>
               </div>
             </div>
@@ -1037,6 +1045,7 @@ export default function TabProfil({
                       placeholder="Code de vérification..."
                       value={profilData.code_verif_urssaf || ''}
                       onChange={(e) => setProfilData({ ...profilData, code_verif_urssaf: e.target.value })}
+                      onBlur={() => handleAutoSave(3)}
                       className="sp-kyc-input"
                     />
                   </div>
@@ -1047,6 +1056,7 @@ export default function TabProfil({
                         type="date"
                         value={profilData.date_emission_urssaf ? profilData.date_emission_urssaf.slice(0, 10) : ''}
                         onChange={(e) => setProfilData({ ...profilData, date_emission_urssaf: e.target.value })}
+                        onBlur={() => handleAutoSave(3)}
                         className="sp-kyc-input"
                       />
                     </div>
@@ -1056,6 +1066,7 @@ export default function TabProfil({
                         type="date"
                         value={profilData.date_expiration_urssaf ? profilData.date_expiration_urssaf.slice(0, 10) : ''}
                         onChange={(e) => setProfilData({ ...profilData, date_expiration_urssaf: e.target.value })}
+                        onBlur={() => handleAutoSave(3)}
                         className="sp-kyc-input"
                       />
                     </div>
@@ -1068,13 +1079,22 @@ export default function TabProfil({
                 </div>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+              {/* Barre d'actions avec enregistrement automatique */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#059669', fontWeight: '700' }}>
+                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10b981', display: 'inline-block' }} />
+                  <span>Enregistrement automatique actif</span>
+                </div>
+
                 <button
                   type="button"
-                  onClick={() => submitEtapeConformite(3)}
+                  onClick={() => {
+                    handleAutoSave(3);
+                    setEtapeActive(4);
+                  }}
                   style={{
-                    flex: isMobile ? 1.4 : 'initial',
-                    padding: '12px 18px',
+                    flex: isMobile ? 1 : 'initial',
+                    padding: '12px 22px',
                     borderRadius: '999px',
                     border: 'none',
                     backgroundColor: '#111827',
@@ -1090,27 +1110,7 @@ export default function TabProfil({
                     whiteSpace: 'nowrap'
                   }}
                 >
-                  <Icon.Check />
-                  <span>Enregistrer l'Étape 3</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setEtapeActive(4)}
-                  className="sp-glass-pill"
-                  style={{
-                    flex: isMobile ? 1 : 'initial',
-                    padding: '12px 14px',
-                    borderRadius: '999px',
-                    fontSize: '12px',
-                    fontWeight: '800',
-                    color: '#0f172a',
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap',
-                    textAlign: 'center'
-                  }}
-                >
-                  Étape 4 (RC Pro) →
+                  <span>Étape 4 (RC Pro) →</span>
                 </button>
               </div>
             </div>
@@ -1179,6 +1179,7 @@ export default function TabProfil({
                       placeholder="Ex : AXA, Hiscox..."
                       value={profilData.assureur_nom || ''}
                       onChange={(e) => setProfilData({ ...profilData, assureur_nom: e.target.value })}
+                      onBlur={() => handleAutoSave(4)}
                       className="sp-kyc-input"
                     />
                   </div>
@@ -1189,6 +1190,7 @@ export default function TabProfil({
                       placeholder="N° contrat..."
                       value={profilData.assureur_contrat || ''}
                       onChange={(e) => setProfilData({ ...profilData, assureur_contrat: e.target.value })}
+                      onBlur={() => handleAutoSave(4)}
                       className="sp-kyc-input"
                     />
                   </div>
@@ -1199,6 +1201,7 @@ export default function TabProfil({
                       placeholder="Ex : 500 000 €"
                       value={profilData.assureur_plafond || ''}
                       onChange={(e) => setProfilData({ ...profilData, assureur_plafond: e.target.value })}
+                      onBlur={() => handleAutoSave(4)}
                       className="sp-kyc-input"
                     />
                   </div>
@@ -1213,6 +1216,7 @@ export default function TabProfil({
                       type="date"
                       value={profilData.date_expiration_rc_pro ? profilData.date_expiration_rc_pro.slice(0, 10) : ''}
                       onChange={(e) => setProfilData({ ...profilData, date_expiration_rc_pro: e.target.value })}
+                      onBlur={() => handleAutoSave(4)}
                       className="sp-kyc-input"
                       style={statutsEtapes[4].expire ? { borderColor: '#ef4444' } : undefined}
                     />
@@ -1237,6 +1241,7 @@ export default function TabProfil({
                       placeholder="Nom ou raison sociale"
                       value={profilData.titulaire_iban || ''}
                       onChange={(e) => setProfilData({ ...profilData, titulaire_iban: e.target.value })}
+                      onBlur={() => handleAutoSave(4)}
                       className="sp-kyc-input"
                     />
                   </div>
@@ -1247,6 +1252,7 @@ export default function TabProfil({
                       placeholder="FR76 ..."
                       value={profilData.iban || ''}
                       onChange={(e) => setProfilData({ ...profilData, iban: e.target.value })}
+                      onBlur={() => handleAutoSave(4)}
                       className="sp-kyc-input"
                       style={{ fontFamily: 'monospace', fontSize: '12.5px' }}
                     />
@@ -1255,7 +1261,11 @@ export default function TabProfil({
                     <label className="sp-kyc-label">Régime de TVA</label>
                     <select
                       value={profilData.regime_tva || 'FRANCHISE_293B'}
-                      onChange={(e) => setProfilData({ ...profilData, regime_tva: e.target.value })}
+                      onChange={(e) => {
+                        const next = { ...profilData, regime_tva: e.target.value };
+                        setProfilData(next);
+                        handleAutoSave(4, next);
+                      }}
                       className="sp-kyc-input"
                     >
                       <option value="FRANCHISE_293B">Franchise en base (293B)</option>
@@ -1283,7 +1293,11 @@ export default function TabProfil({
                   <input
                     type="checkbox"
                     checked={!!profilData.honneur_aucune_interdiction}
-                    onChange={(e) => setProfilData({ ...profilData, honneur_aucune_interdiction: e.target.checked })}
+                    onChange={(e) => {
+                      const next = { ...profilData, honneur_aucune_interdiction: e.target.checked };
+                      setProfilData(next);
+                      handleAutoSave(4, next);
+                    }}
                     style={{ width: '16px', height: '16px', accentColor: '#111827', cursor: 'pointer', flexShrink: 0 }}
                   />
                   <span>Aucune interdiction de gérer ou d'exercer.</span>
@@ -1293,7 +1307,11 @@ export default function TabProfil({
                   <input
                     type="checkbox"
                     checked={!!profilData.honneur_pas_exclusivite_employeur}
-                    onChange={(e) => setProfilData({ ...profilData, honneur_pas_exclusivite_employeur: e.target.checked })}
+                    onChange={(e) => {
+                      const next = { ...profilData, honneur_pas_exclusivite_employeur: e.target.checked };
+                      setProfilData(next);
+                      handleAutoSave(4, next);
+                    }}
                     style={{ width: '16px', height: '16px', accentColor: '#111827', cursor: 'pointer', flexShrink: 0 }}
                   />
                   <span>Aucune clause d'exclusivité employeur bloquante.</span>
@@ -1303,7 +1321,11 @@ export default function TabProfil({
                   <input
                     type="checkbox"
                     checked={!!profilData.honneur_pas_mandat_concurrent}
-                    onChange={(e) => setProfilData({ ...profilData, honneur_pas_mandat_concurrent: e.target.checked })}
+                    onChange={(e) => {
+                      const next = { ...profilData, honneur_pas_mandat_concurrent: e.target.checked };
+                      setProfilData(next);
+                      handleAutoSave(4, next);
+                    }}
                     style={{ width: '16px', height: '16px', accentColor: '#111827', cursor: 'pointer', flexShrink: 0 }}
                   />
                   <span>Aucun mandat concurrent non déclaré.</span>
@@ -1313,20 +1335,33 @@ export default function TabProfil({
                   <input
                     type="checkbox"
                     checked={!!profilData.charte_acceptee}
-                    onChange={(e) => setProfilData({ ...profilData, charte_acceptee: e.target.checked })}
+                    onChange={(e) => {
+                      const next = { ...profilData, charte_acceptee: e.target.checked };
+                      setProfilData(next);
+                      handleAutoSave(4, next);
+                    }}
                     style={{ width: '16px', height: '16px', accentColor: '#111827', cursor: 'pointer', flexShrink: 0 }}
                   />
                   <span>J'accepte la Charte Commerciale STACK (v1.0).</span>
                 </label>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+              {/* Barre d'actions avec enregistrement automatique */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#059669', fontWeight: '700' }}>
+                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10b981', display: 'inline-block' }} />
+                  <span>Enregistrement automatique actif</span>
+                </div>
+
                 <button
                   type="button"
-                  onClick={() => submitEtapeConformite(4)}
+                  onClick={() => {
+                    handleAutoSave(4);
+                    setEtapeActive(5);
+                  }}
                   style={{
-                    flex: isMobile ? 1.4 : 'initial',
-                    padding: '12px 18px',
+                    flex: isMobile ? 1 : 'initial',
+                    padding: '12px 22px',
                     borderRadius: '999px',
                     border: 'none',
                     backgroundColor: '#111827',
@@ -1342,27 +1377,7 @@ export default function TabProfil({
                     whiteSpace: 'nowrap'
                   }}
                 >
-                  <Icon.Check />
-                  <span>Enregistrer l'Étape 4</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setEtapeActive(5)}
-                  className="sp-glass-pill"
-                  style={{
-                    flex: isMobile ? 1 : 'initial',
-                    padding: '12px 14px',
-                    borderRadius: '999px',
-                    fontSize: '12px',
-                    fontWeight: '800',
-                    color: '#0f172a',
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap',
-                    textAlign: 'center'
-                  }}
-                >
-                  Étape 5 (Quiz) →
+                  <span>Étape 5 (Quiz) →</span>
                 </button>
               </div>
             </div>

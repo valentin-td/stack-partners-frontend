@@ -790,6 +790,24 @@ export default function Dashboard() {
     if (file.size > 8 * 1024 * 1024)
       return notify('Fichier trop volumineux (max 8 Mo).', true);
 
+    const etapeMap = {
+      fichier_identite: 2,
+      fichier_rsac: 2,
+      fichier_kbis: 2,
+      fichier_urssaf: 3,
+      fichier_rc_pro: 4
+    };
+    const etapeCible = etapeMap[fieldName] || 2;
+
+    const sauvegarderAutomatiquement = (dataUrl) => {
+      setProfilData((prev) => {
+        const next = { ...prev, [fieldName]: dataUrl };
+        submitEtapeConformite(etapeCible, next);
+        return next;
+      });
+      notify(`Pièce "${file.name}" importée et enregistrée automatiquement !`);
+    };
+
     if (file.type.startsWith('image/')) {
       const reader = new FileReader();
       reader.onload = (ev) => {
@@ -813,8 +831,10 @@ export default function Dashboard() {
           const ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0, w, h);
           const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.75);
-          setProfilData((prev) => ({ ...prev, [fieldName]: compressedDataUrl }));
-          notify(`Pièce "${file.name}" optimisée et prête. Cliquez sur Enregistrer l'étape.`);
+          sauvegarderAutomatiquement(compressedDataUrl);
+        };
+        img.onerror = () => {
+          sauvegarderAutomatiquement(ev.target.result);
         };
         img.src = ev.target.result;
       };
@@ -824,8 +844,7 @@ export default function Dashboard() {
 
     const reader = new FileReader();
     reader.onload = () => {
-      setProfilData((prev) => ({ ...prev, [fieldName]: reader.result }));
-      notify(`Pièce "${file.name}" prête. Cliquez sur Enregistrer l'étape.`);
+      sauvegarderAutomatiquement(reader.result);
     };
     reader.readAsDataURL(file);
   };
