@@ -74,186 +74,169 @@ export default function TabBord({
         zIndex: 1
       }}
     >
-      {/* 1. EN-TÊTE + PILULE FLOTTANTE DU PALIER */}
+      {/* CHARTE SALON ARCHITECTE (LIN CHAUD & ÉMERAUDE — ZÉRO LUMIÈRE BLEUE AGRESSIVE) */}
+      <style>{`
+        html:not(.dark-mode), body:not(.dark-mode) {
+          --sp-bg: #f3f1ed;
+          --sp-card: rgba(255, 255, 255, 0.84);
+          --sp-pill: rgba(255, 255, 255, 0.92);
+          --sp-text: #18181b;
+          --sp-muted: #64748b;
+          --sp-border: rgba(226, 232, 240, 0.9);
+          background-color: #f3f1ed !important;
+          background-image:
+            radial-gradient(at 0% 0%, rgba(214, 203, 187, 0.36) 0px, transparent 55%),
+            radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.06) 0px, transparent 55%),
+            radial-gradient(at 100% 100%, rgba(217, 199, 178, 0.28) 0px, transparent 55%),
+            radial-gradient(at 0% 100%, rgba(231, 229, 228, 0.6) 0px, transparent 55%) !important;
+          background-attachment: fixed !important;
+        }
+        html.dark-mode, body.dark-mode {
+          --sp-bg: #0c0e12;
+          --sp-card: rgba(22, 25, 31, 0.90);
+          --sp-pill: rgba(30, 34, 42, 0.88);
+          --sp-text: #f4f4f5;
+          --sp-muted: #94a3b8;
+          --sp-border: rgba(255, 255, 255, 0.09);
+          background-color: #0c0e12 !important;
+          background-image:
+            radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.07) 0px, transparent 50%),
+            radial-gradient(at 100% 0%, rgba(148, 163, 184, 0.05) 0px, transparent 50%) !important;
+          background-attachment: fixed !important;
+        }
+        .sp-glass-panel {
+          background: var(--sp-card) !important;
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          border: 1px solid var(--sp-border) !important;
+          box-shadow: 0 8px 24px -8px rgba(15, 23, 42, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
+          border-radius: 20px !important;
+        }
+        .sp-glass-panel-dark {
+          background:
+            radial-gradient(120% 120% at 95% 10%, rgba(16, 185, 129, 0.26) 0%, rgba(16, 185, 129, 0) 58%),
+            linear-gradient(145deg, #162420 0%, #0f1715 100%) !important;
+          border: 1px solid rgba(52, 211, 153, 0.28) !important;
+          box-shadow: 0 12px 28px -8px rgba(15, 23, 21, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.14) !important;
+          border-radius: 20px !important;
+          color: #ffffff !important;
+        }
+        .sp-glass-pill {
+          background: var(--sp-pill) !important;
+          border: 1px solid var(--sp-border) !important;
+          box-shadow: 0 2px 6px rgba(15, 23, 42, 0.03) !important;
+        }
+      `}</style>
+
+      {/* 1. EN-TÊTE COMPACT SUR UNE SEULE LIGNE */}
       <header
         style={{
           display: 'flex',
           flexDirection: isMobile ? 'column' : 'row',
           justifyContent: 'space-between',
           alignItems: isMobile ? 'stretch' : 'center',
-          gap: isMobile ? '8px' : '14px',
-          marginBottom: isMobile ? '12px' : '22px',
+          gap: '12px',
+          marginBottom: isMobile ? '12px' : '16px',
           position: 'relative'
         }}
       >
-        <div>
-          {!isMobile && (
-            <span
-              className="sp-glass-pill"
-              style={{
-                display: 'inline-block',
-                padding: '4px 12px',
-                borderRadius: '999px',
-                fontSize: '10.5px',
-                fontWeight: '800',
-                letterSpacing: '0.06em',
-                textTransform: 'uppercase',
-                color: '#64748b',
-                marginBottom: '6px'
-              }}
-            >
-              Activité Commerciale
-            </span>
-          )}
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', flexWrap: 'wrap' }}>
           <h1
             style={{
-              fontSize: isMobile ? '22px' : '30px',
+              fontSize: isMobile ? '22px' : '27px',
               fontWeight: '800',
-              margin: isMobile ? '0' : '0 0 4px 0',
+              margin: 0,
               letterSpacing: '-0.03em',
-              color: '#0f172a',
+              color: 'var(--sp-text, #18181b)',
               lineHeight: 1.1
             }}
           >
             Tableau de bord
           </h1>
-          {!isMobile && (
-            <span style={{ fontSize: '13.5px', color: '#64748b', fontWeight: '500' }}>
-              Voici un aperçu de votre portefeuille salons et de vos commissions récurrentes.
-            </span>
-          )}
+          <span style={{ fontSize: '12.5px', color: 'var(--sp-muted, #64748b)', fontWeight: '600' }}>
+            Portefeuille salons & commissions récurrentes (20 % HT)
+          </span>
         </div>
 
-        {!palierAtteint && (
-          <div style={{ position: 'relative' }}>
-            <button
-              type="button"
-              onClick={() => setAfficherDetailPalier(!afficherDetailPalier)}
-              className="sp-glass-pill"
+        {/* Pilule compacte d'explication du palier */}
+        <div style={{ position: 'relative' }}>
+          <button
+            type="button"
+            onClick={() => setAfficherDetailPalier(!afficherDetailPalier)}
+            className="sp-glass-pill"
+            style={{
+              width: isMobile ? '100%' : 'auto',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '10px',
+              padding: '7px 13px',
+              borderRadius: '999px',
+              cursor: 'pointer',
+              color: 'var(--sp-text, #18181b)',
+              boxSizing: 'border-box'
+            }}
+          >
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', fontSize: '12px', fontWeight: '700' }}>
+              <span style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                background: palierAtteint ? '#10b981' : '#f59e0b'
+              }} />
+              <span>
+                Palier récurrent : <strong style={{ fontWeight: '800' }}>{nbSalonsActifs}/{seuilDeblocage} salons actifs</strong>
+              </span>
+            </span>
+            <span style={{
+              fontSize: '11px',
+              fontWeight: '800',
+              color: '#059669',
+              background: 'rgba(16, 185, 129, 0.12)',
+              padding: '2px 8px',
+              borderRadius: '999px'
+            }}>
+              {afficherDetailPalier ? 'Fermer' : 'Règle 20% ›'}
+            </span>
+          </button>
+
+          {afficherDetailPalier && (
+            <div
+              className="sp-glass-panel"
               style={{
-                width: isMobile ? '100%' : 'auto',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '10px',
-                padding: isMobile ? '7px 12px 7px 9px' : '8px 15px 8px 10px',
-                borderRadius: '999px',
-                cursor: 'pointer',
-                color: '#0f172a',
-                boxShadow: '0 6px 20px -6px rgba(15, 23, 42, 0.08), inset 0 1px 0 #ffffff',
+                position: 'absolute',
+                top: 'calc(100% + 8px)',
+                right: 0,
+                left: isMobile ? 0 : 'auto',
+                width: isMobile ? '100%' : '330px',
+                padding: '14px 16px',
+                borderRadius: '18px',
+                zIndex: 50,
                 boxSizing: 'border-box'
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '9px', minWidth: 0 }}>
-                <div style={{ position: 'relative', width: '26px', height: '26px', flexShrink: 0 }}>
-                  <svg width="26" height="26" viewBox="0 0 28 28" style={{ transform: 'rotate(-90deg)' }}>
-                    <circle cx="14" cy="14" r={rayonCercle} fill="none" stroke="rgba(148, 163, 184, 0.25)" strokeWidth="3" />
-                    <circle
-                      cx="14"
-                      cy="14"
-                      r={rayonCercle}
-                      fill="none"
-                      stroke="#4f46e5"
-                      strokeWidth="3"
-                      strokeLinecap="round"
-                      strokeDasharray={circonferenceCercle}
-                      strokeDashoffset={offsetCercle}
-                    />
-                  </svg>
-                  <span
-                    style={{
-                      position: 'absolute',
-                      inset: 0,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '8.5px',
-                      fontWeight: '800',
-                      color: '#4f46e5'
-                    }}
-                  >
-                    {nbSalonsActifs}/{seuilDeblocage}
-                  </span>
-                </div>
-
-                <div style={{ textAlign: 'left', minWidth: 0 }}>
-                  <div
-                    style={{
-                      fontSize: '11.5px',
-                      fontWeight: '800',
-                      color: '#0f172a',
-                      lineHeight: 1.2,
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis'
-                    }}
-                  >
-                    Palier récurrent : {nbSalonsActifs} / {seuilDeblocage} salons actifs
-                  </div>
-                  <div style={{ fontSize: '10px', color: '#64748b', fontWeight: '600' }}>
-                    Encore {Math.max(0, seuilDeblocage - nbSalonsActifs)} salon{seuilDeblocage - nbSalonsActifs > 1 ? 's' : ''} payant{seuilDeblocage - nbSalonsActifs > 1 ? 's' : ''} pour débloquer
-                  </div>
-                </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                <strong style={{ fontSize: '12.5px', fontWeight: '800', color: 'var(--sp-text, #18181b)' }}>
+                  Déblocage des commissions (20 % HT)
+                </strong>
+                <span style={{ fontSize: '11.5px', fontWeight: '800', color: '#059669' }}>{pctPalier}%</span>
               </div>
-
-              <span
-                style={{
-                  width: '20px',
-                  height: '20px',
-                  borderRadius: '50%',
-                  background: 'rgba(15, 23, 42, 0.06)',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '10.5px',
-                  fontWeight: '800',
-                  color: '#64748b',
-                  flexShrink: 0
-                }}
-              >
-                {afficherDetailPalier ? 'X' : 'i'}
-              </span>
-            </button>
-
-            {afficherDetailPalier && (
-              <div
-                className="sp-glass-panel"
-                style={{
-                  position: 'absolute',
-                  top: 'calc(100% + 8px)',
-                  right: 0,
-                  left: isMobile ? 0 : 'auto',
-                  width: isMobile ? '100%' : '320px',
-                  padding: '14px 16px',
-                  borderRadius: '18px',
-                  zIndex: 50,
-                  boxSizing: 'border-box',
-                  boxShadow: '0 18px 38px -8px rgba(15, 23, 42, 0.16), inset 0 1px 0 #ffffff'
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                  <strong style={{ fontSize: '12.5px', fontWeight: '800', color: '#0f172a' }}>
-                    Déblocage des commissions (20 % HT)
-                  </strong>
-                  <span style={{ fontSize: '11.5px', fontWeight: '800', color: '#4f46e5' }}>{pctPalier}%</span>
-                </div>
-                <p style={{ margin: '0 0 10px 0', fontSize: '11.5px', color: '#64748b', lineHeight: 1.45 }}>
-                  Les salons comptent dans ce palier dès leur 1er abonnement payant. Une fois les {seuilDeblocage} salons atteints, toutes vos commissions en attente sont automatiquement débloquées.
-                </p>
-                <div style={{ height: '6px', backgroundColor: 'rgba(148, 163, 184, 0.22)', borderRadius: '999px', overflow: 'hidden' }}>
-                  <div
-                    style={{
-                      width: `${Math.max(6, pctPalier)}%`,
-                      height: '100%',
-                      backgroundColor: '#111827',
-                      borderRadius: '999px'
-                    }}
-                  />
-                </div>
+              <p style={{ margin: '0 0 10px 0', fontSize: '11.5px', color: 'var(--sp-muted, #64748b)', lineHeight: 1.45 }}>
+                Dès que {seuilDeblocage} salons passent sur un abonnement payant, toutes vos commissions en réserve sont automatiquement débloquées et versées chaque mois pendant 24 mois.
+              </p>
+              <div style={{ height: '5px', backgroundColor: 'rgba(148, 163, 184, 0.2)', borderRadius: '999px', overflow: 'hidden' }}>
+                <div
+                  style={{
+                    width: `${Math.max(6, pctPalier)}%`,
+                    height: '100%',
+                    backgroundColor: '#10b981',
+                    borderRadius: '999px'
+                  }}
+                />
               </div>
-            )}
-          </div>
-        )}
+            </div>
+          )}
+        </div>
       </header>
 
       {/* 2. LES 4 CARTES KPI (GRILLE 2x2 ULTRA-NETTE SUR IPHONE) */}
