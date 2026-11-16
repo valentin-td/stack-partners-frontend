@@ -1393,13 +1393,13 @@ export default function Dashboard() {
         display: 'flex',
         flexDirection: isMobile ? 'column' : 'row',
         minHeight: '100vh',
-        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+        fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
         backgroundColor: 'transparent',
-        color: '#111827',
+        color: 'var(--sp-text-main, #18181b)',
         paddingBottom: isMobile ? 'calc(88px + env(safe-area-inset-bottom, 0px))' : '0'
       }}
     >
-      {/* Fond d'ambiance Aurora sur GPU dedie (aucune saccade au scroll) */}
+      {/* Fond d'ambiance sur GPU dédié (aucune saccade au scroll) */}
       <div className="sp-ambient-bg" />
 
       {/* Navigation Desktop & Mobile */}
@@ -1415,15 +1415,15 @@ export default function Dashboard() {
         onToggleTheme={toggleTheme}
       />
 
-      {/* Zone de contenu principale */}
+      {/* Zone de contenu principale calibrée pour tenir sans scroll inutile */}
       <div
         style={{
           flex: 1,
           minWidth: 0,
-          paddingTop: isMobile ? 'calc(max(env(safe-area-inset-top, 0px), 12px) + 54px)' : '36px',
-          paddingBottom: isMobile ? '16px' : '40px',
-          paddingLeft: isMobile ? 'max(env(safe-area-inset-left, 0px), 14px)' : '40px',
-          paddingRight: isMobile ? 'max(env(safe-area-inset-right, 0px), 14px)' : '40px',
+          paddingTop: isMobile ? 'calc(max(env(safe-area-inset-top, 0px), 12px) + 54px)' : '24px',
+          paddingBottom: isMobile ? '16px' : '32px',
+          paddingLeft: isMobile ? 'max(env(safe-area-inset-left, 0px), 14px)' : '30px',
+          paddingRight: isMobile ? 'max(env(safe-area-inset-right, 0px), 14px)' : '30px',
           maxWidth: '1280px',
           width: '100%',
           boxSizing: 'border-box',

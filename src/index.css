@@ -3,30 +3,33 @@
 /* Support dynamique des ambiances Jour & Nuit haute visibilité */
 
 :root {
-  --sp-text-main: #0f172a;
+  --sp-text-main: #18181b;
   --sp-text-muted: #64748b;
-  --sp-bg-app: #dce5f2;
-  --sp-gradient-app: radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.22) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.18) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, rgba(245, 158, 11, 0.14) 0px, transparent 50%),
-    radial-gradient(at 0% 100%, rgba(14, 165, 233, 0.18) 0px, transparent 50%);
-  --sp-bg-card: rgba(255, 255, 255, 0.90);
-  --sp-border-card: 1px solid rgba(255, 255, 255, 0.92);
+  --sp-bg-app: #f3f1ed;
+  --sp-gradient-app:
+    radial-gradient(at 0% 0%, rgba(214, 203, 187, 0.36) 0px, transparent 55%),
+    radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.06) 0px, transparent 55%),
+    radial-gradient(at 100% 100%, rgba(217, 199, 178, 0.28) 0px, transparent 55%),
+    radial-gradient(at 0% 100%, rgba(231, 229, 228, 0.60) 0px, transparent 55%);
+  --sp-bg-card: rgba(255, 255, 255, 0.84);
+  --sp-bg-pill: rgba(255, 255, 255, 0.92);
+  --sp-border-card: 1px solid rgba(226, 232, 240, 0.90);
+  --sp-border-pill: 1px solid rgba(203, 213, 225, 0.75);
 }
 
 *, *::before, *::after {
   box-sizing: border-box;
 }
 
-/* FOND AMBIANT DYNAMIQUE STACK PARTNERS (ADAPTÉ AU THÈME CHOISI) */
+/* FOND AMBIANT DYNAMIQUE STACK PARTNERS (CONFORT VISUEL LONGUE DURÉE) */
 html, body, #root {
   margin: 0;
   padding: 0;
   width: 100%;
   min-height: 100vh;
-  background-color: var(--sp-bg-app, #dce5f2);
-  color: var(--sp-text-main, #0f172a);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--sp-bg-app, #f3f1ed);
+  color: var(--sp-text-main, #18181b);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
@@ -34,7 +37,7 @@ html, body, #root {
   transition: background-color 0.25s ease, color 0.25s ease;
 }
 
-/* Couche de fond ambiante sur GPU dédié - Ne repeint JAMAIS lors du scroll */
+/* Couche de fond ambiante sur GPU dédié */
 .sp-ambient-bg, .sp-aurora-bg {
   position: fixed;
   inset: 0;
@@ -42,50 +45,47 @@ html, body, #root {
   height: 100vh;
   z-index: -1;
   pointer-events: none;
-  background-color: var(--sp-bg-app, #dce5f2);
+  background-color: var(--sp-bg-app, #f3f1ed);
   background-image: var(--sp-gradient-app);
   transform: translateZ(0);
   will-change: transform;
   transition: background-color 0.25s ease;
 }
 
-/* Panneaux Verre Cristal optimisés GPU */
+/* Panneaux Ivoire Doux optimisés GPU (Zéro éblouissement) */
 .sp-glass-panel {
-  background: var(--sp-bg-card, linear-gradient(145deg, rgba(255, 255, 255, 0.90) 0%, rgba(255, 255, 255, 0.72) 100%));
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: var(--sp-border-card, 1px solid rgba(255, 255, 255, 0.92));
-  border-top: var(--sp-border-card-top, 1.5px solid rgba(255, 255, 255, 0.98));
-  border-left: var(--sp-border-card-left, 1.5px solid rgba(255, 255, 255, 0.92));
-  box-shadow: var(--sp-shadow-card, 0 10px 28px -6px rgba(15, 23, 42, 0.05), inset 0 1px 0 0 #ffffff);
-  border-radius: 24px;
+  background: var(--sp-bg-card, rgba(255, 255, 255, 0.84));
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: var(--sp-border-card, 1px solid rgba(226, 232, 240, 0.90));
+  box-shadow: var(--sp-shadow-card, 0 8px 24px -8px rgba(15, 23, 42, 0.05), inset 0 1px 0 0 rgba(255, 255, 255, 0.7));
+  border-radius: 20px;
   box-sizing: border-box;
   max-width: 100%;
   transform: translateZ(0);
   transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* Panneau Maître Obsidienne Émeraude */
+/* Carte maîtresse Obsidienne & Émeraude (identique à STACK Pro) */
 .sp-glass-panel-dark {
-  background: linear-gradient(145deg, #181a1f 0%, #111317 100%);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-top: 1.5px solid rgba(255, 255, 255, 0.22);
-  box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.35);
-  border-radius: 24px;
-  box-sizing: border-box;
-  max-width: 100%;
+  background:
+    radial-gradient(120% 120% at 95% 10%, rgba(16, 185, 129, 0.26) 0%, rgba(16, 185, 129, 0) 58%),
+    linear-gradient(145deg, #162420 0%, #0f1715 100%);
+  border: 1px solid rgba(52, 211, 153, 0.28);
+  box-shadow: 0 12px 28px -8px rgba(15, 23, 21, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  border-radius: 20px;
   color: #ffffff;
-  transform: translateZ(0);
+  box-sizing: border-box;
 }
 
-/* Pilules et badges haute fluidité */
+/* Pilules et champs avec bordure fine toujours visible */
 .sp-glass-pill {
-  background: var(--sp-bg-pill, linear-gradient(145deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.82) 100%));
-  border: var(--sp-border-pill, 1px solid rgba(255, 255, 255, 0.96));
-  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.03), inset 0 1px 0 #ffffff;
+  background: var(--sp-bg-pill, rgba(255, 255, 255, 0.92));
+  border: var(--sp-border-pill, 1px solid rgba(203, 213, 225, 0.75));
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.03);
   box-sizing: border-box;
   max-width: 100%;
-  color: var(--sp-text-main, #0f172a);
+  color: var(--sp-text-main, #18181b);
   transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
@@ -141,13 +141,33 @@ html, body, #root {
   background: #ffffff;
 }
 
-/* RÈGLES SPÉCIFIQUES MODE SOMBRE (NUIT) */
+/* RÈGLES SPÉCIFIQUES MODE SOMBRE (NUIT CARBONE & OBSIDIENNE) */
 html.dark-mode {
   color-scheme: dark;
+  --sp-text-main: #f4f4f5;
+  --sp-text-muted: #94a3b8;
+  --sp-bg-app: #0c0e12;
+  --sp-bg-card: rgba(22, 25, 31, 0.90);
+  --sp-bg-pill: rgba(30, 34, 42, 0.88);
+  --sp-border-card: 1px solid rgba(255, 255, 255, 0.09);
+  --sp-border-pill: 1px solid rgba(255, 255, 255, 0.11);
 }
 
 html.dark-mode body, html.dark-mode #root {
-  color: #f8fafc;
+  color: #f4f4f5;
+}
+
+html.dark-mode .sp-glass-panel {
+  background: var(--sp-bg-card, rgba(22, 25, 31, 0.90)) !important;
+  border: 1px solid rgba(255, 255, 255, 0.09) !important;
+  box-shadow: 0 14px 32px -8px rgba(0, 0, 0, 0.50), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+}
+
+html.dark-mode .sp-glass-pill {
+  background: var(--sp-bg-pill, rgba(30, 34, 42, 0.88)) !important;
+  border: 1px solid rgba(255, 255, 255, 0.11) !important;
+  box-shadow: none !important;
+  color: #f4f4f5 !important;
 }
 
 html.dark-mode h1,
@@ -155,7 +175,7 @@ html.dark-mode h2,
 html.dark-mode h3,
 html.dark-mode h4,
 html.dark-mode strong {
-  color: #f8fafc !important;
+  color: #f4f4f5 !important;
 }
 
 html.dark-mode .sp-kyc-input,
