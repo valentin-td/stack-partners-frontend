@@ -93,12 +93,8 @@ export default function TabCarte({
       if (document.body) document.body.scrollTop = 0;
     };
     resetScroll();
-    const t1 = setTimeout(resetScroll, 60);
-    const t2 = setTimeout(resetScroll, 250);
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-    };
+    const timers = [0, 40, 100, 200, 350, 600, 1000].map((t) => setTimeout(resetScroll, t));
+    return () => timers.forEach(clearTimeout);
   }, []);
 
   // Salons dans le rayon actif
@@ -158,6 +154,13 @@ export default function TabCarte({
     const container = document.getElementById('stack-partners-map');
     if (!container) return;
 
+    // Neutralisation stricte de l'auto-focus Leaflet pour empêcher le défilement intempestif
+    try {
+      container.focus = () => {};
+      container.tabIndex = -1;
+      container.blur();
+    } catch (e) {}
+
     if (window.__stackMap && window.__stackMap.getContainer() !== container) {
       try {
         window.__stackMap.remove();
@@ -174,6 +177,13 @@ export default function TabCarte({
         [mapCenter.lat, mapCenter.lng],
         zoomByRadius
       );
+      if (map._container) {
+        try {
+          map._container.focus = () => {};
+          map._container.tabIndex = -1;
+          map._container.blur();
+        } catch (e) {}
+      }
       L.control.zoom({ position: 'bottomright' }).addTo(map);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap',
@@ -244,7 +254,7 @@ export default function TabCarte({
 
           const starsLabel = salon.etoiles ? `${String(salon.etoiles).replace('.', ',')}/5` : 'N/A';
           marker.bindTooltip(
-            `<strong>${formatTextePropre(salon.nom_salon)}</strong><br/>★ ${starsLabel} • ${salon.distance_km} km`,
+            `<strong>${formatTextePropre(salon.nom_salon)}</strong><br/>Note : ${starsLabel} • ${salon.distance_km} km`,
             { direction: 'top', offset: [0, -6] }
           );
           marker.on('click', () => setSelectedSalonMap(salon));
@@ -281,7 +291,7 @@ export default function TabCarte({
           }).addTo(layerGroup);
           const starsLabel = salon.etoiles ? `${String(salon.etoiles).replace('.', ',')}/5` : 'N/A';
           marker.bindTooltip(
-            `<strong>${formatTextePropre(salon.nom_salon)}</strong><br/>★ ${starsLabel} • ${salon.distance_km} km`,
+            `<strong>${formatTextePropre(salon.nom_salon)}</strong><br/>Note : ${starsLabel} • ${salon.distance_km} km`,
             { direction: 'top', offset: [0, -6] }
           );
           marker.on('click', () => setSelectedSalonMap(salon));
@@ -432,10 +442,18 @@ export default function TabCarte({
       `}</style>
 
       {/* =================================================================== */}
-      {/* 1. EN-TÊTE COMPACT SUR UNE SEULE LIGNE (GAIN DE HAUTEUR POUR CARTE) */}
+      {/* 1. EN-TÊTE FIXE ET GARANTI TOUJOURS VISIBLE (JOUR & NUIT)          */}
       {/* =================================================================== */}
       <header
         style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 40,
+          background: 'var(--sp-bg-app, #f3f1ed)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          paddingTop: '2px',
+          paddingBottom: '8px',
           display: 'flex',
           flexDirection: isMobile ? 'column' : 'row',
           justifyContent: 'space-between',
@@ -474,7 +492,7 @@ export default function TabCarte({
             title="Centrer autour de ma position GPS"
             style={{
               height: '36px',
-              padding: isMobile ? '0 8px' : '0 15px',
+              padding: isMobile ? '0 10px' : '0 16px',
               borderRadius: '999px',
               fontSize: '12px',
               fontWeight: '700',
@@ -484,7 +502,8 @@ export default function TabCarte({
               justifyContent: 'center',
               gap: '6px',
               cursor: 'pointer',
-              whiteSpace: 'nowrap'
+              whiteSpace: 'nowrap',
+              boxShadow: '0 2px 6px rgba(15, 23, 42, 0.04)'
             }}
           >
             <Icon.Compass />
@@ -495,11 +514,12 @@ export default function TabCarte({
             type="button"
             onClick={() => setShowRoutePlanner(!showRoutePlanner)}
             className={`sp-carte-btn ${showRoutePlanner ? '' : 'sp-glass-pill'}`}
+            title="Préparer et optimiser une tournée de prospection"
             style={{
               height: '36px',
-              padding: isMobile ? '0 8px' : '0 16px',
+              padding: isMobile ? '0 10px' : '0 18px',
               borderRadius: '999px',
-              backgroundColor: showRoutePlanner ? 'rgba(16, 185, 129, 0.15)' : undefined,
+              backgroundColor: showRoutePlanner ? 'rgba(16, 185, 129, 0.16)' : undefined,
               color: showRoutePlanner ? '#059669' : 'var(--sp-text-main, #18181b)',
               border: showRoutePlanner ? '1.5px solid rgba(16, 185, 129, 0.45)' : undefined,
               fontSize: '12px',
@@ -510,7 +530,8 @@ export default function TabCarte({
               gap: '6px',
               cursor: 'pointer',
               whiteSpace: 'nowrap',
-              transition: 'all 0.15s ease'
+              transition: 'all 0.15s ease',
+              boxShadow: showRoutePlanner ? '0 2px 8px rgba(16, 185, 129, 0.18)' : '0 2px 6px rgba(15, 23, 42, 0.04)'
             }}
           >
             <Icon.Map />
@@ -573,12 +594,37 @@ export default function TabCarte({
                 <button
                   type="button"
                   onClick={() => setMapAddressQuery('')}
-                  style={{ background: 'none', border: 'none', color: 'var(--sp-text-muted, #64748b)', cursor: 'pointer', fontSize: '12px', padding: 0 }}
+                  style={{ background: 'none', border: 'none', color: 'var(--sp-text-muted, #64748b)', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 0 }}
                 >
-                  ✕
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
               )}
             </div>
+
+            <button
+              type="button"
+              onClick={handleGeolocateAgent}
+              className="sp-glass-pill sp-carte-btn"
+              title="Centrer la carte sur ma position GPS"
+              style={{
+                height: '38px',
+                padding: isMobile ? '0 10px' : '0 13px',
+                borderRadius: '999px',
+                fontSize: '12px',
+                fontWeight: '700',
+                color: 'var(--sp-text-main, #18181b)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                cursor: 'pointer',
+                flexShrink: 0,
+                whiteSpace: 'nowrap'
+              }}
+            >
+              <Icon.Compass />
+              <span>{isMobile ? 'GPS' : 'Ma position'}</span>
+            </button>
 
             <button
               type="submit"
@@ -737,10 +783,17 @@ export default function TabCarte({
                 border: hideVisitedSalons ? '1px solid rgba(16, 185, 129, 0.4)' : undefined,
                 color: hideVisitedSalons ? '#059669' : 'var(--sp-text-muted, #64748b)',
                 whiteSpace: 'nowrap',
-                textAlign: 'center'
+                textAlign: 'center',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '5px'
               }}
             >
-              {hideVisitedSalons ? '✓ Visités masqués' : 'Masquer les visités'}
+              {hideVisitedSalons && (
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              )}
+              <span>{hideVisitedSalons ? 'Visités masqués' : 'Masquer les visités'}</span>
             </button>
 
             <select
@@ -860,7 +913,7 @@ export default function TabCarte({
                   padding: 0
                 }}
               >
-                ✕
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>
           </div>
@@ -1170,7 +1223,7 @@ export default function TabCarte({
                           {formatTextePropre(s.nom_salon)}
                         </div>
                         <div style={{ fontSize: '10.5px', color: 'var(--sp-text-muted, #64748b)' }}>
-                          {s.distance_km} km • {s.etoiles ? `★ ${String(s.etoiles).replace('.', ',')}` : 'Sans note'}
+                          {s.distance_km} km • {s.etoiles ? `Note : ${String(s.etoiles).replace('.', ',')}` : 'Sans note'}
                         </div>
                       </div>
                     </div>
@@ -1180,9 +1233,9 @@ export default function TabCarte({
                         e.stopPropagation();
                         toggleSalonInRoute(s);
                       }}
-                      style={{ background: 'none', border: 'none', color: 'var(--sp-text-muted, #64748b)', cursor: 'pointer', display: 'flex', padding: 0, fontSize: '11px', fontWeight: '800' }}
+                      style={{ background: 'none', border: 'none', color: 'var(--sp-text-muted, #64748b)', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 0 }}
                     >
-                      ✕
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                     </button>
                   </div>
                 ))}
@@ -1366,7 +1419,7 @@ export default function TabCarte({
                     color: routeSalons.some((r) => r.siret === selectedSalonMap.siret) ? '#ffffff' : '#059669'
                   }}
                 >
-                  {routeSalons.some((r) => r.siret === selectedSalonMap.siret) ? '✓ Dans ma tournée' : '+ Ajouter à la tournée'}
+                  {routeSalons.some((r) => r.siret === selectedSalonMap.siret) ? 'Dans ma tournée' : '+ Ajouter à la tournée'}
                 </button>
               </div>
 
@@ -1427,7 +1480,7 @@ export default function TabCarte({
                         color: selectedSalonMap.etoiles ? '#b45309' : 'var(--sp-text-muted, #64748b)'
                       }}
                     >
-                      {selectedSalonMap.etoiles ? `★ ${String(selectedSalonMap.etoiles).replace('.', ',')} / 5` : 'Sans note'}
+                      {selectedSalonMap.etoiles ? `Note : ${String(selectedSalonMap.etoiles).replace('.', ',')} / 5` : 'Sans note'}
                     </span>
                     <span style={{ padding: '3px 9px', borderRadius: '999px', fontSize: '11px', fontWeight: '700', background: 'rgba(148, 163, 184, 0.14)', color: 'var(--sp-text-main, #18181b)' }}>
                       {selectedSalonMap.distance_km} km
@@ -1743,9 +1796,9 @@ export default function TabCarte({
                     <button
                       type="button"
                       onClick={() => setRechercheLocaleListe('')}
-                      style={{ background: 'none', border: 'none', color: 'var(--sp-text-muted, #64748b)', cursor: 'pointer', fontSize: '11px', padding: 0 }}
+                      style={{ background: 'none', border: 'none', color: 'var(--sp-text-muted, #64748b)', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 0 }}
                     >
-                      ✕
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                     </button>
                   )}
                 </div>
@@ -1870,7 +1923,7 @@ export default function TabCarte({
                                     color: '#b45309'
                                   }}
                                 >
-                                  ★ {String(s.etoiles).replace('.', ',')}
+                                  Note : {String(s.etoiles).replace('.', ',')}
                                 </span>
                               )}
                               {s.visite_info && (
@@ -1907,7 +1960,7 @@ export default function TabCarte({
                               padding: 0
                             }}
                           >
-                            {inRoute ? '✓' : '+'}
+                            {inRoute ? 'OK' : '+'}
                           </button>
 
                           <span

@@ -496,9 +496,9 @@ export default function TabProspects({
                 <button
                   type="button"
                   onClick={() => setRechercheLead('')}
-                  style={{ background: 'none', border: 'none', color: 'var(--sp-text-muted, #64748b)', cursor: 'pointer', fontSize: '11px', padding: 0 }}
+                  style={{ background: 'none', border: 'none', color: 'var(--sp-text-muted, #64748b)', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 0 }}
                 >
-                  ✕
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
               )}
             </div>
@@ -631,7 +631,7 @@ export default function TabProspects({
                                 color: estSigne || estProtege ? '#059669' : '#dc2626'
                               }}
                             >
-                              {estSigne ? 'Signé ✓' : estProtege ? 'Protégé' : 'Expiré'}
+                              {estSigne ? 'Signé' : estProtege ? 'Protégé' : 'Expiré'}
                             </span>
 
                             {villePropre && (
@@ -789,7 +789,7 @@ export default function TabProspects({
                   </h3>
                 </div>
                 <span className="sp-glass-pill" style={{ padding: '2px 8px', borderRadius: '999px', fontSize: '10px', fontWeight: '800', color: nbUrgents > 0 ? '#b45309' : '#059669' }}>
-                  {nbUrgents > 0 ? `${nbUrgents} urgente${nbUrgents > 1 ? 's' : ''}` : 'À jour ✓'}
+                  {nbUrgents > 0 ? `${nbUrgents} urgente${nbUrgents > 1 ? 's' : ''}` : 'À jour'}
                 </span>
               </div>
 
@@ -805,7 +805,7 @@ export default function TabProspects({
                   }}
                 >
                   <strong style={{ display: 'block', color: '#059669', fontSize: '12.5px', marginBottom: '2px' }}>
-                    ✓ Aucune protection proche d'expiration
+                    Aucune protection proche d'expiration
                   </strong>
                   <span>
                     {nbProteges > 0
@@ -998,7 +998,7 @@ export default function TabProspects({
                   flexShrink: 0
                 }}
               >
-                ✕
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>
 

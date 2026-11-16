@@ -512,9 +512,9 @@ export default function TabFactures({
                 <button
                   type="button"
                   onClick={() => setRechercheFacture('')}
-                  style={{ background: 'none', border: 'none', color: 'var(--sp-text-muted, #64748b)', cursor: 'pointer', fontSize: '11px', padding: 0 }}
+                  style={{ background: 'none', border: 'none', color: 'var(--sp-text-muted, #64748b)', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 0 }}
                 >
-                  ✕
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
               )}
             </div>
@@ -637,7 +637,7 @@ export default function TabFactures({
                                 color: estPayee ? '#059669' : '#b45309'
                               }}
                             >
-                              {estPayee ? (f.mode_reglement === 'STRIPE' ? 'Payée Stripe ✓' : 'Payée ✓') : 'En attente'}
+                              {estPayee ? (f.mode_reglement === 'STRIPE' ? 'Payée Stripe' : 'Payée') : 'En attente'}
                             </span>
                           </div>
 
@@ -791,7 +791,7 @@ export default function TabFactures({
                   color: nbEnAttente > 0 ? '#b45309' : '#059669'
                 }}
               >
-                {nbEnAttente > 0 ? `${nbEnAttente} à encaisser` : '100% encaissé ✓'}
+                {nbEnAttente > 0 ? `${nbEnAttente} à encaisser` : '100% encaissé'}
               </span>
             </div>
 
@@ -985,7 +985,7 @@ export default function TabFactures({
                   flexShrink: 0
                 }}
               >
-                ✕
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>
 

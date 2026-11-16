@@ -82,11 +82,11 @@ export default function TabProfil({
     );
 
     return {
-      1: { ok: e1Ok, expire: false, label: e1Ok ? 'Signé ✓' : 'À signer' },
-      2: { ok: e2Ok, expire: idExp, label: idExp ? 'ID expirée' : e2Ok ? 'Complet ✓' : 'À compléter' },
-      3: { ok: e3Ok, expire: urssafExp, label: urssafExp ? 'Expirée' : e3Ok ? 'Valide ✓' : 'À compléter' },
-      4: { ok: e4Ok, expire: rcExp, label: rcExp ? 'RC Pro expirée' : e4Ok ? 'Valide ✓' : 'À compléter' },
-      5: { ok: e5Ok, expire: false, label: e5Ok ? 'Certifié ✓' : 'À valider' }
+      1: { ok: e1Ok, expire: false, label: e1Ok ? 'Signé' : 'À signer' },
+      2: { ok: e2Ok, expire: idExp, label: idExp ? 'ID expirée' : e2Ok ? 'Complet' : 'À compléter' },
+      3: { ok: e3Ok, expire: urssafExp, label: urssafExp ? 'Expirée' : e3Ok ? 'Valide' : 'À compléter' },
+      4: { ok: e4Ok, expire: rcExp, label: rcExp ? 'RC Pro expirée' : e4Ok ? 'Valide' : 'À compléter' },
+      5: { ok: e5Ok, expire: false, label: e5Ok ? 'Certifié' : 'À valider' }
     };
   }, [profilData, quizAnswers]);
 
@@ -367,7 +367,7 @@ export default function TabProfil({
               }}
             />
             <span>
-              {profilData.autorise_a_vendre ? 'Vente Autorisée ✓' : `Dossier KYC : ${nbEtapesValides}/5 (${pctConformite}%)`}
+              {profilData.autorise_a_vendre ? 'Vente Autorisée' : `Dossier KYC : ${nbEtapesValides}/5 (${pctConformite}%)`}
             </span>
           </span>
         </div>
@@ -780,7 +780,7 @@ export default function TabProfil({
                       flexShrink: 0
                     }}
                   >
-                    {profilData.statut_contrat === 'VALIDE' ? 'Signé ✓' : (profilData.statut_contrat || 'En attente')}
+                    {profilData.statut_contrat === 'VALIDE' ? 'Signé' : (profilData.statut_contrat || 'En attente')}
                   </span>
                 </div>
 

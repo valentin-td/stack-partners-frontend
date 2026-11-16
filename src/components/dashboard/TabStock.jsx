@@ -500,7 +500,7 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
 
               <div className="sp-glass-pill" style={{ padding: '10px 13px', borderRadius: '12px', fontSize: '11.5px', color: 'var(--sp-text-muted, #64748b)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <span>Base de données Open Beauty & Réseau STACK</span>
-                <strong style={{ color: '#059669' }}>Actif ✓</strong>
+                <strong style={{ color: '#059669' }}>Actif</strong>
               </div>
             </div>
           </div>
@@ -728,7 +728,7 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
                     color: data.alerte_penurie ? '#b45309' : '#059669'
                   }}
                 >
-                  {data.alerte_penurie ? 'À compléter' : 'Optimale ✓'}
+                  {data.alerte_penurie ? 'À compléter' : 'Optimale'}
                 </span>
               </div>
               <div>
@@ -882,7 +882,11 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
                             >
                               {m.badge}
                             </span>
-                            {actif && <span style={{ fontSize: '11px', fontWeight: '800', color: '#059669' }}>✓</span>}
+                            {actif && (
+                              <span style={{ display: 'flex', alignItems: 'center', color: '#059669' }}>
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                              </span>
+                            )}
                           </div>
                           <strong style={{ display: 'block', fontSize: '13px', color: 'var(--sp-text-main, #18181b)', marginBottom: '2px' }}>
                             {m.nom}
@@ -1103,7 +1107,7 @@ export default function TabStock({ apiBaseUrl, token, isMobile }) {
                               flexShrink: 0
                             }}
                           >
-                            {estExpediee ? 'Expédié ✓' : 'En préparation'}
+                            {estExpediee ? 'Expédié' : 'En préparation'}
                           </span>
                         </div>
                       );
