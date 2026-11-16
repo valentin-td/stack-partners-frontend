@@ -1,5 +1,5 @@
 // src/components/dashboard/TabFactures.jsx
-// Onglet 4 : Factures d'installation 99 EUR HT, génération, téléchargement PDF et validation en Verre Cristal
+// Onglet 4 : Facturation Onboarding — Design Salon Architecte (Zéro doublon, Zéro fatigue visuelle, Jour & Nuit)
 
 import React, { useState, useMemo } from 'react';
 import { Icon } from '../common/Icons';
@@ -46,26 +46,44 @@ export default function TabFactures({
 }) {
   const [filtreStatut, setFiltreStatut] = useState('TOUTES'); // 'TOUTES' | 'ATTENTE' | 'PAYEE'
   const [rechercheFacture, setRechercheFacture] = useState('');
+  const [afficherReglesFacturation, setAfficherReglesFacturation] = useState(false);
 
   const listeFactures = Array.isArray(factures) ? factures : [];
 
-  // Calcul des KPIs de facturation Onboarding (99 € HT par facture)
+  // Calcul des KPIs de facturation et ventilation Agent (99 €) vs STACK Cloud (100 €)
   const {
     nbTotal,
     nbPayees,
     nbEnAttente,
     montantEncaisseHT,
     montantEnAttenteHT,
-    tauxEncaissement,
-    facturesEnAttentePrioritaires
+    montantAgentTotalHT,
+    montantStackTotalHT,
+    nbAgentTotal,
+    nbStackTotal,
+    tauxEncaissement
   } = useMemo(() => {
     let payees = 0;
     let attente = 0;
     let totalPaye = 0;
     let totalAttente = 0;
+    let agentHT = 0;
+    let stackHT = 0;
+    let countAgent = 0;
+    let countStack = 0;
 
     listeFactures.forEach((f) => {
-      const montantUnitaire = parseFloat(f.montant_ht) || 99;
+      const estStack = f.type_facture === 'STACK' || String(f.numero_facture || '').startsWith('FAC-ST');
+      const montantUnitaire = parseFloat(f.montant_ht) || (estStack ? 100 : 99);
+
+      if (estStack) {
+        stackHT += montantUnitaire;
+        countStack += 1;
+      } else {
+        agentHT += montantUnitaire;
+        countAgent += 1;
+      }
+
       if (f.statut === 'PAYEE') {
         payees += 1;
         totalPaye += montantUnitaire;
@@ -77,7 +95,6 @@ export default function TabFactures({
 
     const total = listeFactures.length;
     const taux = total > 0 ? Math.round((payees / total) * 100) : 0;
-    const enAttenteListe = listeFactures.filter((f) => f.statut !== 'PAYEE').slice(0, 4);
 
     return {
       nbTotal: total,
@@ -85,8 +102,11 @@ export default function TabFactures({
       nbEnAttente: attente,
       montantEncaisseHT: totalPaye,
       montantEnAttenteHT: totalAttente,
-      tauxEncaissement: taux,
-      facturesEnAttentePrioritaires: enAttenteListe
+      montantAgentTotalHT: agentHT,
+      montantStackTotalHT: stackHT,
+      nbAgentTotal: countAgent,
+      nbStackTotal: countStack,
+      tauxEncaissement: taux
     };
   }, [listeFactures]);
 
@@ -107,25 +127,54 @@ export default function TabFactures({
   }, [listeFactures, filtreStatut, rechercheFacture]);
 
   return (
-    <div style={{ paddingBottom: isMobile ? '90px' : '24px' }}>
+    <div
+      style={{
+        paddingBottom: isMobile ? 'calc(95px + env(safe-area-inset-bottom, 0px))' : '24px',
+        width: '100%',
+        boxSizing: 'border-box',
+        position: 'relative',
+        zIndex: 1
+      }}
+    >
       <style>{`
         .sp-invoice-row {
-          background: linear-gradient(145deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.66) 100%);
-          border: 1px solid rgba(255, 255, 255, 0.96);
-          box-shadow: 0 4px 14px -4px rgba(15, 23, 42, 0.04), inset 0 1px 0 #ffffff;
-          border-radius: 18px;
-          padding: 14px 16px;
-          transition: transform 0.15s ease, box-shadow 0.15s ease;
+          background: var(--sp-bg-pill, rgba(255, 255, 255, 0.90));
+          border: var(--sp-border-pill, 1px solid rgba(148, 163, 184, 0.22));
+          box-shadow: 0 3px 10px -4px rgba(15, 23, 42, 0.04);
+          border-radius: 16px;
+          padding: 13px 16px;
+          transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
         }
         .sp-invoice-row:hover {
           transform: translateY(-1px);
-          box-shadow: 0 10px 24px -6px rgba(15, 23, 42, 0.08), inset 0 1px 0 #ffffff;
+          border-color: rgba(16, 185, 129, 0.40);
+          box-shadow: 0 8px 20px -6px rgba(15, 23, 42, 0.07);
+        }
+        .sp-pay-soft-btn {
+          background: rgba(16, 185, 129, 0.14);
+          color: #059669;
+          border: 1px solid rgba(16, 185, 129, 0.35);
+          transition: all 0.15s ease;
+        }
+        .sp-pay-soft-btn:hover {
+          background: #059669;
+          color: #ffffff;
+          border-color: #059669;
+        }
+        html.dark-mode .sp-pay-soft-btn {
+          background: rgba(16, 185, 129, 0.18);
+          color: #34d399;
+          border-color: rgba(16, 185, 129, 0.40);
+        }
+        html.dark-mode .sp-pay-soft-btn:hover {
+          background: #10b981;
+          color: #0b0d10;
         }
         .sp-modal-backdrop {
           position: fixed;
           inset: 0;
           z-index: 100020;
-          background: rgba(15, 23, 42, 0.42);
+          background: rgba(15, 23, 42, 0.48);
           backdrop-filter: blur(10px);
           -webkit-backdrop-filter: blur(10px);
           display: flex;
@@ -139,11 +188,11 @@ export default function TabFactures({
           max-width: 860px;
           max-height: 90dvh;
           overflow-y: auto;
-          background: linear-gradient(145deg, rgba(255, 255, 255, 0.96) 0%, rgba(246, 249, 253, 0.9) 100%);
-          border: 1.5px solid #ffffff;
-          box-shadow: 0 28px 68px -12px rgba(15, 23, 42, 0.25), inset 0 1px 0 #ffffff;
-          border-radius: 26px;
-          color: #0f172a;
+          background: var(--sp-bg-app, #f3f1ed);
+          border: var(--sp-border-card, 1px solid rgba(148, 163, 184, 0.28));
+          box-shadow: 0 28px 68px -12px rgba(15, 23, 42, 0.28);
+          border-radius: 24px;
+          color: var(--sp-text-main, #18181b);
           box-sizing: border-box;
         }
         .sp-fac-input {
@@ -151,91 +200,75 @@ export default function TabFactures({
           box-sizing: border-box;
           height: 42px;
           padding: 0 13px;
-          background: #ffffff;
-          border: 1px solid rgba(148, 163, 184, 0.32);
+          background: var(--sp-bg-input, #ffffff);
+          border: var(--sp-border-input, 1px solid rgba(148, 163, 184, 0.32));
           border-radius: 12px;
           font-size: 13.5px;
           font-weight: 600;
-          color: #0f172a;
+          color: var(--sp-text-main, #18181b);
           outline: none;
           transition: border-color 0.15s ease;
         }
         .sp-fac-input:focus {
-          border-color: #0f172a;
+          border-color: #10b981;
         }
       `}</style>
 
       {/* =================================================================== */}
-      {/* 1. EN-TÊTE FACTURES D'INSTALLATION + BOUTON NOUVELLE FACTURE        */}
+      {/* 1. EN-TÊTE COMPACT SUR UNE SEULE LIGNE (UN SEUL BOUTON D'ACTION)    */}
       {/* =================================================================== */}
       <header
         style={{
           display: 'flex',
-          flexDirection: isMobile ? 'column' : 'row',
+          flexDirection: 'row',
           justifyContent: 'space-between',
-          alignItems: isMobile ? 'stretch' : 'center',
-          gap: isMobile ? '8px' : '14px',
-          marginBottom: isMobile ? '12px' : '22px',
-          position: 'relative'
+          alignItems: 'center',
+          gap: '12px',
+          marginBottom: isMobile ? '12px' : '16px',
+          flexWrap: 'wrap'
         }}
       >
-        <div>
-          {!isMobile && (
-            <span
-              className="sp-glass-pill"
-              style={{
-                display: 'inline-block',
-                padding: '4px 12px',
-                borderRadius: '999px',
-                fontSize: '10.5px',
-                fontWeight: '800',
-                letterSpacing: '0.06em',
-                textTransform: 'uppercase',
-                color: '#64748b',
-                marginBottom: '6px'
-              }}
-            >
-              Facturation Mandataire • Mise en Service
-            </span>
-          )}
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', flexWrap: 'wrap', minWidth: 0 }}>
           <h1
             style={{
-              fontSize: isMobile ? '22px' : '30px',
+              fontSize: isMobile ? '22px' : '27px',
               fontWeight: '800',
-              margin: isMobile ? '0' : '0 0 4px 0',
+              margin: 0,
               letterSpacing: '-0.03em',
-              color: '#0f172a',
+              color: 'var(--sp-text-main, #18181b)',
               lineHeight: 1.1
             }}
           >
             Facturation
           </h1>
           {!isMobile && (
-            <span style={{ fontSize: '13.5px', color: '#64748b', fontWeight: '500' }}>
-              Générez vos factures d'onboarding, transmettez-les par e-mail au gérant et suivez vos règlements.
+            <span style={{ fontSize: '12.5px', color: 'var(--sp-text-muted, #64748b)', fontWeight: '600' }}>
+              Factures d'onboarding (99 € HT Agent) • Envoi PDF & suivi des règlements
             </span>
           )}
         </div>
 
+        {/* Seul bouton plein de toute la page */}
         <button
           type="button"
           onClick={() => setShowFactureForm(true)}
           style={{
-            height: '42px',
-            padding: '0 20px',
+            height: isMobile ? '36px' : '38px',
+            padding: isMobile ? '0 14px' : '0 18px',
             borderRadius: '999px',
-            backgroundColor: '#111827',
-            color: '#ffffff',
+            backgroundColor: 'var(--sp-btn-primary, #18181b)',
+            color: 'var(--sp-btn-primary-text, #ffffff)',
             border: 'none',
-            fontSize: '13px',
+            fontSize: '12.5px',
             fontWeight: '800',
             display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '8px',
+            gap: '6px',
             cursor: 'pointer',
-            boxShadow: '0 10px 22px -4px rgba(17, 24, 39, 0.24)',
-            alignSelf: isMobile ? 'stretch' : 'auto'
+            boxShadow: '0 6px 16px -4px rgba(15, 23, 42, 0.18)',
+            whiteSpace: 'nowrap',
+            flexShrink: 0
           }}
         >
           <Icon.Plus />
@@ -244,209 +277,178 @@ export default function TabFactures({
       </header>
 
       {/* =================================================================== */}
-      {/* 2. LES 4 KPIS DE FACTURATION (VERRE CRISTAL)                        */}
+      {/* 2. LES 4 KPIS HIÉRARCHISÉS (CARTE MAÎTRESSE ÉMERAUDE + 3 KPIS)      */}
       {/* =================================================================== */}
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
-          gap: isMobile ? '10px' : '16px',
-          marginBottom: '22px'
+          gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : '1.3fr 1fr 1fr 1fr',
+          gap: isMobile ? '8px' : '14px',
+          marginBottom: isMobile ? '12px' : '18px'
         }}
       >
-        {/* KPI 1 : Factures émises */}
+        {/* KPI 1 (Pièce maîtresse) : Revenu Onboarding encaissé + Jauge de recouvrement */}
         <div
-          className="sp-glass-panel"
+          className="sp-glass-panel-dark"
           style={{
-            padding: isMobile ? '16px 14px' : '20px 22px',
+            gridColumn: isMobile ? '1 / -1' : 'auto',
+            padding: isMobile ? '16px 18px' : '18px 22px',
+            minHeight: isMobile ? '96px' : '108px',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
-            gap: '12px'
+            boxSizing: 'border-box'
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div
-              style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '50%',
-                background: 'rgba(15, 23, 42, 0.08)',
-                color: '#0f172a',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-            >
-              <Icon.Factures />
-            </div>
-            <span className="sp-glass-pill" style={{ padding: '3px 9px', borderRadius: '999px', fontSize: '10.5px', fontWeight: '700', color: '#64748b' }}>
-              Total
+            <span style={{ fontSize: '10.5px', fontWeight: '700', color: 'rgba(255,255,255,0.72)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+              Revenu Onboarding acquis
+            </span>
+            <span style={{ padding: '2px 8px', borderRadius: '999px', fontSize: '10px', fontWeight: '800', background: 'rgba(16, 185, 129, 0.22)', color: '#34d399' }}>
+              100 % Agent
             </span>
           </div>
+
+          <div style={{ fontSize: isMobile ? '26px' : '29px', fontWeight: '800', color: '#ffffff', lineHeight: 1, fontVariantNumeric: 'tabular-nums', margin: '6px 0' }}>
+            {formatMontant(montantEncaisseHT)} <span style={{ fontSize: '13px', fontWeight: '700', color: 'rgba(255,255,255,0.65)' }}>€ HT</span>
+          </div>
+
           <div>
-            <div style={{ fontSize: isMobile ? '24px' : '28px', fontWeight: '800', color: '#0f172a', lineHeight: 1.05, fontVariantNumeric: 'tabular-nums' }}>
-              {nbTotal}
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10.5px', color: 'rgba(255,255,255,0.75)', fontWeight: '600', marginBottom: '4px' }}>
+              <span>{nbPayees} sur {nbTotal} réglée{nbPayees > 1 ? 's' : ''}</span>
+              <span style={{ color: '#34d399', fontWeight: '800' }}>{tauxEncaissement}%</span>
             </div>
-            <div style={{ fontSize: '12.5px', fontWeight: '600', color: '#64748b', marginTop: '4px' }}>
-              Factures émises
+            <div style={{ height: '4px', width: '100%', background: 'rgba(255,255,255,0.15)', borderRadius: '999px', overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${Math.max(5, tauxEncaissement)}%`, background: '#10b981', borderRadius: '999px' }} />
             </div>
           </div>
         </div>
 
-        {/* KPI 2 : En attente de règlement */}
+        {/* KPI 2 : En attente de paiement */}
         <div
           className="sp-glass-panel"
           style={{
-            padding: isMobile ? '16px 14px' : '20px 22px',
+            padding: isMobile ? '13px 14px' : '18px 20px',
+            minHeight: isMobile ? '82px' : '108px',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
-            gap: '12px'
+            boxSizing: 'border-box'
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div
-              style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '50%',
-                background: 'rgba(245, 158, 11, 0.15)',
-                border: '1px solid rgba(245, 158, 11, 0.3)',
-                color: '#d97706',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-            >
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
-              </svg>
-            </div>
-            <span style={{ padding: '3px 9px', borderRadius: '999px', fontSize: '10.5px', fontWeight: '800', background: 'rgba(245, 158, 11, 0.15)', color: '#b45309' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontSize: '10.5px', fontWeight: '700', color: 'var(--sp-text-muted, #64748b)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              À encaisser
+            </span>
+            <span style={{ padding: '2px 8px', borderRadius: '999px', fontSize: '10px', fontWeight: '800', background: 'rgba(245, 158, 11, 0.14)', color: '#b45309' }}>
               {nbEnAttente} en attente
             </span>
           </div>
           <div>
-            <div style={{ fontSize: isMobile ? '22px' : '26px', fontWeight: '800', color: nbEnAttente > 0 ? '#d97706' : '#0f172a', lineHeight: 1.05, fontVariantNumeric: 'tabular-nums' }}>
-              {formatMontant(montantEnAttenteHT)} <span style={{ fontSize: '13px', fontWeight: '700', color: '#94a3b8' }}>€ HT</span>
+            <div style={{ fontSize: isMobile ? '20px' : '26px', fontWeight: '800', color: nbEnAttente > 0 ? '#d97706' : 'var(--sp-text-main, #18181b)', lineHeight: 1.05, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+              {formatMontant(montantEnAttenteHT)} <span style={{ fontSize: '11.5px', fontWeight: '700', color: 'var(--sp-text-muted, #64748b)' }}>€ HT</span>
             </div>
-            <div style={{ fontSize: '12.5px', fontWeight: '600', color: '#64748b', marginTop: '4px' }}>
-              En attente de paiement
+            <div style={{ fontSize: '11px', fontWeight: '500', color: 'var(--sp-text-muted, #64748b)', marginTop: '4px' }}>
+              En attente de règlement
             </div>
           </div>
         </div>
 
-        {/* KPI 3 : Factures Payées */}
+        {/* KPI 3 : Factures encaissées */}
         <div
           className="sp-glass-panel"
           style={{
-            padding: isMobile ? '16px 14px' : '20px 22px',
+            padding: isMobile ? '13px 14px' : '18px 20px',
+            minHeight: isMobile ? '82px' : '108px',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
-            gap: '12px'
+            boxSizing: 'border-box'
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div
-              style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '50%',
-                background: 'rgba(16, 185, 129, 0.14)',
-                border: '1px solid rgba(16, 185, 129, 0.28)',
-                color: '#059669',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-            >
-              <Icon.Check />
-            </div>
-            <span style={{ padding: '3px 9px', borderRadius: '999px', fontSize: '10.5px', fontWeight: '800', background: 'rgba(16, 185, 129, 0.14)', color: '#059669' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontSize: '10.5px', fontWeight: '700', color: 'var(--sp-text-muted, #64748b)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Encaissées
+            </span>
+            <span style={{ padding: '2px 8px', borderRadius: '999px', fontSize: '10px', fontWeight: '800', background: 'rgba(16, 185, 129, 0.14)', color: '#059669' }}>
               {tauxEncaissement}% réglées
             </span>
           </div>
           <div>
-            <div style={{ fontSize: isMobile ? '24px' : '28px', fontWeight: '800', color: '#059669', lineHeight: 1.05, fontVariantNumeric: 'tabular-nums' }}>
+            <div style={{ fontSize: isMobile ? '20px' : '27px', fontWeight: '800', color: nbPayees > 0 ? '#059669' : 'var(--sp-text-main, #18181b)', lineHeight: 1.05, fontVariantNumeric: 'tabular-nums' }}>
               {nbPayees}
             </div>
-            <div style={{ fontSize: '12.5px', fontWeight: '600', color: '#64748b', marginTop: '4px' }}>
-              Factures encaissées
+            <div style={{ fontSize: '11px', fontWeight: '500', color: 'var(--sp-text-muted, #64748b)', marginTop: '4px' }}>
+              Paiements validés
             </div>
           </div>
         </div>
 
-        {/* KPI 4 : Chiffre d'affaires Onboarding encaissé */}
+        {/* KPI 4 : Total Factures émises */}
         <div
           className="sp-glass-panel"
           style={{
-            padding: isMobile ? '16px 14px' : '20px 22px',
+            padding: isMobile ? '13px 14px' : '18px 20px',
+            minHeight: isMobile ? '82px' : '108px',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
-            gap: '12px'
+            boxSizing: 'border-box'
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div
-              style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '50%',
-                background: 'rgba(99, 102, 241, 0.12)',
-                border: '1px solid rgba(99, 102, 241, 0.25)',
-                color: '#4f46e5',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: '800',
-                fontSize: '16px'
-              }}
-            >
-              €
-            </div>
-            <span className="sp-glass-pill" style={{ padding: '3px 9px', borderRadius: '999px', fontSize: '10.5px', fontWeight: '800', color: '#4f46e5' }}>
-              100 % Agent
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontSize: '10.5px', fontWeight: '700', color: 'var(--sp-text-muted, #64748b)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Factures émises
+            </span>
+            <span className="sp-glass-pill" style={{ padding: '2px 8px', borderRadius: '999px', fontSize: '10px', fontWeight: '700', color: 'var(--sp-text-muted, #64748b)' }}>
+              Registre
             </span>
           </div>
           <div>
-            <div style={{ fontSize: isMobile ? '22px' : '26px', fontWeight: '800', color: '#0f172a', lineHeight: 1.05, fontVariantNumeric: 'tabular-nums' }}>
-              {formatMontant(montantEncaisseHT)} <span style={{ fontSize: '13px', fontWeight: '700', color: '#94a3b8' }}>€ HT</span>
+            <div style={{ fontSize: isMobile ? '20px' : '27px', fontWeight: '800', color: 'var(--sp-text-main, #18181b)', lineHeight: 1.05, fontVariantNumeric: 'tabular-nums' }}>
+              {nbTotal}
             </div>
-            <div style={{ fontSize: '12.5px', fontWeight: '600', color: '#64748b', marginTop: '4px' }}>
-              Revenu Onboarding acquis
+            <div style={{ fontSize: '11px', fontWeight: '500', color: 'var(--sp-text-muted, #64748b)', marginTop: '4px' }}>
+              {nbAgentTotal} Agent • {nbStackTotal} Cloud
             </div>
           </div>
         </div>
       </div>
 
       {/* =================================================================== */}
-      {/* 3. GRILLE BENTO 2 COLONNES (REGISTRE FACTURES | SUIVI & RÈGLES)     */}
+      {/* 3. GRILLE BENTO 2 COLONNES (REGISTRE FACTURES | VENTILATION & RÈGLES)*/}
       {/* =================================================================== */}
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr' : '1.48fr 1fr',
-          gap: '20px',
+          gridTemplateColumns: isMobile ? '1fr' : '1.52fr 1fr',
+          gap: isMobile ? '12px' : '18px',
           alignItems: 'start'
         }}
       >
-        {/* COLONNE GAUCHE : REGISTRE DES FACTURES D'INSTALLATION */}
-        <div className="sp-glass-panel" style={{ padding: isMobile ? '18px 14px' : '22px 24px' }}>
-          {/* Barre de filtres + Recherche */}
+        {/* COLONNE GAUCHE : REGISTRE DES FACTURES D'INSTALLATION (SANS BOUTON DOUBLON) */}
+        <div className="sp-glass-panel" style={{ padding: isMobile ? '16px 12px' : '20px 22px', minWidth: 0 }}>
+          {/* Barre de filtres doux + Recherche */}
           <div
             style={{
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: isMobile ? 'stretch' : 'center',
               flexDirection: isMobile ? 'column' : 'row',
-              gap: '12px',
-              marginBottom: '16px'
+              gap: '10px',
+              marginBottom: '14px'
             }}
           >
-            <div className="sp-glass-pill" style={{ display: 'inline-flex', padding: '3px', borderRadius: '999px', gap: '2px', overflowX: 'auto' }}>
+            <div
+              className="sp-glass-pill"
+              style={{
+                display: isMobile ? 'grid' : 'inline-flex',
+                gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : undefined,
+                padding: '3px',
+                borderRadius: '999px',
+                gap: '2px'
+              }}
+            >
               {[
                 { id: 'TOUTES', label: `Toutes (${nbTotal})` },
                 { id: 'ATTENTE', label: `En attente (${nbEnAttente})` },
@@ -459,15 +461,16 @@ export default function TabFactures({
                     type="button"
                     onClick={() => setFiltreStatut(tab.id)}
                     style={{
-                      border: 'none',
-                      background: actif ? '#111827' : 'transparent',
-                      color: actif ? '#ffffff' : '#64748b',
-                      padding: '6px 13px',
+                      border: actif ? '1px solid rgba(16, 185, 129, 0.4)' : 'none',
+                      background: actif ? 'rgba(16, 185, 129, 0.14)' : 'transparent',
+                      color: actif ? '#059669' : 'var(--sp-text-muted, #64748b)',
+                      padding: '5px 13px',
                       borderRadius: '999px',
                       fontSize: '11.5px',
-                      fontWeight: '700',
+                      fontWeight: actif ? '800' : '700',
                       cursor: 'pointer',
-                      whiteSpace: 'nowrap'
+                      whiteSpace: 'nowrap',
+                      textAlign: 'center'
                     }}
                   >
                     {tab.label}
@@ -476,72 +479,44 @@ export default function TabFactures({
               })}
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: isMobile ? '100%' : 'auto', flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
-              <div
-                className="sp-glass-pill"
+            <div
+              className="sp-glass-pill"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '6px 13px',
+                borderRadius: '999px',
+                width: isMobile ? '100%' : '245px',
+                boxSizing: 'border-box'
+              }}
+            >
+              <Icon.Search />
+              <input
+                type="text"
+                placeholder="N° facture, salon, SIRET..."
+                value={rechercheFacture}
+                onChange={(e) => setRechercheFacture(e.target.value)}
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '7px 13px',
-                  borderRadius: '999px',
-                  width: isMobile ? '100%' : '235px',
-                  boxSizing: 'border-box'
-                }}
-              >
-                <Icon.Search />
-                <input
-                  type="text"
-                  placeholder="N° facture, salon, SIRET..."
-                  value={rechercheFacture}
-                  onChange={(e) => setRechercheFacture(e.target.value)}
-                  style={{
-                    border: 'none',
-                    background: 'transparent',
-                    outline: 'none',
-                    width: '100%',
-                    fontSize: '12.5px',
-                    color: '#0f172a',
-                    fontFamily: 'inherit'
-                  }}
-                />
-                {rechercheFacture && (
-                  <button
-                    type="button"
-                    onClick={() => setRechercheFacture('')}
-                    style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: '11px', padding: 0 }}
-                  >
-                    X
-                  </button>
-                )}
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setShowFactureForm(true)}
-                style={{
-                  height: '38px',
-                  padding: '0 16px',
-                  borderRadius: '999px',
-                  backgroundColor: '#111827',
-                  color: '#ffffff',
                   border: 'none',
-                  fontSize: '12.5px',
-                  fontWeight: '800',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '6px',
-                  cursor: 'pointer',
-                  boxShadow: '0 6px 16px -3px rgba(17, 24, 39, 0.22)',
-                  whiteSpace: 'nowrap',
-                  flexShrink: 0,
-                  width: isMobile ? '100%' : 'auto'
+                  background: 'transparent',
+                  outline: 'none',
+                  width: '100%',
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  color: 'var(--sp-text-main, #18181b)',
+                  fontFamily: 'inherit'
                 }}
-              >
-                <Icon.Plus />
-                <span>Nouvelle Facture</span>
-              </button>
+              />
+              {rechercheFacture && (
+                <button
+                  type="button"
+                  onClick={() => setRechercheFacture('')}
+                  style={{ background: 'none', border: 'none', color: 'var(--sp-text-muted, #64748b)', cursor: 'pointer', fontSize: '11px', padding: 0 }}
+                >
+                  ✕
+                </button>
+              )}
             </div>
           </div>
 
@@ -550,30 +525,28 @@ export default function TabFactures({
             <div
               className="sp-glass-pill"
               style={{
-                padding: '40px 18px',
-                borderRadius: '18px',
+                padding: '36px 18px',
+                borderRadius: '16px',
                 textAlign: 'center',
-                color: '#64748b',
-                fontSize: '13px'
+                color: 'var(--sp-text-muted, #64748b)',
+                fontSize: '12.5px'
               }}
             >
-              <strong style={{ display: 'block', fontSize: '14.5px', color: '#0f172a', marginBottom: '4px' }}>
+              <strong style={{ display: 'block', fontSize: '14px', color: 'var(--sp-text-main, #18181b)', marginBottom: '4px' }}>
                 Aucune facture dans cette vue
               </strong>
-              <span style={{ display: 'block', marginBottom: '16px' }}>
+              <span style={{ display: 'block', marginBottom: '14px' }}>
                 Émettez une facture de mise en service (99 € HT) lors de l'installation d'un nouveau salon.
               </span>
               <button
                 type="button"
                 onClick={() => setShowFactureForm(true)}
+                className="sp-pay-soft-btn"
                 style={{
-                  padding: '9px 18px',
+                  padding: '8px 16px',
                   borderRadius: '999px',
-                  background: '#111827',
-                  color: '#ffffff',
-                  border: 'none',
-                  fontSize: '12.5px',
-                  fontWeight: '700',
+                  fontSize: '12px',
+                  fontWeight: '800',
                   cursor: 'pointer'
                 }}
               >
@@ -581,7 +554,7 @@ export default function TabFactures({
               </button>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '9px' }}>
               {facturesFiltrees.map((f) => {
                 const estPayee = f.statut === 'PAYEE';
                 const estStack = f.type_facture === 'STACK' || String(f.numero_facture || '').startsWith('FAC-ST');
@@ -596,18 +569,27 @@ export default function TabFactures({
                         flexDirection: isMobile ? 'column' : 'row',
                         alignItems: isMobile ? 'stretch' : 'center',
                         justifyContent: 'space-between',
-                        gap: '14px'
+                        gap: '12px'
                       }}
                     >
-                      {/* Infos Facture & Salon */}
+                      {/* Gauche : Icône + Salon + Badges + Métadonnées */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0, flex: 1 }}>
                         <div
                           style={{
-                            width: '42px',
-                            height: '42px',
-                            borderRadius: '13px',
-                            background: estPayee ? 'rgba(16, 185, 129, 0.14)' : (estStack ? 'rgba(99, 102, 241, 0.14)' : 'rgba(245, 158, 11, 0.15)'),
-                            color: estPayee ? '#059669' : (estStack ? '#4f46e5' : '#d97706'),
+                            width: '38px',
+                            height: '38px',
+                            borderRadius: '11px',
+                            background: estPayee
+                              ? 'rgba(16, 185, 129, 0.14)'
+                              : estStack
+                                ? 'rgba(14, 165, 233, 0.12)'
+                                : 'rgba(245, 158, 11, 0.14)',
+                            border: estPayee
+                              ? '1px solid rgba(16, 185, 129, 0.28)'
+                              : estStack
+                                ? '1px solid rgba(14, 165, 233, 0.25)'
+                                : '1px solid rgba(245, 158, 11, 0.28)',
+                            color: estPayee ? '#059669' : estStack ? '#0284c7' : '#d97706',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -618,12 +600,12 @@ export default function TabFactures({
                         </div>
 
                         <div style={{ minWidth: 0, flex: 1 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '7px', flexWrap: 'wrap' }}>
                             <strong
                               style={{
                                 fontSize: '14.5px',
                                 fontWeight: '800',
-                                color: '#0f172a',
+                                color: 'var(--sp-text-main, #18181b)',
                                 whiteSpace: 'nowrap',
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis'
@@ -635,11 +617,11 @@ export default function TabFactures({
                             <span
                               style={{
                                 padding: '2px 8px',
-                                borderRadius: '7px',
-                                fontSize: '11px',
+                                borderRadius: '6px',
+                                fontSize: '10px',
                                 fontWeight: '800',
-                                background: estStack ? 'rgba(99, 102, 241, 0.12)' : 'rgba(16, 185, 129, 0.12)',
-                                color: estStack ? '#4f46e5' : '#059669'
+                                background: estStack ? 'rgba(14, 165, 233, 0.12)' : 'rgba(16, 185, 129, 0.12)',
+                                color: estStack ? '#0284c7' : '#059669'
                               }}
                             >
                               {estStack ? 'STACK Cloud' : 'Agent Installation'}
@@ -647,29 +629,15 @@ export default function TabFactures({
 
                             <span
                               style={{
-                                fontFamily: 'monospace',
-                                fontSize: '11.5px',
-                                fontWeight: '700',
                                 padding: '2px 8px',
-                                borderRadius: '7px',
-                                background: 'rgba(15, 23, 42, 0.06)',
-                                color: '#334155'
-                              }}
-                            >
-                              {f.numero_facture}
-                            </span>
-
-                            <span
-                              style={{
-                                padding: '2px 9px',
                                 borderRadius: '999px',
-                                fontSize: '10.5px',
+                                fontSize: '10px',
                                 fontWeight: '800',
-                                backgroundColor: estPayee ? 'rgba(16, 185, 129, 0.14)' : 'rgba(245, 158, 11, 0.16)',
+                                backgroundColor: estPayee ? 'rgba(16, 185, 129, 0.14)' : 'rgba(245, 158, 11, 0.15)',
                                 color: estPayee ? '#059669' : '#b45309'
                               }}
                             >
-                              {estPayee ? (f.mode_reglement === 'STRIPE' ? 'Payée via Stripe' : 'Payée') : 'En attente'}
+                              {estPayee ? (f.mode_reglement === 'STRIPE' ? 'Payée Stripe ✓' : 'Payée ✓') : 'En attente'}
                             </span>
                           </div>
 
@@ -677,108 +645,120 @@ export default function TabFactures({
                             style={{
                               display: 'flex',
                               alignItems: 'center',
-                              gap: '8px',
+                              gap: '7px',
                               flexWrap: 'wrap',
                               marginTop: '4px',
-                              fontSize: '12px',
-                              color: '#64748b'
+                              fontSize: '11.5px',
+                              color: 'var(--sp-text-muted, #64748b)'
                             }}
                           >
-                            <span>Émise le {formatDate(f.date_emission)}</span>
-                            <span>•</span>
-                            <span style={{ fontFamily: 'monospace', fontSize: '11.5px' }}>
-                              SIRET : {f.siret_salon || 'N/A'}
+                            <span style={{ fontFamily: 'monospace', fontWeight: '700', color: 'var(--sp-text-main, #18181b)' }}>
+                              {f.numero_facture}
                             </span>
                             <span>•</span>
-                            <strong style={{ color: '#0f172a' }}>{formatMontant(montantHT)} € HT</strong>
-                            {f.mode_reglement === 'STRIPE' && (
+                            <span>Émise le {formatDate(f.date_emission)}</span>
+                            {f.siret_salon && (
                               <>
                                 <span>•</span>
-                                <span style={{ color: '#4f46e5', fontWeight: '700', fontSize: '11px' }}>Règlement Carte Bancaire</span>
+                                <span>SIRET {f.siret_salon}</span>
                               </>
                             )}
                           </div>
                         </div>
                       </div>
 
-                      {/* Boutons d'actions : PDF, E-mail, Valider paiement */}
+                      {/* Droite : Montant mis en valeur + Boutons PDF, E-mail et Encaisser Soft */}
                       <div
                         style={{
                           display: 'flex',
                           alignItems: 'center',
-                          justifyContent: isMobile ? 'flex-end' : 'flex-end',
-                          gap: '8px',
+                          justifyContent: 'space-between',
+                          gap: '10px',
                           flexWrap: 'wrap',
-                          paddingTop: isMobile ? '10px' : 0,
+                          paddingTop: isMobile ? '9px' : 0,
                           borderTop: isMobile ? '1px solid rgba(148, 163, 184, 0.16)' : 'none',
                           flexShrink: 0
                         }}
                       >
-                        <button
-                          type="button"
-                          onClick={() => handleDownload(f.id_facture, f.numero_facture)}
-                          className="sp-glass-pill"
-                          style={{
-                            padding: '8px 13px',
-                            borderRadius: '999px',
-                            fontSize: '12px',
-                            fontWeight: '700',
-                            color: '#0f172a',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            cursor: 'pointer'
-                          }}
-                          title="Télécharger la facture PDF"
-                        >
-                          <Icon.FileDownload />
-                          <span>PDF</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => handleSendFactureEmail(f.id_facture, f.nom_salon)}
-                          className="sp-glass-pill"
-                          style={{
-                            padding: '8px 13px',
-                            borderRadius: '999px',
-                            fontSize: '12px',
-                            fontWeight: '700',
-                            color: '#0f172a',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            cursor: 'pointer'
-                          }}
-                          title="Envoyer la facture par e-mail au salon"
-                        >
-                          <Icon.ArrowUpRight />
-                          <span>E-mail</span>
-                        </button>
-
-                        {!estPayee && (
-                          <button
-                            type="button"
-                            onClick={() => handlePay(f.id_facture)}
+                        <div style={{ textAlign: isMobile ? 'left' : 'right', marginRight: '4px' }}>
+                          <strong
                             style={{
-                              padding: '8px 15px',
-                              borderRadius: '999px',
-                              backgroundColor: '#111827',
-                              color: '#ffffff',
-                              border: 'none',
-                              fontSize: '12px',
+                              fontSize: '15px',
                               fontWeight: '800',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '6px',
-                              cursor: 'pointer',
-                              boxShadow: '0 6px 16px -4px rgba(17, 24, 39, 0.22)'
+                              color: estPayee ? '#059669' : 'var(--sp-text-main, #18181b)',
+                              fontVariantNumeric: 'tabular-nums',
+                              whiteSpace: 'nowrap'
                             }}
                           >
-                            <Icon.Check />
-                            <span>Valider paiement</span>
+                            {formatMontant(montantHT)} € <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--sp-text-muted, #64748b)' }}>HT</span>
+                          </strong>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <button
+                            type="button"
+                            onClick={() => handleDownload(f.id_facture, f.numero_facture)}
+                            className="sp-glass-pill"
+                            style={{
+                              padding: '6px 11px',
+                              borderRadius: '999px',
+                              fontSize: '11.5px',
+                              fontWeight: '700',
+                              color: 'var(--sp-text-main, #18181b)',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '5px',
+                              cursor: 'pointer'
+                            }}
+                            title="Télécharger la facture PDF"
+                          >
+                            <Icon.FileDownload />
+                            <span>PDF</span>
                           </button>
-                        )}
+
+                          <button
+                            type="button"
+                            onClick={() => handleSendFactureEmail(f.id_facture, f.nom_salon)}
+                            className="sp-glass-pill"
+                            style={{
+                              padding: '6px 11px',
+                              borderRadius: '999px',
+                              fontSize: '11.5px',
+                              fontWeight: '700',
+                              color: 'var(--sp-text-main, #18181b)',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '5px',
+                              cursor: 'pointer'
+                            }}
+                            title="Envoyer la facture par e-mail au salon"
+                          >
+                            <Icon.ArrowUpRight />
+                            <span>E-mail</span>
+                          </button>
+
+                          {!estPayee && (
+                            <button
+                              type="button"
+                              onClick={() => handlePay(f.id_facture)}
+                              className="sp-pay-soft-btn"
+                              style={{
+                                padding: '6px 13px',
+                                borderRadius: '999px',
+                                fontSize: '11.5px',
+                                fontWeight: '800',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '5px',
+                                cursor: 'pointer',
+                                whiteSpace: 'nowrap'
+                              }}
+                            >
+                              <Icon.Check />
+                              <span>Valider paiement</span>
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -788,170 +768,163 @@ export default function TabFactures({
           )}
         </div>
 
-        {/* COLONNE DROITE : ENCAISSEMENTS EN ATTENTE & RÈGLES MANDATAIRE */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-          {/* Carte 1 : Factures en attente de règlement */}
-          <div className="sp-glass-panel" style={{ padding: '20px 22px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+        {/* COLONNE DROITE : SYNTHÈSE DE FACTURATION (ZÉRO DOUBLON DE LISTE) & RÈGLES */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '12px' : '16px' }}>
+          {/* Carte 1 : Synthèse & Ventilation des factures (Remplace la liste en doublon "Règlements à pointer") */}
+          <div className="sp-glass-panel" style={{ padding: isMobile ? '16px 14px' : '18px 20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Icon.Zap />
-                <h3 style={{ margin: 0, fontSize: '15.5px', fontWeight: '800', color: '#0f172a' }}>
-                  Règlements à pointer
+                <span style={{ color: '#059669', display: 'flex' }}>
+                  <Icon.Check />
+                </span>
+                <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '800', color: 'var(--sp-text-main, #18181b)' }}>
+                  Ventilation des factures
                 </h3>
               </div>
               <span
                 style={{
-                  padding: '3px 9px',
+                  padding: '2px 8px',
                   borderRadius: '999px',
-                  fontSize: '10.5px',
+                  fontSize: '10px',
                   fontWeight: '800',
-                  background: nbEnAttente > 0 ? 'rgba(245, 158, 11, 0.16)' : 'rgba(16, 185, 129, 0.14)',
+                  background: nbEnAttente > 0 ? 'rgba(245, 158, 11, 0.14)' : 'rgba(16, 185, 129, 0.14)',
                   color: nbEnAttente > 0 ? '#b45309' : '#059669'
                 }}
               >
-                {nbEnAttente > 0 ? `${nbEnAttente} en attente` : 'Tout est réglé'}
+                {nbEnAttente > 0 ? `${nbEnAttente} à encaisser` : '100% encaissé ✓'}
               </span>
             </div>
 
-            {facturesEnAttentePrioritaires.length === 0 ? (
-              <div
-                className="sp-glass-pill"
-                style={{ padding: '18px 14px', borderRadius: '16px', textAlign: 'center', fontSize: '12.5px', color: '#64748b' }}
-              >
-                Toutes vos factures d'installation ont été réglées.
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '9px' }}>
+              <div className="sp-glass-pill" style={{ padding: '11px 13px', borderRadius: '13px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <strong style={{ display: 'block', fontSize: '13px', color: 'var(--sp-text-main, #18181b)' }}>
+                    Prestations Agent (99 € HT)
+                  </strong>
+                  <span style={{ fontSize: '11px', color: 'var(--sp-text-muted, #64748b)' }}>
+                    {nbAgentTotal} facture{nbAgentTotal > 1 ? 's' : ''} • 100 % reversé à l'agent
+                  </span>
+                </div>
+                <strong style={{ fontSize: '14.5px', fontWeight: '800', color: '#059669', fontVariantNumeric: 'tabular-nums' }}>
+                  {formatMontant(montantAgentTotalHT)} € HT
+                </strong>
               </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {facturesEnAttentePrioritaires.map((fac) => (
-                  <div
-                    key={`wait-${fac.id_facture}`}
-                    className="sp-glass-pill"
-                    style={{
-                      padding: '12px 14px',
-                      borderRadius: '16px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      gap: '10px'
-                    }}
-                  >
-                    <div style={{ minWidth: 0 }}>
-                      <strong style={{ display: 'block', fontSize: '13.5px', color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {formatNomSalonPropre(fac.nom_salon)}
-                      </strong>
-                      <span style={{ fontSize: '11.5px', color: '#64748b', fontFamily: 'monospace' }}>
-                        {fac.numero_facture} • 99,00 € HT
-                      </span>
-                    </div>
 
-                    <button
-                      type="button"
-                      onClick={() => handlePay(fac.id_facture)}
+              <div className="sp-glass-pill" style={{ padding: '11px 13px', borderRadius: '13px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <strong style={{ display: 'block', fontSize: '13px', color: 'var(--sp-text-main, #18181b)' }}>
+                    Mise en service STACK Cloud
+                  </strong>
+                  <span style={{ fontSize: '11px', color: 'var(--sp-text-muted, #64748b)' }}>
+                    {nbStackTotal} facture{nbStackTotal > 1 ? 's' : ''} • Déploiement infrastructure
+                  </span>
+                </div>
+                <strong style={{ fontSize: '14.5px', fontWeight: '800', color: 'var(--sp-text-main, #18181b)', fontVariantNumeric: 'tabular-nums' }}>
+                  {formatMontant(montantStackTotalHT)} € HT
+                </strong>
+              </div>
+
+              {nbEnAttente > 0 && filtreStatut !== 'ATTENTE' && (
+                <button
+                  type="button"
+                  onClick={() => setFiltreStatut('ATTENTE')}
+                  className="sp-glass-pill"
+                  style={{
+                    width: '100%',
+                    padding: '9px 12px',
+                    borderRadius: '11px',
+                    fontSize: '12px',
+                    fontWeight: '700',
+                    color: '#b45309',
+                    cursor: 'pointer',
+                    textAlign: 'center',
+                    marginTop: '2px'
+                  }}
+                >
+                  Filtrer les {nbEnAttente} facture{nbEnAttente > 1 ? 's' : ''} en attente ({formatMontant(montantEnAttenteHT)} € HT) →
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Carte 2 : Fonctionnement des frais de mise en service (Sans le 3e bouton noir redondant) */}
+          <div className="sp-glass-panel" style={{ padding: isMobile ? '13px 14px' : '18px 20px' }}>
+            <div
+              onClick={() => isMobile && setAfficherReglesFacturation(!afficherReglesFacturation)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                cursor: isMobile ? 'pointer' : 'default',
+                marginBottom: !isMobile || afficherReglesFacturation ? '12px' : 0
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ color: '#059669', display: 'flex' }}>
+                  <Icon.Shield />
+                </span>
+                <h3 style={{ margin: 0, fontSize: isMobile ? '14px' : '15px', fontWeight: '800', color: 'var(--sp-text-main, #18181b)' }}>
+                  Facturation Onboarding (99 € HT)
+                </h3>
+              </div>
+              {isMobile && (
+                <span style={{ fontSize: '11.5px', fontWeight: '800', color: 'var(--sp-text-muted, #64748b)' }}>
+                  {afficherReglesFacturation ? 'Masquer ▲' : 'Règles ▼'}
+                </span>
+              )}
+            </div>
+
+            {(!isMobile || afficherReglesFacturation) && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {[
+                  {
+                    num: '1',
+                    titre: '100 % acquis à l’agent',
+                    desc: "Les 99 € HT de frais d'installation et de paramétrage initial sont facturés directement en votre nom (mention RSAC)."
+                  },
+                  {
+                    num: '2',
+                    titre: 'Envoi PDF & E-mail en 1 clic',
+                    desc: 'Chaque facture est générée au format PDF conforme avec votre SIRET et votre régime de TVA (Franchise 293B ou TVA 20%).'
+                  },
+                  {
+                    num: '3',
+                    titre: 'Validation Go-Live du salon',
+                    desc: 'Une fois le règlement reçu, cliquez sur « Valider paiement » pour confirmer la mise en service.'
+                  }
+                ].map((step) => (
+                  <div key={step.num} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                    <span
                       style={{
-                        padding: '7px 12px',
-                        borderRadius: '999px',
-                        border: 'none',
-                        background: '#111827',
-                        color: '#ffffff',
-                        fontSize: '11.5px',
+                        width: '22px',
+                        height: '22px',
+                        borderRadius: '50%',
+                        background: 'rgba(16, 185, 129, 0.14)',
+                        border: '1px solid rgba(16, 185, 129, 0.32)',
+                        color: '#059669',
+                        fontSize: '11px',
                         fontWeight: '800',
-                        cursor: 'pointer',
-                        flexShrink: 0,
                         display: 'inline-flex',
                         alignItems: 'center',
-                        gap: '4px'
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                        marginTop: '1px'
                       }}
                     >
-                      <Icon.Check /> Pointer
-                    </button>
+                      {step.num}
+                    </span>
+                    <div>
+                      <strong style={{ display: 'block', fontSize: '12.5px', color: 'var(--sp-text-main, #18181b)', marginBottom: '1px' }}>
+                        {step.titre}
+                      </strong>
+                      <span style={{ fontSize: '11.5px', color: 'var(--sp-text-muted, #64748b)', lineHeight: 1.4, display: 'block' }}>
+                        {step.desc}
+                      </span>
+                    </div>
                   </div>
                 ))}
               </div>
             )}
-          </div>
-
-          {/* Carte 2 : Fonctionnement des frais de mise en service (99 € HT) */}
-          <div className="sp-glass-panel" style={{ padding: '20px 22px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-              <Icon.Shield />
-              <h3 style={{ margin: 0, fontSize: '15.5px', fontWeight: '800', color: '#0f172a' }}>
-                Facturation Onboarding (99 € HT)
-              </h3>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {[
-                {
-                  num: '1',
-                  titre: '100 % acquis à l’agent',
-                  desc: "Les 99 € HT de frais d'installation et de paramétrage initial sont facturés directement en votre nom (mention RSAC)."
-                },
-                {
-                  num: '2',
-                  titre: 'Envoi PDF & E-mail en 1 clic',
-                  desc: "Chaque facture est générée au format PDF conforme avec votre SIRET et votre régime de TVA (Franchise 293B ou TVA 20%)."
-                },
-                {
-                  num: '3',
-                  titre: 'Validation Go-Live du salon',
-                  desc: "Une fois le règlement reçu, cliquez sur « Valider paiement » pour confirmer la mise en service."
-                }
-              ].map((step) => (
-                <div key={step.num} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-                  <span
-                    style={{
-                      width: '22px',
-                      height: '22px',
-                      borderRadius: '50%',
-                      background: '#111827',
-                      color: '#ffffff',
-                      fontSize: '11px',
-                      fontWeight: '800',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                      marginTop: '1px'
-                    }}
-                  >
-                    {step.num}
-                  </span>
-                  <div>
-                    <strong style={{ display: 'block', fontSize: '12.5px', color: '#0f172a', marginBottom: '2px' }}>
-                      {step.titre}
-                    </strong>
-                    <span style={{ fontSize: '11.5px', color: '#64748b', lineHeight: 1.45, display: 'block' }}>
-                      {step.desc}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setShowFactureForm(true)}
-              style={{
-                width: '100%',
-                marginTop: '16px',
-                padding: '11px',
-                borderRadius: '999px',
-                border: 'none',
-                backgroundColor: '#111827',
-                color: '#ffffff',
-                fontSize: '12.5px',
-                fontWeight: '800',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                cursor: 'pointer',
-                boxShadow: '0 6px 16px -3px rgba(17, 24, 39, 0.22)'
-              }}
-            >
-              <Icon.Plus />
-              <span>Créer une facture</span>
-            </button>
           </div>
         </div>
       </div>
@@ -964,32 +937,33 @@ export default function TabFactures({
           <div
             className="sp-modal-box"
             onClick={(e) => e.stopPropagation()}
-            style={{ padding: isMobile ? '20px 16px 26px 16px' : '28px' }}
+            style={{ padding: isMobile ? '20px 16px 26px 16px' : '26px 28px' }}
           >
             {/* En-tête de la modale */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', gap: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', gap: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div
-                  className="sp-glass-pill"
                   style={{
-                    width: '46px',
-                    height: '46px',
-                    borderRadius: '15px',
+                    width: '44px',
+                    height: '44px',
+                    borderRadius: '13px',
+                    background: 'rgba(16, 185, 129, 0.14)',
+                    border: '1px solid rgba(16, 185, 129, 0.32)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: '#0f172a',
+                    color: '#059669',
                     flexShrink: 0
                   }}
                 >
                   <Icon.Factures />
                 </div>
                 <div>
-                  <h2 style={{ margin: 0, fontSize: isMobile ? '19px' : '22px', fontWeight: '800', color: '#0f172a', letterSpacing: '-0.02em' }}>
-                    Nouvelle Facture d'Installation (Méthode B)
+                  <h2 style={{ margin: 0, fontSize: isMobile ? '18.5px' : '21px', fontWeight: '800', color: 'var(--sp-text-main, #18181b)', letterSpacing: '-0.02em' }}>
+                    Nouvelle Facture d'Installation
                   </h2>
-                  <span style={{ fontSize: '12.5px', color: '#64748b' }}>
-                    Génération du lot double facture : Prestation Agent (99,00 € HT) &amp; Frais Cloud STACK (100,00 € HT)
+                  <span style={{ fontSize: '12px', color: 'var(--sp-text-muted, #64748b)' }}>
+                    Génération du lot double facture : Prestation Agent (99,00 € HT) & Frais Cloud STACK (100,00 € HT)
                   </span>
                 </div>
               </div>
@@ -1003,7 +977,7 @@ export default function TabFactures({
                   height: '34px',
                   borderRadius: '50%',
                   cursor: 'pointer',
-                  color: '#64748b',
+                  color: 'var(--sp-text-muted, #64748b)',
                   fontWeight: '800',
                   display: 'flex',
                   alignItems: 'center',
@@ -1011,7 +985,7 @@ export default function TabFactures({
                   flexShrink: 0
                 }}
               >
-                X
+                ✕
               </button>
             </div>
 
@@ -1023,18 +997,18 @@ export default function TabFactures({
               style={{
                 display: 'grid',
                 gridTemplateColumns: isMobile ? '1fr' : '1.35fr 1fr',
-                gap: isMobile ? '16px' : '22px',
+                gap: isMobile ? '16px' : '20px',
                 alignItems: 'stretch'
               }}
             >
               {/* Colonne gauche : Coordonnées de facturation du salon */}
               <div className="sp-glass-panel" style={{ padding: isMobile ? '16px 14px' : '20px', borderRadius: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                <div style={{ fontSize: '13.5px', fontWeight: '800', color: '#0f172a' }}>
+                <div style={{ fontSize: '13.5px', fontWeight: '800', color: 'var(--sp-text-main, #18181b)' }}>
                   Établissement facturé
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '11.5px', fontWeight: '800', color: '#0f172a', marginBottom: '5px' }}>
+                  <label style={{ display: 'block', fontSize: '11.5px', fontWeight: '800', color: 'var(--sp-text-main, #18181b)', marginBottom: '5px' }}>
                     Nom du Salon / Raison sociale <span style={{ color: '#ef4444' }}>*</span>
                   </label>
                   <input
@@ -1049,7 +1023,7 @@ export default function TabFactures({
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '11.5px', fontWeight: '800', color: '#0f172a', marginBottom: '5px' }}>
+                  <label style={{ display: 'block', fontSize: '11.5px', fontWeight: '800', color: 'var(--sp-text-main, #18181b)', marginBottom: '5px' }}>
                     SIRET du Salon <span style={{ color: '#ef4444' }}>*</span>
                   </label>
                   <input
@@ -1064,7 +1038,7 @@ export default function TabFactures({
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '11.5px', fontWeight: '800', color: '#0f172a', marginBottom: '5px' }}>
+                  <label style={{ display: 'block', fontSize: '11.5px', fontWeight: '800', color: 'var(--sp-text-main, #18181b)', marginBottom: '5px' }}>
                     Adresse complète de facturation <span style={{ color: '#ef4444' }}>*</span>
                   </label>
                   <input
@@ -1083,7 +1057,7 @@ export default function TabFactures({
                 <div className="sp-glass-panel" style={{ padding: '20px', borderRadius: '20px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '14px' }}>
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                      <span style={{ fontSize: '11px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                      <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--sp-text-muted, #64748b)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                         Aperçu de la pièce comptable
                       </span>
                       <span style={{ padding: '3px 9px', borderRadius: '999px', fontSize: '10.5px', fontWeight: '800', background: 'rgba(16, 185, 129, 0.14)', color: '#059669' }}>
@@ -1092,27 +1066,27 @@ export default function TabFactures({
                     </div>
 
                     <div className="sp-glass-pill" style={{ padding: '16px', borderRadius: '16px' }}>
-                      <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', marginBottom: '2px' }}>
+                      <div style={{ fontSize: '11px', fontWeight: '700', color: 'var(--sp-text-muted, #64748b)', marginBottom: '2px' }}>
                         Destinataire :
                       </div>
-                      <strong style={{ display: 'block', fontSize: '15px', fontWeight: '800', color: '#0f172a', marginBottom: '2px' }}>
+                      <strong style={{ display: 'block', fontSize: '15px', fontWeight: '800', color: 'var(--sp-text-main, #18181b)', marginBottom: '2px' }}>
                         {formatNomSalonPropre(factureData.nom_salon || 'Nom du salon')}
                       </strong>
-                      <div style={{ fontSize: '11.5px', color: '#64748b', marginBottom: '4px' }}>
+                      <div style={{ fontSize: '11.5px', color: 'var(--sp-text-muted, #64748b)', marginBottom: '4px' }}>
                         {factureData.adresse_salon || 'Adresse du salon'}
                       </div>
-                      <div style={{ fontSize: '11px', color: '#475569', fontFamily: 'monospace', marginBottom: '12px' }}>
+                      <div style={{ fontSize: '11px', color: 'var(--sp-text-muted, #64748b)', fontFamily: 'monospace', marginBottom: '12px' }}>
                         SIRET : {factureData.siret_salon || '—'}
                       </div>
 
                       <div style={{ borderTop: '1px solid rgba(148, 163, 184, 0.22)', paddingTop: '10px', display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                          <span style={{ color: '#64748b' }}>Prestation</span>
-                          <strong style={{ color: '#0f172a' }}>Onboarding & Setup STACK</strong>
+                          <span style={{ color: 'var(--sp-text-muted, #64748b)' }}>Prestation Agent</span>
+                          <strong style={{ color: 'var(--sp-text-main, #18181b)' }}>Onboarding & Setup STACK</strong>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', paddingTop: '6px', borderTop: '1px dashed rgba(148, 163, 184, 0.25)' }}>
-                          <strong style={{ color: '#0f172a', fontSize: '13px' }}>Total HT</strong>
-                          <strong style={{ color: '#4f46e5', fontSize: '19px', fontWeight: '900', fontVariantNumeric: 'tabular-nums' }}>
+                          <strong style={{ color: 'var(--sp-text-main, #18181b)', fontSize: '13px' }}>Total Agent HT</strong>
+                          <strong style={{ color: '#059669', fontSize: '19px', fontWeight: '900', fontVariantNumeric: 'tabular-nums' }}>
                             99,00 € HT
                           </strong>
                         </div>
@@ -1120,7 +1094,7 @@ export default function TabFactures({
                     </div>
                   </div>
 
-                  <div style={{ fontSize: '11.5px', color: '#64748b', lineHeight: 1.45 }}>
+                  <div style={{ fontSize: '11.5px', color: 'var(--sp-text-muted, #64748b)', lineHeight: 1.45 }}>
                     La facture sera immédiatement disponible en téléchargement PDF et prête à être envoyée par e-mail.
                   </div>
                 </div>
@@ -1133,11 +1107,11 @@ export default function TabFactures({
                     className="sp-glass-pill"
                     style={{
                       flex: 1,
-                      padding: '13px',
+                      padding: '12px',
                       borderRadius: '999px',
                       fontSize: '13px',
                       fontWeight: '700',
-                      color: '#0f172a',
+                      color: 'var(--sp-text-main, #18181b)',
                       cursor: 'pointer'
                     }}
                   >
@@ -1147,15 +1121,15 @@ export default function TabFactures({
                     type="submit"
                     style={{
                       flex: 1.6,
-                      padding: '13px 18px',
+                      padding: '12px 18px',
                       borderRadius: '999px',
                       border: 'none',
-                      backgroundColor: '#111827',
-                      color: '#ffffff',
+                      backgroundColor: 'var(--sp-btn-primary, #18181b)',
+                      color: 'var(--sp-btn-primary-text, #ffffff)',
                       fontSize: '13px',
                       fontWeight: '800',
                       cursor: 'pointer',
-                      boxShadow: '0 8px 20px -4px rgba(17, 24, 39, 0.24)',
+                      boxShadow: '0 6px 16px -4px rgba(15, 23, 42, 0.22)',
                       display: 'inline-flex',
                       alignItems: 'center',
                       justifyContent: 'center',
