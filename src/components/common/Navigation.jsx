@@ -51,6 +51,7 @@ export default function Navigation({
     { key: 'bord', label: 'Tableau de bord', shortLabel: 'Bord', icon: <Icon.Bord /> },
     { key: 'prospects', label: 'Mes Prospects', shortLabel: 'Leads', icon: <Icon.Prospects /> },
     { key: 'carte', label: 'Carte & Prospection', shortLabel: 'Carte', icon: <Icon.MapPin /> },
+    { key: 'simulateur', label: 'Simulateur Anti-Planity', shortLabel: 'Simulateur', icon: <Icon.Calculator /> },
     { key: 'factures', label: 'Factures Onboarding', shortLabel: 'Factures', icon: <Icon.Factures /> },
     { key: 'stock', label: 'Stock & TPE', shortLabel: 'Stock', icon: <Icon.Stock /> },
     { key: 'academie', label: 'Académie & Tutos', shortLabel: 'Tutos', icon: <Icon.Academie /> }
@@ -501,7 +502,7 @@ export default function Navigation({
             border: 'var(--sp-border-card, 1px solid rgba(148, 163, 184, 0.22))',
             borderRadius: '24px',
             display: 'grid',
-            gridTemplateColumns: `repeat(${isSuperAdmin ? 6 : 5}, 1fr)`,
+            gridTemplateColumns: `repeat(${isSuperAdmin ? 7 : 6}, 1fr)`,
             padding: '4px 5px',
             boxShadow: '0 10px 28px rgba(15, 23, 42, 0.10)'
           }}
@@ -510,6 +511,7 @@ export default function Navigation({
             { key: 'bord', label: 'Bord', icon: <Icon.Bord /> },
             { key: 'prospects', label: 'Leads', icon: <Icon.Prospects /> },
             { key: 'carte', label: 'Carte', icon: <Icon.MapPin /> },
+            { key: 'simulateur', label: 'Simulateur', icon: <Icon.Calculator /> },
             { key: 'stock', label: 'Stock', icon: <Icon.Stock /> },
             { key: 'academie', label: 'Tutos', icon: <Icon.Academie /> },
             ...(isSuperAdmin ? [{ key: 'godmode', label: 'Admin', icon: <Icon.Shield /> }] : [])

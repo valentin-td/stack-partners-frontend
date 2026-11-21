@@ -10,6 +10,7 @@ import Toast from './components/common/Toast';
 import TabBord from './components/dashboard/TabBord';
 import TabProspects from './components/dashboard/TabProspects';
 import TabCarte from './components/dashboard/TabCarte';
+import TabSimulateur from './components/dashboard/TabSimulateur';
 import TabFactures from './components/dashboard/TabFactures';
 import TabStock from './components/dashboard/TabStock';
 import TabAcademie from './components/dashboard/TabAcademie';
@@ -1515,6 +1516,21 @@ export default function Dashboard() {
             inputStyle={inputStyle}
             cardStyle={cardStyle}
             leafletReady={leafletReady}
+          />
+        )}
+
+        {/* Onglet : Simulateur d'Économies Anti-Planity */}
+        {activeTab === 'simulateur' && (
+          <TabSimulateur
+            isMobile={isMobile}
+            isSmall={isSmall}
+            cardStyle={cardStyle}
+            primaryBtn={primaryBtn}
+            secondaryBtn={secondaryBtn}
+            inputStyle={inputStyle}
+            setActiveTab={setActiveTab}
+            setProspectData={setProspectData}
+            setShowProspectForm={setShowProspectForm}
           />
         )}
 
