@@ -35,23 +35,41 @@ export default function TabSimulateur({
   const [simNomProspect, setSimNomProspect] = useState('');
   const [simCopiePitch, setSimCopiePitch] = useState(false);
 
+  // Constantes tarifaires constatées sur le marché
+  const PRIX_PLANITY_BASE = 269.00;
+  const COM_PLANITY_NOUVEAU = 2.90;
+  const LOYER_TPE_PLANITY_MOIS = 39.00; // Location de TPE classique (39 € à 55 € HT / mois)
+  const FRAIS_INSTALL_PLANITY = 350.00; // Moyenne constatée (250 € à 490 € HT)
+
+  const PRIX_STACK_ESSENTIEL = 39.00;
+  const PRIX_STACK_PRO = 69.00;
+  const LOYER_TPE_STACK_MOIS = 0.00; // 0 € / mois : Prêt 100% gratuit du terminal TPE Stripe Reader T600
+  const FRAIS_INSTALL_STACK = 99.00; // 99 € HT : Mise en service, paramétrage complet et formation
+
   // Calculs financiers
   const nbNouveaux = Math.round(simRdvMois * (simPctNouveaux / 100));
-  const commPlanityMois = nbNouveaux * 2.90;
-  const fixePlanityMois = 269.00;
-  const coutPlanityMois = fixePlanityMois + commPlanityMois;
-  const coutPlanityAn = coutPlanityMois * 12;
+  const commPlanityMois = nbNouveaux * COM_PLANITY_NOUVEAU;
+  const coutPlanityLogicielMois = PRIX_PLANITY_BASE + commPlanityMois;
+  const coutPlanityTotalMois = coutPlanityLogicielMois + LOYER_TPE_PLANITY_MOIS;
+  const coutPlanityAn = coutPlanityTotalMois * 12;
 
-  const coutStackMois = simPlanStack === 'ESSENTIAL' ? 39.00 : 69.00;
-  const coutStackAn = coutStackMois * 12;
+  const coutStackLogicielMois = simPlanStack === 'ESSENTIAL' ? PRIX_STACK_ESSENTIEL : PRIX_STACK_PRO;
+  const coutStackTotalMois = coutStackLogicielMois + LOYER_TPE_STACK_MOIS;
+  const coutStackAn = coutStackTotalMois * 12;
 
-  const ecoMois = Math.max(0, coutPlanityMois - coutStackMois);
+  // Économie récurrente par mois et par an (logiciel + TPE)
+  const ecoMois = Math.max(0, coutPlanityTotalMois - coutStackTotalMois);
   const ecoAn = ecoMois * 12;
-  const eco3Ans = ecoAn * 3;
-  const pctEco = coutPlanityMois > 0 ? Math.round((ecoMois / coutPlanityMois) * 100) : 0;
-  const ratioBarreStack = coutPlanityMois > 0 ? Math.max(8, Math.round((coutStackMois / coutPlanityMois) * 100)) : 16;
 
-  // Équivalences métier concrètes
+  // Économie d'installation la première année
+  const ecoInstall = FRAIS_INSTALL_PLANITY - FRAIS_INSTALL_STACK; // 251 € HT d'économie immédiate
+  const gainPremiereAnnee = ecoAn + ecoInstall;
+  const eco3Ans = (ecoAn * 3) + ecoInstall;
+
+  const pctEco = coutPlanityTotalMois > 0 ? Math.round((ecoMois / coutPlanityTotalMois) * 100) : 0;
+  const ratioBarreStack = coutPlanityTotalMois > 0 ? Math.max(8, Math.round((coutStackTotalMois / coutPlanityTotalMois) * 100)) : 16;
+
+  // Équivalences métier concrètes pour le gérant
   const pairesCiseaux = Math.max(1, Math.floor(ecoAn / 650));
   const moisLoyer = ecoAn / 1500;
   const bacsLavage = Math.max(1, Math.floor(ecoAn / 2200));
@@ -66,6 +84,24 @@ export default function TabSimulateur({
       planityDetail: `Soit ${formatEuroFr(commPlanityMois, 2)} HT / mois ponctionnés sur votre croissance.`,
       stack: '0,00 € à vie (0 % de commission)',
       stackDetail: '100 % du chiffre d’affaires reste acquis au salon.'
+    },
+    {
+      id: 'tpe',
+      categorie: 'TECH_LEGAL',
+      titre: 'Terminal de paiement (TPE)',
+      planity: '39 € à 55 € HT / mois de location',
+      planityDetail: 'Location longue durée auprès d’une banque avec engagement 36 à 48 mois.',
+      stack: '0 € / mois (Prêt gracieux inclus)',
+      stackDetail: 'Stripe Reader T600 moderne avec écran tactile couleur, prêté gratuitement.'
+    },
+    {
+      id: 'frais_install',
+      categorie: 'BUSINESS',
+      titre: 'Frais de mise en service & formation',
+      planity: '250 € à 490 € HT facturés d’office',
+      planityDetail: 'Frais d’installation et de paramétrage prélevés dès la souscription.',
+      stack: '99 € HT (Pack Démarrage Sérénité)',
+      stackDetail: 'Import complet de votre fichier clients, configuration sur-mesure et formation équipe.'
     },
     {
       id: 'engagement',
@@ -102,15 +138,6 @@ export default function TabSimulateur({
       planityDetail: 'Nécessite souvent un logiciel de caisse additionnel (40 à 80 € / mois).',
       stack: 'Caisse NF525 nativement scellée SHA-256',
       stackDetail: 'Journal JET inviolable, clôtures Z et exports FEC inclus sans surcoût.'
-    },
-    {
-      id: 'tpe',
-      categorie: 'TECH_LEGAL',
-      titre: 'Terminal de paiement (TPE)',
-      planity: 'Location bancaire contraignante',
-      planityDetail: '35 € à 55 € / mois engagés sur 36 à 48 mois.',
-      stack: 'Stripe Reader T600 nouvelle génération',
-      stackDetail: 'Écran tactile couleur, pourboires intégrés et sans rente bancaire.'
     },
     {
       id: 'parrainage',
@@ -165,16 +192,27 @@ export default function TabSimulateur({
     const nom = simNomProspect.trim() || 'votre salon';
     const texte = `SYNTHÈSE COMPARATIVE STACK vs PLANITY (${nom.toUpperCase()}) :
 Volume salon : ${simRdvMois} RDV / mois (dont ${nbNouveaux} nouveaux clients)
-Coût actuel estimé Planity : ${formatEuroFr(coutPlanityMois, 2)} HT / mois (269 € fixe + ${formatEuroFr(commPlanityMois, 2)} de commissions)
-Coût STACK (${simPlanStack === 'ESSENTIAL' ? 'Essentiel 39 €' : 'Pro 69 €'} HT / mois) : ${formatEuroFr(coutStackMois, 2)} HT / mois (0 € de commission)
 
-VOS GAINS DIRECTS :
-- Économie nette mensuelle : +${formatEuroFr(ecoMois, 2)} HT / mois
-- Économie nette annuelle : +${formatEuroFr(ecoAn, 0)} HT / an (+${formatEuroFr(eco3Ans, 0)} HT sur 3 ans)
-- Baisse immédiate des frais logiciels : -${pctEco} %
+COÛTS ACTUELS ESTIMÉS PLANITY + TPE :
+- Abonnement logiciel : 269,00 € HT / mois
+- Commissions nouveaux clients (${nbNouveaux} x 2,90 €) : ${formatEuroFr(commPlanityMois, 2)} HT / mois
+- Location TPE traditionnel : 39,00 € HT / mois
+TOTAL PLANITY : ${formatEuroFr(coutPlanityTotalMois, 2)} HT / mois (${formatEuroFr(coutPlanityAn, 0)} HT / an)
 
-ÉQUIVALENCES CONCRÈTES :
-- ${formatDecimalFr(moisLoyer, 1)} mois de loyer commercial autofinancés
+COÛT GLOBAL AVEC STACK :
+- Abonnement ${simPlanStack === 'ESSENTIAL' ? 'Essentiel (39 €)' : 'Pro (69 €)'} HT / mois
+- Commissions nouveaux clients : 0,00 € (0% commission à vie)
+- Terminal TPE Stripe Reader T600 : 0,00 € (Prêt gracieux inclus)
+TOTAL STACK : ${formatEuroFr(coutStackTotalMois, 2)} HT / mois (${formatEuroFr(coutStackAn, 0)} HT / an)
+
+VOS GAINS DIRECTS EN PASSANT CHEZ STACK :
+- ÉCONOMIE RÉCURRENTE PAR AN : +${formatEuroFr(ecoAn, 0)} HT / an (+${formatEuroFr(ecoMois, 2)} HT / mois conservés)
+- GAIN TOTAL 1ÈRE ANNÉE : +${formatEuroFr(gainPremiereAnnee, 0)} HT (avec TPE offert & mise en service à 99 € au lieu de 350 €)
+- PROJECTION SUR 3 ANS : +${formatEuroFr(eco3Ans, 0)} HT préservés dans votre trésorerie
+- BAISSE GLOBALE DE VOS FRAIS : -${pctEco} %
+
+CE QUE CETTE ÉCONOMIE REPRÉSENTE CONCRÈTEMENT :
+- ${formatDecimalFr(moisLoyer, 1)} mois de loyer commercial financés
 - ${pairesCiseaux} paire${pairesCiseaux > 1 ? 's' : ''} de ciseaux japonais Mizutani
 - ${bacsLavage} bac${bacsLavage > 1 ? 's' : ''} de lavage massant${bacsLavage > 1 ? 's' : ''} neuf${bacsLavage > 1 ? 's' : ''}
 - ${formationsPro} formation${formationsPro > 1 ? 's' : ''} technique${formationsPro > 1 ? 's' : ''} équipe`;
@@ -283,10 +321,10 @@ VOS GAINS DIRECTS :
               lineHeight: 1.1
             }}
           >
-            Simulateur ROI
+            Simulateur d'Économies & Comparateur
           </h1>
           <span style={{ fontSize: '12.5px', color: 'var(--sp-text-muted, #64748b)', fontWeight: '600' }}>
-            Comparateur financier STACK vs Planity
+            STACK vs Planity — Démonstration du gain annuel pour le salon
           </span>
         </div>
 
@@ -313,7 +351,7 @@ VOS GAINS DIRECTS :
             }}
           >
             <Icon.Check />
-            <span>{simCopiePitch ? 'Pitch copié' : 'Copier le pitch'}</span>
+            <span>{simCopiePitch ? 'Pitch copié !' : 'Copier le pitch commercial'}</span>
           </button>
 
           <button
@@ -344,16 +382,127 @@ VOS GAINS DIRECTS :
         </div>
       </header>
 
-      {/* 2. COCKPIT 2 COLONNES : PARAMÈTRES À GAUCHE | SYNTHÈSE ROI EN DIRECT À DROITE */}
+      {/* 2. LES 3 PILIERS FORTS DE STACK (TPE OFFERT, MISE EN SERVICE 99€, 0% COMMISSION) */}
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 1.08fr) minmax(0, 1fr)',
+          gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
+          gap: '12px'
+        }}
+      >
+        <div
+          className="sp-glass-panel"
+          style={{
+            padding: '14px 16px',
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '12px'
+          }}
+        >
+          <div
+            style={{
+              padding: '8px',
+              borderRadius: '10px',
+              backgroundColor: 'rgba(16, 185, 129, 0.14)',
+              color: '#059669',
+              display: 'flex',
+              flexShrink: 0
+            }}
+          >
+            <Icon.CreditCard />
+          </div>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
+              <span style={{ fontSize: '10.5px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.04em', color: '#059669', backgroundColor: 'rgba(16, 185, 129, 0.12)', padding: '2px 7px', borderRadius: '4px' }}>
+                0 € / mois
+              </span>
+              <strong style={{ fontSize: '13px', color: 'var(--sp-text-main, #18181b)' }}>Prêt Gratuit du TPE</strong>
+            </div>
+            <p style={{ margin: 0, fontSize: '11.5px', color: 'var(--sp-text-muted, #64748b)', lineHeight: 1.4 }}>
+              Terminal tactile Stripe Reader T600 prêté sans frais. Économisez les <strong style={{ color: 'var(--sp-text-main, #18181b)' }}>39 € à 55 € HT/mois</strong> de location facturés par les banques ou Planity.
+            </p>
+          </div>
+        </div>
+
+        <div
+          className="sp-glass-panel"
+          style={{
+            padding: '14px 16px',
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '12px'
+          }}
+        >
+          <div
+            style={{
+              padding: '8px',
+              borderRadius: '10px',
+              backgroundColor: 'rgba(99, 102, 241, 0.14)',
+              color: '#4f46e5',
+              display: 'flex',
+              flexShrink: 0
+            }}
+          >
+            <Icon.Sparkles />
+          </div>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
+              <span style={{ fontSize: '10.5px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.04em', color: '#4f46e5', backgroundColor: 'rgba(99, 102, 241, 0.12)', padding: '2px 7px', borderRadius: '4px' }}>
+                99 € au lieu de 350 €+
+              </span>
+              <strong style={{ fontSize: '13px', color: 'var(--sp-text-main, #18181b)' }}>Mise en Service Sérénité</strong>
+            </div>
+            <p style={{ margin: 0, fontSize: '11.5px', color: 'var(--sp-text-muted, #64748b)', lineHeight: 1.4 }}>
+              Import de vos données, paramétrage complet et formation de l'équipe à seulement <strong style={{ color: 'var(--sp-text-main, #18181b)' }}>99 € HT</strong> contre 250 € à 490 € HT chez les géants du secteur.
+            </p>
+          </div>
+        </div>
+
+        <div
+          className="sp-glass-panel"
+          style={{
+            padding: '14px 16px',
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '12px'
+          }}
+        >
+          <div
+            style={{
+              padding: '8px',
+              borderRadius: '10px',
+              backgroundColor: 'rgba(245, 158, 11, 0.14)',
+              color: '#d97706',
+              display: 'flex',
+              flexShrink: 0
+            }}
+          >
+            <Icon.TrendingUp />
+          </div>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
+              <span style={{ fontSize: '10.5px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.04em', color: '#d97706', backgroundColor: 'rgba(245, 158, 11, 0.12)', padding: '2px 7px', borderRadius: '4px' }}>
+                0 % de commission
+              </span>
+              <strong style={{ fontSize: '13px', color: 'var(--sp-text-main, #18181b)' }}>Zéro Rançon sur vos Clients</strong>
+            </div>
+            <p style={{ margin: 0, fontSize: '11.5px', color: 'var(--sp-text-muted, #64748b)', lineHeight: 1.4 }}>
+              Vos clients restent vos clients. Pas de taxe de 2,90 € HT par tête. 100 % de votre chiffre d'affaires reste acquis dans la caisse du salon.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* 3. COCKPIT 2 COLONNES : PARAMÈTRES À GAUCHE | SYNTHÈSE DU MONTANT ANNUEL GAGNÉ À DROITE */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 1.05fr) minmax(0, 1fr)',
           gap: isMobile ? '14px' : '18px',
           alignItems: 'stretch'
         }}
       >
-        {/* COLONNE GAUCHE : PARAMÈTRES D'ACTIVITÉ COMPACTS */}
+        {/* COLONNE GAUCHE : PARAMÈTRES D'ACTIVITÉ */}
         <div
           className="sp-glass-panel"
           style={{
@@ -383,7 +532,7 @@ VOS GAINS DIRECTS :
             <div style={{ position: 'relative' }}>
               <input
                 type="text"
-                placeholder="Nom du salon prospect (optionnel, ex : Atelier Saint-Germain)..."
+                placeholder="Nom du salon prospect (ex : Atelier Saint-Germain)..."
                 value={simNomProspect}
                 onChange={e => setSimNomProspect(e.target.value)}
                 className="sp-sim-input"
@@ -412,7 +561,7 @@ VOS GAINS DIRECTS :
             />
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10.5px', color: 'var(--sp-text-muted, #64748b)', marginTop: '5px' }}>
               <span>50 (Indépendant)</span>
-              <span>500 (Salon moyen)</span>
+              <span>350 (Salon moyen)</span>
               <span>1 000 (Grosse équipe)</span>
             </div>
           </div>
@@ -421,7 +570,7 @@ VOS GAINS DIRECTS :
           <div className="sp-glass-pill" style={{ padding: '13px 15px', borderRadius: '14px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '8px', gap: '8px' }}>
               <span style={{ fontSize: '12.5px', fontWeight: '700', color: 'var(--sp-text-main, #18181b)' }}>
-                Part de nouveaux clients
+                Part de nouveaux clients en ligne
               </span>
               <strong style={{ fontSize: '14.5px', fontWeight: '800', color: '#b45309', fontVariantNumeric: 'tabular-nums' }}>
                 {simPctNouveaux} % ({nbNouveaux} / mois)
@@ -438,8 +587,8 @@ VOS GAINS DIRECTS :
             />
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10.5px', color: 'var(--sp-text-muted, #64748b)', marginTop: '5px' }}>
               <span>5 % (Fidèle)</span>
-              <span>20 % (Moyenne)</span>
-              <span>50 % (En développement)</span>
+              <span>20 % (Moyenne marché)</span>
+              <span>50 % (En forte croissance)</span>
             </div>
           </div>
 
@@ -506,7 +655,7 @@ VOS GAINS DIRECTS :
           </div>
         </div>
 
-        {/* COLONNE DROITE : CARTE MAÎTRESSE OBSIDIENNE ÉMERAUDE (RÉSULTAT & ÉQUIVALENCES) */}
+        {/* COLONNE DROITE : CARTE MAÎTRESSE OBSIDIENNE ÉMERAUDE (MONTANT ANNUEL GAGNÉ PAR LE SALON) */}
         <div
           className="sp-glass-panel-dark"
           style={{
@@ -517,11 +666,11 @@ VOS GAINS DIRECTS :
             gap: '18px'
           }}
         >
-          {/* Haut : Économie nette annuelle phare */}
+          {/* Haut : Grand montant annuel gagné */}
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
               <span style={{ fontSize: '11px', fontWeight: '700', color: 'rgba(255, 255, 255, 0.72)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
-                {simNomProspect.trim() ? `Économie · ${simNomProspect.trim()}` : 'Économie nette annuelle'}
+                {simNomProspect.trim() ? `Montant annuel gagné · ${simNomProspect.trim()}` : 'Montant annuel gagné par le salon'}
               </span>
               <span style={{ padding: '3px 10px', borderRadius: '999px', fontSize: '11px', fontWeight: '800', backgroundColor: 'rgba(16, 185, 129, 0.22)', color: '#34d399', border: '1px solid rgba(52, 211, 153, 0.32)' }}>
                 -{pctEco} % de frais
@@ -529,16 +678,35 @@ VOS GAINS DIRECTS :
             </div>
 
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', flexWrap: 'wrap' }}>
-              <span style={{ fontSize: isMobile ? '30px' : '34px', fontWeight: '800', color: '#ffffff', letterSpacing: '-0.03em', lineHeight: 1.05, fontVariantNumeric: 'tabular-nums' }}>
+              <span style={{ fontSize: isMobile ? '32px' : '38px', fontWeight: '900', color: '#ffffff', letterSpacing: '-0.03em', lineHeight: 1.05, fontVariantNumeric: 'tabular-nums' }}>
                 +{formatEuroFr(ecoAn, 0)}
               </span>
-              <span style={{ fontSize: '13.5px', fontWeight: '700', color: 'rgba(255, 255, 255, 0.65)' }}>
-                HT / an
+              <span style={{ fontSize: '14.5px', fontWeight: '800', color: '#34d399' }}>
+                HT / an de charges économisées
               </span>
             </div>
 
-            <div style={{ fontSize: '12.5px', color: 'rgba(255, 255, 255, 0.76)', marginTop: '5px', fontVariantNumeric: 'tabular-nums' }}>
-              Soit <strong style={{ color: '#34d399' }}>+{formatEuroFr(ecoMois, 2)} HT / mois</strong> · Cumul 3 ans : <strong style={{ color: '#ffffff' }}>+{formatEuroFr(eco3Ans, 0)} HT</strong>
+            <div style={{ fontSize: '12.5px', color: 'rgba(255, 255, 255, 0.76)', marginTop: '6px', fontVariantNumeric: 'tabular-nums' }}>
+              soit <strong style={{ color: '#34d399' }}>+{formatEuroFr(ecoMois, 2)} HT / mois</strong> conservés dans la trésorerie du gérant
+            </div>
+
+            {/* Badges 1ère année & 3 ans */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '12px' }}>
+              <div style={{ padding: '8px 10px', borderRadius: '10px', backgroundColor: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                <div style={{ fontSize: '10.5px', color: 'rgba(255, 255, 255, 0.60)', fontWeight: '600' }}>Gain total 1ère année</div>
+                <div style={{ fontSize: '14px', fontWeight: '800', color: '#34d399', marginTop: '2px' }}>
+                  +{formatEuroFr(gainPremiereAnnee, 0)} HT
+                </div>
+                <div style={{ fontSize: '9.5px', color: 'rgba(255, 255, 255, 0.45)', marginTop: '1px' }}>Avec TPE offert & install. à 99 €</div>
+              </div>
+
+              <div style={{ padding: '8px 10px', borderRadius: '10px', backgroundColor: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                <div style={{ fontSize: '10.5px', color: 'rgba(255, 255, 255, 0.60)', fontWeight: '600' }}>Projection sur 3 ans</div>
+                <div style={{ fontSize: '14px', fontWeight: '800', color: '#ffffff', marginTop: '2px' }}>
+                  +{formatEuroFr(eco3Ans, 0)} HT
+                </div>
+                <div style={{ fontSize: '9.5px', color: '#34d399', marginTop: '1px' }}>Préservés de Planity</div>
+              </div>
             </div>
           </div>
 
@@ -548,10 +716,10 @@ VOS GAINS DIRECTS :
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: '12px', marginBottom: '5px', gap: '8px' }}>
                 <span style={{ color: 'rgba(255, 255, 255, 0.75)', fontWeight: '600' }}>
-                  Planity <span style={{ color: 'rgba(255, 255, 255, 0.48)', fontSize: '11px' }}>(269 € + {formatEuroFr(commPlanityMois, 0)} comm.)</span>
+                  Planity + TPE bancaire <span style={{ color: 'rgba(255, 255, 255, 0.48)', fontSize: '11px' }}>(269 € + {formatEuroFr(commPlanityMois, 0)} comm. + 39 € TPE)</span>
                 </span>
                 <strong style={{ color: '#fca5a5', fontWeight: '800', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
-                  {formatEuroFr(coutPlanityMois, 2)} HT / mois
+                  {formatEuroFr(coutPlanityTotalMois, 2)} HT / mois
                 </strong>
               </div>
               <div style={{ height: '6px', width: '100%', backgroundColor: 'rgba(255, 255, 255, 0.10)', borderRadius: '999px', overflow: 'hidden' }}>
@@ -563,10 +731,10 @@ VOS GAINS DIRECTS :
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: '12px', marginBottom: '5px', gap: '8px' }}>
                 <span style={{ color: '#ffffff', fontWeight: '700' }}>
-                  STACK {simPlanStack === 'ESSENTIAL' ? 'Essentiel' : 'Pro'} <span style={{ color: '#34d399', fontSize: '11px', fontWeight: '600' }}>(0 € commission)</span>
+                  STACK {simPlanStack === 'ESSENTIAL' ? 'Essentiel' : 'Pro'} <span style={{ color: '#34d399', fontSize: '11px', fontWeight: '600' }}>(0 € commission · TPE offert)</span>
                 </span>
                 <strong style={{ color: '#34d399', fontWeight: '800', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
-                  {formatEuroFr(coutStackMois, 2)} HT / mois
+                  {formatEuroFr(coutStackTotalMois, 2)} HT / mois
                 </strong>
               </div>
               <div style={{ height: '6px', width: '100%', backgroundColor: 'rgba(255, 255, 255, 0.10)', borderRadius: '999px', overflow: 'hidden' }}>
@@ -575,21 +743,21 @@ VOS GAINS DIRECTS :
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'rgba(255, 255, 255, 0.55)', paddingTop: '4px', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
-              <span>Coût annuel Planity : {formatEuroFr(coutPlanityAn, 0)} HT</span>
-              <span>STACK : {formatEuroFr(coutStackAn, 0)} HT</span>
+              <span>Coût annuel Planity + TPE : {formatEuroFr(coutPlanityAn, 0)} HT</span>
+              <span>STACK tout compris : {formatEuroFr(coutStackAn, 0)} HT</span>
             </div>
           </div>
 
-          {/* Bas : 4 équivalences concrètes intégrées sans redondance */}
+          {/* Bas : 4 équivalences concrètes intégrées */}
           <div>
             <div style={{ fontSize: '10.5px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'rgba(255, 255, 255, 0.58)', marginBottom: '8px' }}>
-              Ce que cette économie finance dans le salon
+              Ce que cette économie finance directement dans le salon
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
               {[
-                { val: `${formatDecimalFr(moisLoyer, 1)} mois`, label: 'Loyer commercial (base 1 500 €)' },
+                { val: `${formatDecimalFr(moisLoyer, 1)} mois`, label: 'Loyer commercial financé' },
                 { val: `${pairesCiseaux} paire${pairesCiseaux > 1 ? 's' : ''}`, label: 'Ciseaux Mizutani (650 €)' },
-                { val: `${bacsLavage} bac${bacsLavage > 1 ? 's' : ''}`, label: 'Poste massant shiatsu (2 200 €)' },
+                { val: `${bacsLavage} bac${bacsLavage > 1 ? 's' : ''}`, label: 'Poste massant neuf (2 200 €)' },
                 { val: `${formationsPro} stage${formationsPro > 1 ? 's' : ''}`, label: 'Formations équipe (800 €)' }
               ].map((eq, i) => (
                 <div
@@ -614,7 +782,7 @@ VOS GAINS DIRECTS :
         </div>
       </div>
 
-      {/* 3. TABLEAU COMPARATIF SOBRE & LISIBLE (SANS COLONNES ROSES / VERTES CRIARDES) */}
+      {/* 4. TABLEAU COMPARATIF SOBRE & LISIBLE */}
       <div className="sp-glass-panel" style={{ padding: isMobile ? '16px 14px' : '22px 24px' }}>
         <div
           style={{
@@ -635,7 +803,7 @@ VOS GAINS DIRECTS :
             </span>
           </div>
 
-          {/* Filtres doux en Émeraude (Harmonisées avec TabBord / TabProspects / TabFactures) */}
+          {/* Filtres doux en Émeraude */}
           <div
             className="sp-glass-pill"
             style={{
@@ -746,7 +914,7 @@ VOS GAINS DIRECTS :
           }}
         >
           <span style={{ fontSize: '11.5px', color: 'var(--sp-text-muted, #64748b)' }}>
-            Base de calcul : forfait public avec prise de RDV (269 € HT/mois) + commission moyenne 2,90 € HT par nouveau client.
+            Base de calcul : forfait public avec prise de RDV (269 € HT/mois) + commission moyenne 2,90 € HT par nouveau client + location TPE standard (39 € HT/mois).
           </span>
 
           {simFiltreCritere === 'TOUS' && criteresFiltres.length > 6 && (
