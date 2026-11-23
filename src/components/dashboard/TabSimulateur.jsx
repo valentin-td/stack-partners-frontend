@@ -1,5 +1,6 @@
 // src/components/dashboard/TabSimulateur.jsx
-// Simulateur ROI & Comparateur STACK vs Planity — Design Sobre & Exécutif (Jour & Nuit)
+// Simulateur de Rentabilite & Comparateur Executif (STACK vs Planity / STACK vs Sans Logiciel)
+// Design Pleine Largeur, Reactivite Temps Reel & Mode 100% Zero Emoji
 
 import { useState } from 'react';
 import { Icon } from '../common/Icons';
@@ -20,39 +21,73 @@ const formatDecimalFr = (val, decimals = 1) => {
   });
 };
 
+const TARIFS_STACK = {
+  ESSENTIAL: {
+    id: 'ESSENTIAL',
+    label: 'Essentiel',
+    prix: 39.00,
+    planityRef: 269.00,
+    planityNom: 'Planity Solo (269 €)',
+    description: '1 collaborateur · Caisse NF525 & TPE T600 inclus'
+  },
+  PRO: {
+    id: 'PRO',
+    label: 'Pro',
+    prix: 69.00,
+    planityRef: 289.00,
+    planityNom: 'Planity Standard (289 €)',
+    description: 'Jusqu\'a 5 collaborateurs · Agenda en ligne & SMS inclus'
+  },
+  PREMIUM: {
+    id: 'PREMIUM',
+    label: 'Premium',
+    prix: 99.00,
+    planityRef: 339.00,
+    planityNom: 'Planity Equipe (339 €)',
+    description: 'Equipe complete · Intelligence Artificielle & Comptabilite FEC'
+  }
+};
+
 export default function TabSimulateur({
   isMobile,
   setActiveTab,
   setProspectData,
   setShowProspectForm
 }) {
-  const [vueActive, setVueActive] = useState('simulateur'); // 'simulateur' | 'comparatif'
-  const [simRdvMois, setSimRdvMois] = useState(250);
+  // Mode de comparaison : 'PLANITY' (salon deja equipe) ou 'SANS_LOGICIEL' (cahier papier / caisse basique)
+  const [modeComparatif, setModeComparatif] = useState('PLANITY');
+
+  // Parametres du salon prospect
+  const [simNomProspect, setSimNomProspect] = useState('');
+  const [simRdvMois, setSimRdvMois] = useState(300);
   const [simPctNouveaux, setSimPctNouveaux] = useState(20);
   const [simPanier, setSimPanier] = useState(48);
-  const [simPlanStack, setSimPlanStack] = useState('PRO'); // 'ESSENTIAL' | 'PRO'
+  const [simPlanStack, setSimPlanStack] = useState('PRO'); // 'ESSENTIAL' | 'PRO' | 'PREMIUM'
+  const [simNbCollaborateurs, setSimNbCollaborateurs] = useState(2);
   const [simFiltreCritere, setSimFiltreCritere] = useState('TOUS'); // 'TOUS' | 'BUSINESS' | 'TECH_LEGAL'
-  const [simNomProspect, setSimNomProspect] = useState('');
   const [simCopiePitch, setSimCopiePitch] = useState(false);
 
-  // Constantes tarifaires marché
-  const PRIX_PLANITY_BASE = 269.00;
-  const COM_PLANITY_NOUVEAU = 2.90;
-  const LOYER_TPE_PLANITY_MOIS = 39.00;
-  const FRAIS_INSTALL_PLANITY = 350.00;
+  // Constantes tarifaires marche Planity
+  const planActuel = TARIFS_STACK[simPlanStack] || TARIFS_STACK.PRO;
+  const PRIX_PLANITY_BASE = planActuel.planityRef;
+  const COM_PLANITY_NOUVEAU = 2.90; // Commission ponctionnee par nouveau client chez Planity
+  const LOYER_TPE_PLANITY_MOIS = 39.00; // Location de TPE bancaire ou Planity
+  const FRAIS_INSTALL_PLANITY = 350.00; // Frais de mise en service et formation Planity
 
-  const PRIX_STACK_ESSENTIEL = 39.00;
-  const PRIX_STACK_PRO = 69.00;
-  const LOYER_TPE_STACK_MOIS = 0.00;
-  const FRAIS_INSTALL_STACK = 99.00;
+  // Constantes STACK
+  const PRIX_STACK = planActuel.prix;
+  const LOYER_TPE_STACK_MOIS = 0.00; // Pret 100% gratuit du TPE Stripe Reader T600
+  const FRAIS_INSTALL_STACK = 99.00; // Mise en service, formation et import de fichier
 
-  // Calculs financiers
+  // =========================================================================
+  // CALCULS MODE 1 : COMPARATIF PLANITY
+  // =========================================================================
   const nbNouveaux = Math.round(simRdvMois * (simPctNouveaux / 100));
   const commPlanityMois = nbNouveaux * COM_PLANITY_NOUVEAU;
   const coutPlanityTotalMois = PRIX_PLANITY_BASE + commPlanityMois + LOYER_TPE_PLANITY_MOIS;
   const coutPlanityAn = coutPlanityTotalMois * 12;
 
-  const coutStackTotalMois = (simPlanStack === 'ESSENTIAL' ? PRIX_STACK_ESSENTIEL : PRIX_STACK_PRO) + LOYER_TPE_STACK_MOIS;
+  const coutStackTotalMois = PRIX_STACK + LOYER_TPE_STACK_MOIS;
   const coutStackAn = coutStackTotalMois * 12;
 
   const ecoMois = Math.max(0, coutPlanityTotalMois - coutStackTotalMois);
@@ -60,152 +95,263 @@ export default function TabSimulateur({
   const ecoInstall = FRAIS_INSTALL_PLANITY - FRAIS_INSTALL_STACK;
   const gainPremiereAnnee = ecoAn + ecoInstall;
   const eco3Ans = ecoAn * 3 + ecoInstall;
-
   const pctEco = coutPlanityTotalMois > 0 ? Math.round((ecoMois / coutPlanityTotalMois) * 100) : 0;
   const ratioBarreStack = coutPlanityTotalMois > 0 ? Math.max(8, Math.round((coutStackTotalMois / coutPlanityTotalMois) * 100)) : 16;
 
-  // Équivalences métier concrètes
+  // Equivalences metier concretes (Planity)
   const pairesCiseaux = Math.max(1, Math.floor(ecoAn / 650));
   const moisLoyer = ecoAn / 1500;
   const bacsLavage = Math.max(1, Math.floor(ecoAn / 2200));
   const formationsPro = Math.max(1, Math.floor(ecoAn / 800));
 
-  const criteresComparatifs = [
+  // =========================================================================
+  // CALCULS MODE 2 : SALON SANS LOGICIEL DE CAISSE (CE QUE STACK FAIT GAGNER)
+  // =========================================================================
+  const caEstimeMois = simRdvMois * simPanier;
+  const caEstimeAn = caEstimeMois * 12;
+
+  // 1. No-shows eradiques grace aux acomptes et rappels SMS (8% de no-shows historiques sauves)
+  const nbRdvSauvesNoShow = Math.max(1, Math.round(simRdvMois * 0.08));
+  const gainNoShowMois = nbRdvSauvesNoShow * simPanier;
+
+  // 2. Rendez-vous pris en ligne en dehors des heures d ouverture (soir apres 20h et dimanche) : ~6% de RDV supplementaires
+  const nbRdvEnLigneCaptes = Math.max(1, Math.round(simRdvMois * 0.06));
+  const gainRdvEnLigneMois = nbRdvEnLigneCaptes * simPanier;
+
+  // 3. Economie de loyer TPE bancaire (TPE T600 inclus sans frais vs 39 EUR factures par la banque)
+  const gainTpeBancaireMois = 39.00;
+
+  // Total gain brut et benefice net annuel
+  const gainBrutMois = gainNoShowMois + gainRdvEnLigneMois + gainTpeBancaireMois;
+  const gainBrutAn = gainBrutMois * 12;
+  const beneficeNetMois = Math.max(0, gainBrutMois - coutStackTotalMois);
+  const beneficeNetAn = beneficeNetMois * 12;
+  const multiplicateurRoi = coutStackTotalMois > 0 ? (gainBrutMois / coutStackTotalMois).toFixed(1) : '15.0';
+  const heuresGagneesMois = Math.round(simRdvMois * 0.07); // ~4 min gagnees par RDV en moins au telephone
+
+  // =========================================================================
+  // CRITERES COMPARATIFS (TABLEAU DU BAS)
+  // =========================================================================
+  const criteresPlanity = [
     {
       id: 'commissions',
       categorie: 'BUSINESS',
-      titre: 'Commissions nouveaux clients',
-      planity: '2,50 € à 5,90 € HT par nouveau client',
-      planityDetail: `Soit ${formatEuroFr(commPlanityMois, 2)} HT / mois ponctionnés sur votre croissance.`,
-      stack: '0,00 € à vie (0 % de commission)',
-      stackDetail: '100 % du chiffre d’affaires reste acquis au salon.'
+      titre: 'Commissions sur nouveaux clients',
+      planity: '2,50 a 5,90 EUR HT par nouveau client',
+      planityDetail: `Soit ${formatEuroFr(commPlanityMois, 2)} HT / mois ponctionnes directement sur votre chiffre d affaires.`,
+      stack: '0,00 EUR a vie (0% de commission)',
+      stackDetail: '100% de vos encaissements et de votre croissance restent acquis au salon.'
     },
     {
       id: 'tpe',
       categorie: 'TECH_LEGAL',
       titre: 'Terminal de paiement (TPE)',
-      planity: '39 € à 55 € HT / mois de location',
-      planityDetail: 'Location longue durée avec engagement bancaire de 36 à 48 mois.',
-      stack: '0 € / mois (Prêt gracieux inclus)',
-      stackDetail: 'Stripe Reader T600 avec écran tactile couleur, prêté sans frais.'
+      planity: '39 a 55 EUR HT / mois de location bancaire',
+      planityDetail: 'Contrat bancaire de location avec engagement ferme de 36 a 48 mois.',
+      stack: '0 EUR / mois (Pret gracieux inclus)',
+      stackDetail: 'Terminal tactile couleur Stripe Reader T600 prete sans frais pendant toute la souscription.'
     },
     {
       id: 'frais_install',
       categorie: 'BUSINESS',
       titre: 'Mise en service & formation',
-      planity: '250 € à 490 € HT à la souscription',
-      planityDetail: 'Frais d’installation et de paramétrage facturés dès l’ouverture.',
-      stack: '99 € HT (Tout compris)',
-      stackDetail: 'Import complet du fichier clients, paramétrage et formation sur place.'
+      planity: '250 a 490 EUR HT a la souscription',
+      planityDetail: 'Frais de dossier et de formation preleves des le premier mois.',
+      stack: '99 EUR HT (Tarif forfaitaire unique)',
+      stackDetail: 'Import complet de votre base clients, configuration du catalogue et formation de l equipe.'
     },
     {
       id: 'engagement',
       categorie: 'BUSINESS',
       titre: 'Engagement contractuel',
-      planity: '12 à 24 mois fermes',
-      planityDetail: 'Reconduction tacite, préavis contraignant et pénalités de sortie.',
-      stack: '100 % sans engagement',
-      stackDetail: 'Résiliation libre en un clic, sans aucun frais de sortie.'
+      planity: '12 a 24 mois avec reconduction tacite',
+      planityDetail: 'Preavis rigide de 3 mois et penalites financieres en cas de resiliation.',
+      stack: '100% sans engagement de duree',
+      stackDetail: 'Libre resiliation en un clic depuis votre espace administrateur, sans aucune penalite.'
     },
     {
       id: 'fichier_client',
       categorie: 'TECH_LEGAL',
-      titre: 'Propriété du fichier client (RGPD)',
-      planity: 'Capté dans leur annuaire centralisé',
-      planityDetail: 'Vos clients deviennent des utilisateurs de leur plateforme.',
-      stack: 'Propriété 100 % souveraine du salon',
-      stackDetail: 'Base hermétique, jamais partagée ni exploitée pour des tiers.'
+      titre: 'Propriete du fichier clients (RGPD)',
+      planity: 'Base mutualisee dans leur annuaire',
+      planityDetail: 'Vos clients sont enregistres sur la marketplace et sollicites pour d autres etablissements.',
+      stack: 'Propriete souveraine hermetique du salon',
+      stackDetail: 'Vos donnees clients ne sont jamais partagees, vendues ni sollicitees pour la concurrence.'
     },
     {
       id: 'concurrence',
       categorie: 'BUSINESS',
-      titre: 'Visibilité des salons concurrents',
-      planity: 'Concurrents du quartier suggérés',
-      planityDetail: 'Les salons voisins sont proposés lorsqu’un client cherche un créneau.',
-      stack: 'Zéro concurrence (Marque blanche)',
-      stackDetail: 'Page de réservation dédiée exclusivement à l’identité du salon.'
+      titre: 'Visibilite des salons concurrents',
+      planity: 'Salons voisins affiches lors des recherches',
+      planityDetail: 'Un client en retard ou cherchant un horaire se voit proposer les confreres a proximite.',
+      stack: 'Marque blanche exclusive (Zero concurrence)',
+      stackDetail: 'Votre page et application de reservation mettent uniquement en valeur votre equipe et vos tarifs.'
     },
     {
       id: 'caisse_nf525',
       categorie: 'TECH_LEGAL',
-      titre: 'Caisse certifiée NF525 (DGFiP)',
-      planity: 'Module externe ou surcoût',
-      planityDetail: 'Nécessite souvent un logiciel de caisse additionnel (40 à 80 € / mois).',
-      stack: 'Caisse NF525 nativement scellée SHA-256',
-      stackDetail: 'Journal JET inviolable, clôtures Z et exports FEC inclus.'
+      titre: 'Conformite fiscale caisse NF525',
+      planity: 'Module externe ou surcout caisse',
+      planityDetail: 'Necessite souvent un abonnement de caisse complementaire (40 a 80 EUR / mois).',
+      stack: 'Caisse NF525 certifiee scellee SHA-256',
+      stackDetail: 'Journal JET inviolable, clotures Z automatiques et exports du grand livre comptable inclus.'
     },
     {
       id: 'parrainage',
       categorie: 'BUSINESS',
-      titre: 'Parrainage client & bouche-à-oreille',
-      planity: 'Inexistant',
-      planityDetail: 'Acquisition payante via les commissions sur nouveaux clients.',
-      stack: 'Parrainage intégré (WhatsApp / SMS)',
-      stackDetail: 'Vos clients partagent leur code en un clic et déclenchent des avoirs.'
+      titre: 'Programme de parrainage integre',
+      planity: 'Aucun programme de parrainage salon',
+      planityDetail: 'L acquisition de clientele reste entierement tributaire de la plateforme payante.',
+      stack: 'Moteur de parrainage digital en 1 clic',
+      stackDetail: 'Vos clients fideles partagent leur code promo sur WhatsApp / SMS et cumulent des avoirs.'
     },
     {
       id: 'acomptes',
       categorie: 'TECH_LEGAL',
       titre: 'Protection Anti-NoShow & Acomptes',
-      planity: 'Règles rigides standardisées',
-      planityDetail: 'Paramétrage limité face à la réalité quotidienne du salon.',
-      stack: 'Acomptes en ligne souples par prestation',
-      stackDetail: 'Règle 24h automatisée : conversion en avoir ou conservation par le salon.'
+      planity: 'Options standardisees peu flexibles',
+      planityDetail: 'Regles rigides difficilement ajustables selon les specificites de vos prestations.',
+      stack: 'Acomptes CB adaptables par prestation',
+      stackDetail: 'Regle 24h automatique : conservation de l acompte ou emission d un avoir sous garantie.'
     },
     {
       id: 'sms',
       categorie: 'BUSINESS',
-      titre: 'SMS transactionnels & rappels',
-      planity: 'Packs SMS facturés avec forte marge',
-      planityDetail: 'Surcoût rapide sur les rappels et campagnes de relance.',
-      stack: 'Quota inclus + hors-forfait à prix coûtant',
-      stackDetail: 'Envoi GSM direct avec le nom officiel du salon en émetteur.'
+      titre: 'Rappels et notifications SMS',
+      planity: 'Packs SMS surtaxes hors-forfait',
+      planityDetail: 'Forte marge appliquee des que le quota de base est depasse.',
+      stack: 'Quota mensuel inclus + prix coutant',
+      stackDetail: 'SMS envoyes avec le nom officiel de votre salon affiche en emetteur sur le telephone du client.'
     },
     {
-      id: 'relation_humaine',
+      id: 'accompagnement',
       categorie: 'BUSINESS',
-      titre: 'Accompagnement de proximité',
-      planity: 'Standard téléphonique impersonnel',
-      planityDetail: 'Interlocuteurs changeants et délais d’attente réguliers.',
-      stack: 'Conseiller partenaire dédié sur votre secteur',
-      stackDetail: 'Installation sur site, formation de l’équipe et ligne directe.'
+      titre: 'Interlocuteur et assistance de terrain',
+      planity: 'Plateforme telephonique impersonnelle',
+      planityDetail: 'Attente reguliere et conseillers distants ne connaissant pas votre etablissement.',
+      stack: 'Agent commercial partenaire de votre secteur',
+      stackDetail: 'Visite physique sur place, ligne directe mobile et accompagnement technique de proximite.'
     }
   ];
 
-  const criteresFiltres = criteresComparatifs.filter(c => {
+  const criteresSansLogiciel = [
+    {
+      id: 'noshow',
+      categorie: 'BUSINESS',
+      titre: 'Gestion des lapins (No-Shows)',
+      planity: 'Cahier papier : Perte seche 8% a 12% du CA',
+      planityDetail: 'Un creneau non honore est irrecuperable. Les pertes cumulent souvent plus de 800 EUR / mois.',
+      stack: 'Acomptes en ligne + Rappels automatiques',
+      stackDetail: 'Elimination de 95% des no-shows. L acompte garantit le chiffre d affaires du creneau.'
+    },
+    {
+      id: 'reservation_247',
+      categorie: 'BUSINESS',
+      titre: 'Prise de rendez-vous soir et week-end',
+      planity: 'Uniquement aux heures d ouverture par telephone',
+      planityDetail: '40% des clients souhaitent reserver apres 20h ou le dimanche et vont chez un confrere.',
+      stack: 'Prise de rendez-vous en ligne 24h/24',
+      stackDetail: 'Vos clients reservent depuis leur smartphone a toute heure, sans aucune interruption pour vous.'
+    },
+    {
+      id: 'temps_telephone',
+      categorie: 'BUSINESS',
+      titre: 'Temps passe au telephone au fauteuil',
+      planity: '1h30 a 2h interrompues par jour',
+      planityDetail: 'Vous devez lacher vos ciseaux, repondre au client et feuilleter votre agenda papier.',
+      stack: 'Agendas synchronises en temps reel',
+      stackDetail: 'Calme retrouve au salon : 70% des reservations se font en ligne sans que le telephone sonne.'
+    },
+    {
+      id: 'conformite_nf525',
+      categorie: 'TECH_LEGAL',
+      titre: 'Conformite fiscale DGFiP (Loi anti-fraude)',
+      planity: 'Caisse manuelle : Risque lourd en cas de controle',
+      planityDetail: 'Amende legale de 7 500 EUR par systeme non conforme avec obligation de mise en conformite sous 30 jours.',
+      stack: 'Caisse NF525 scellee cryptographiquement',
+      stackDetail: 'Certificat de conformite officiel fourni, clotures Z scellees et export comptable automatique.'
+    },
+    {
+      id: 'tpe_banque',
+      categorie: 'TECH_LEGAL',
+      titre: 'Cout du terminal bancaire TPE',
+      planity: '39 a 55 EUR HT / mois de location bancaire',
+      planityDetail: 'Engagement ferme aupres de votre banque avec commissions d encaissement opaques.',
+      stack: 'Pret 100% gratuit du Stripe Reader T600',
+      stackDetail: 'Terminal tactile moderne sans aucun loyer mensuel, pret a l emploi des le premier jour.'
+    },
+    {
+      id: 'fidelite_marketing',
+      categorie: 'BUSINESS',
+      titre: 'Fidelisation et relance des clients dormants',
+      planity: 'Cartes papier vite egarees',
+      planityDetail: 'Aucune visibilite sur les clients qui n ont pas pris de rendez-vous depuis 3 mois.',
+      stack: 'Relance intelligente et carte digitale',
+      stackDetail: 'Campagnes de relance automatiques pour faire revenir les clients et recompenses parrainage.'
+    }
+  ];
+
+  const criteresAffiches = (modeComparatif === 'PLANITY' ? criteresPlanity : criteresSansLogiciel).filter(c => {
     if (simFiltreCritere === 'BUSINESS') return c.categorie === 'BUSINESS';
     if (simFiltreCritere === 'TECH_LEGAL') return c.categorie === 'TECH_LEGAL';
     return true;
   });
 
+  // =========================================================================
+  // ACTIONS COMMERCIALE (PITCH & CRÉATION PROSPECT)
+  // =========================================================================
   const copierPitch = () => {
     const nom = simNomProspect.trim() || 'votre salon';
-    const texte = `SYNTHÈSE COMPARATIVE STACK vs PLANITY (${nom.toUpperCase()}) :
-Volume salon : ${simRdvMois} RDV / mois (dont ${nbNouveaux} nouveaux clients)
+    let texte = '';
 
-COÛTS ACTUELS ESTIMÉS PLANITY + TPE :
-- Abonnement logiciel : 269,00 € HT / mois
-- Commissions nouveaux clients (${nbNouveaux} x 2,90 €) : ${formatEuroFr(commPlanityMois, 2)} HT / mois
-- Location TPE traditionnel : 39,00 € HT / mois
+    if (modeComparatif === 'PLANITY') {
+      texte = `SYNTHESE COMPARATIVE STACK vs PLANITY (${nom.toUpperCase()}) :
+Volume d activite : ${simRdvMois} RDV / mois (dont ${nbNouveaux} nouveaux clients estimes)
+Forfait STACK selectionne : ${planActuel.label} (${planActuel.prix} EUR HT / mois)
+
+COUTS ACTUELS ESTIMES CHEZ PLANITY + BANQUE :
+- Abonnement logiciel : ${formatEuroFr(PRIX_PLANITY_BASE, 2)} HT / mois (${planActuel.planityNom})
+- Commissions nouveaux clients (${nbNouveaux} x 2,90 EUR) : ${formatEuroFr(commPlanityMois, 2)} HT / mois
+- Location TPE traditionnel : ${formatEuroFr(LOYER_TPE_PLANITY_MOIS, 2)} HT / mois
 TOTAL PLANITY : ${formatEuroFr(coutPlanityTotalMois, 2)} HT / mois (${formatEuroFr(coutPlanityAn, 0)} HT / an)
 
-COÛT GLOBAL AVEC STACK :
-- Abonnement ${simPlanStack === 'ESSENTIAL' ? 'Essentiel (39 €)' : 'Pro (69 €)'} HT / mois
-- Commissions nouveaux clients : 0,00 € (0 % commission à vie)
-- Terminal TPE Stripe Reader T600 : 0,00 € (Prêt gracieux inclus)
+COUT GLOBAL AVEC STACK :
+- Abonnement ${planActuel.label} : ${formatEuroFr(PRIX_STACK, 2)} HT / mois
+- Commissions sur nouveaux clients : 0,00 EUR (0% a vie)
+- Terminal TPE Stripe Reader T600 : 0,00 EUR (Pret gracieux inclus)
 TOTAL STACK : ${formatEuroFr(coutStackTotalMois, 2)} HT / mois (${formatEuroFr(coutStackAn, 0)} HT / an)
 
-VOS GAINS DIRECTS :
-- Économie récurrente annuelle : +${formatEuroFr(ecoAn, 0)} HT / an (+${formatEuroFr(ecoMois, 2)} HT / mois)
-- Gain total 1re année : +${formatEuroFr(gainPremiereAnnee, 0)} HT (TPE offert & mise en service à 99 € au lieu de 350 €)
+VOS ECONOMIES IMMEDIATES :
+- Economie recurrente annuelle : +${formatEuroFr(ecoAn, 0)} HT / an (+${formatEuroFr(ecoMois, 2)} HT / mois)
+- Gain net 1re annee : +${formatEuroFr(gainPremiereAnnee, 0)} HT (TPE offert & mise en service a 99 EUR vs 350 EUR)
 - Projection sur 3 ans : +${formatEuroFr(eco3Ans, 0)} HT
-- Baisse globale des frais : -${pctEco} %
+- Baisse immediate de vos charges : -${pctEco} %
 
-ÉQUIVALENCES CONCRÈTES :
-- ${formatDecimalFr(moisLoyer, 1)} mois de loyer commercial financés
+EQUIVALENCES METIER CONCRETES :
+- ${formatDecimalFr(moisLoyer, 1)} mois de loyer commercial finances
 - ${pairesCiseaux} paire${pairesCiseaux > 1 ? 's' : ''} de ciseaux japonais Mizutani
-- ${bacsLavage} bac${bacsLavage > 1 ? 's' : ''} de lavage massant${bacsLavage > 1 ? 's' : ''} neuf${bacsLavage > 1 ? 's' : ''}
-- ${formationsPro} formation${formationsPro > 1 ? 's' : ''} technique${formationsPro > 1 ? 's' : ''} équipe`;
+- ${bacsLavage} bac${bacsLavage > 1 ? 's' : ''} de lavage massant neuf${bacsLavage > 1 ? 's' : ''}
+- ${formationsPro} stage${formationsPro > 1 ? 's' : ''} de formation technique pour l equipe`;
+    } else {
+      texte = `BILAN FINANCIER & GAINS ESTIMES AVEC STACK (${nom.toUpperCase()}) :
+Volume d activite : ${simRdvMois} RDV / mois · Panier moyen : ${simPanier} EUR TTC
+Forfait STACK selectionne : ${planActuel.label} (${planActuel.prix} EUR HT / mois)
+
+CE QUE STACK FAIT GAGNER A VOTRE SALON CHAQUE MOIS :
+1. No-shows eradiques (acomptes + rappels SMS) : +${formatEuroFr(gainNoShowMois, 0)} / mois (${nbRdvSauvesNoShow} RDV sauves)
+2. Nouveaux clients captes en ligne 24h/24 : +${formatEuroFr(gainRdvEnLigneMois, 0)} / mois (${nbRdvEnLigneCaptes} RDV en ligne le soir/dimanche)
+3. Economie location TPE bancaire : +${formatEuroFr(gainTpeBancaireMois, 0)} / mois (Lecteur tactile T600 prete a 0 EUR)
+TOTAL GAIN BRUT : +${formatEuroFr(gainBrutMois, 0)} / mois (+${formatEuroFr(gainBrutAn, 0)} / an)
+
+COUT DE L ABONNEMENT STACK :
+- Forfait ${planActuel.label} : ${formatEuroFr(PRIX_STACK, 2)} HT / mois (100% sans engagement)
+
+VOTRE BENEFICE NET SUPPLEMENTAIRE :
+- Gain net annuel pour le salon : +${formatEuroFr(beneficeNetAn, 0)} NET / an (+${formatEuroFr(beneficeNetMois, 0)} / mois)
+- Retour sur investissement (ROI) : chaque euro investi dans STACK en rapporte ${multiplicateurRoi} EUR
+- Temps libere au fauteuil : ~${heuresGagneesMois} heures gagnees par mois sans telephone`;
+    }
+
     navigator.clipboard.writeText(texte);
     setSimCopiePitch(true);
     setTimeout(() => setSimCopiePitch(false), 2500);
@@ -228,9 +374,11 @@ VOS GAINS DIRECTS :
       style={{
         display: 'flex',
         flexDirection: 'column',
-        gap: isMobile ? '14px' : '16px',
-        paddingBottom: isMobile ? 'calc(95px + env(safe-area-inset-bottom, 0px))' : '24px',
+        gap: isMobile ? '16px' : '20px',
+        paddingBottom: isMobile ? 'calc(95px + env(safe-area-inset-bottom, 0px))' : '36px',
         width: '100%',
+        maxWidth: '1560px',
+        margin: '0 auto',
         boxSizing: 'border-box'
       }}
     >
@@ -239,8 +387,8 @@ VOS GAINS DIRECTS :
           background:
             radial-gradient(120% 120% at 95% 10%, rgba(16, 185, 129, 0.28) 0%, rgba(16, 185, 129, 0) 58%),
             linear-gradient(145deg, #162420 0%, #0f1715 100%) !important;
-          border: 1px solid rgba(52, 211, 153, 0.28) !important;
-          box-shadow: 0 14px 32px -10px rgba(15, 23, 21, 0.26), inset 0 1px 0 rgba(255, 255, 255, 0.14) !important;
+          border: 1px solid rgba(52, 211, 153, 0.32) !important;
+          box-shadow: 0 16px 36px -10px rgba(15, 23, 21, 0.30), inset 0 1px 0 rgba(255, 255, 255, 0.14) !important;
           border-radius: 20px !important;
           color: #ffffff !important;
           box-sizing: border-box;
@@ -248,12 +396,12 @@ VOS GAINS DIRECTS :
         .sp-sim-input {
           width: 100%;
           box-sizing: border-box;
-          height: 40px;
+          height: 42px;
           padding: 0 13px;
           background: var(--sp-bg-input, #ffffff);
           border: var(--sp-border-input, 1px solid rgba(148, 163, 184, 0.30));
           border-radius: 12px;
-          font-size: 13px;
+          font-size: 13.5px;
           font-weight: 600;
           color: var(--sp-text-main, #18181b);
           outline: none;
@@ -266,7 +414,7 @@ VOS GAINS DIRECTS :
           -webkit-appearance: none;
           appearance: none;
           width: 100%;
-          height: 5px;
+          height: 6px;
           border-radius: 999px;
           background: rgba(148, 163, 184, 0.28);
           outline: none;
@@ -275,8 +423,8 @@ VOS GAINS DIRECTS :
         .sp-sim-range::-webkit-slider-thumb {
           -webkit-appearance: none;
           appearance: none;
-          width: 17px;
-          height: 17px;
+          width: 18px;
+          height: 18px;
           border-radius: 50%;
           background: #10b981;
           border: 2.5px solid #ffffff;
@@ -284,8 +432,8 @@ VOS GAINS DIRECTS :
           cursor: pointer;
         }
         .sp-sim-range::-moz-range-thumb {
-          width: 17px;
-          height: 17px;
+          width: 18px;
+          height: 18px;
           border-radius: 50%;
           background: #10b981;
           border: 2.5px solid #ffffff;
@@ -300,112 +448,74 @@ VOS GAINS DIRECTS :
         }
       `}</style>
 
-      {/* 1. EN-TÊTE SOBRE SUR UNE LIGNE : TITRE + NAVIGATION INTERNE + ACTIONS */}
+      {/* =================================================================== */}
+      {/* 1. TITRE DE LA PAGE & ACTIONS SUPERIEURES                           */}
+      {/* =================================================================== */}
       <header
         style={{
           display: 'flex',
           flexDirection: isMobile ? 'column' : 'row',
           justifyContent: 'space-between',
-          alignItems: isMobile ? 'stretch' : 'center',
-          gap: '12px'
+          alignItems: isMobile ? 'flex-start' : 'center',
+          gap: '14px',
+          width: '100%'
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
-          <div>
-            <h1
-              style={{
-                fontSize: isMobile ? '22px' : '26px',
-                fontWeight: '800',
-                margin: 0,
-                letterSpacing: '-0.03em',
-                color: 'var(--sp-text-main, #18181b)',
-                lineHeight: 1.1
-              }}
-            >
-              Simulateur ROI
-            </h1>
-            <span style={{ fontSize: '12px', color: 'var(--sp-text-muted, #64748b)', fontWeight: '600' }}>
-              STACK vs Planity · Calcul des économies salon
-            </span>
-          </div>
-
-          {/* Sélecteur de vue sobre (évite d'empiler le tableau sous le simulateur) */}
-          <div
-            className="sp-glass-pill"
+        <div>
+          <h1
             style={{
-              display: 'inline-flex',
-              padding: '3px',
-              borderRadius: '999px',
-              gap: '2px'
+              fontSize: isMobile ? '24px' : '28px',
+              fontWeight: '800',
+              margin: 0,
+              letterSpacing: '-0.03em',
+              color: 'var(--sp-text-main, #18181b)',
+              lineHeight: 1.15
             }}
           >
-            {[
-              { id: 'simulateur', label: 'Simulateur' },
-              { id: 'comparatif', label: `Comparatif (${criteresComparatifs.length})` }
-            ].map(v => {
-              const actif = vueActive === v.id;
-              return (
-                <button
-                  key={v.id}
-                  type="button"
-                  onClick={() => setVueActive(v.id)}
-                  style={{
-                    border: actif ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid transparent',
-                    backgroundColor: actif ? 'rgba(16, 185, 129, 0.14)' : 'transparent',
-                    color: actif ? '#059669' : 'var(--sp-text-muted, #64748b)',
-                    padding: '5px 13px',
-                    borderRadius: '999px',
-                    fontSize: '12px',
-                    fontWeight: actif ? '800' : '700',
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap',
-                    transition: 'all 0.14s ease'
-                  }}
-                >
-                  {v.label}
-                </button>
-              );
-            })}
-          </div>
+            Simulateur
+          </h1>
+          <span style={{ fontSize: '13px', color: 'var(--sp-text-muted, #64748b)', fontWeight: '600' }}>
+            Calculateur de rentabilite, d economies et de retour sur investissement salon
+          </span>
         </div>
 
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', width: isMobile ? '100%' : 'auto' }}>
           <button
             type="button"
             onClick={copierPitch}
             className="sp-glass-pill"
             style={{
-              height: '36px',
-              padding: '0 14px',
+              height: '38px',
+              padding: '0 16px',
               borderRadius: '999px',
-              fontSize: '12px',
+              fontSize: '12.5px',
               fontWeight: '700',
               color: simCopiePitch ? '#059669' : 'var(--sp-text-main, #18181b)',
               borderColor: simCopiePitch ? 'rgba(16, 185, 129, 0.45)' : undefined,
               display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '6px',
+              gap: '7px',
               cursor: 'pointer',
               flex: isMobile ? 1 : 'initial',
               whiteSpace: 'nowrap'
             }}
           >
             <Icon.Check />
-            <span>{simCopiePitch ? 'Pitch copié' : 'Copier le pitch'}</span>
+            <span>{simCopiePitch ? 'Pitch copie !' : 'Copier le pitch commercial'}</span>
           </button>
 
           <button
             type="button"
             onClick={basculerVersNouveauProspect}
             style={{
-              height: '36px',
-              padding: '0 16px',
+              height: '38px',
+              padding: '0 18px',
               borderRadius: '999px',
               border: 'none',
               backgroundColor: 'var(--sp-btn-primary, #18181b)',
               color: 'var(--sp-btn-primary-text, #ffffff)',
-              fontSize: '12px',
+              fontSize: '12.5px',
               fontWeight: '800',
               display: 'inline-flex',
               alignItems: 'center',
@@ -418,263 +528,364 @@ VOS GAINS DIRECTS :
             }}
           >
             <Icon.Plus />
-            <span>Créer le prospect</span>
+            <span>Creer le prospect</span>
           </button>
         </div>
       </header>
 
-      {/* ================================================================= */}
-      {/* VUE 1 : COCKPIT SIMULATEUR (TIENT SUR UN ÉCRAN SANS SURCHARGE)    */}
-      {/* ================================================================= */}
-      {vueActive === 'simulateur' && (
-        <>
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 1fr) minmax(0, 1.05fr)',
-              gap: isMobile ? '14px' : '18px',
-              alignItems: 'stretch'
-            }}
-          >
-            {/* COLONNE GAUCHE : RÉGLAGES DU SALON PROSPECT */}
-            <div
-              className="sp-glass-panel"
-              style={{
-                padding: isMobile ? '16px 14px' : '22px 24px',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between',
-                gap: '16px'
-              }}
-            >
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ color: '#059669', display: 'flex' }}>
-                      <Icon.Calculator />
-                    </span>
-                    <h2 style={{ margin: 0, fontSize: '15px', fontWeight: '800', color: 'var(--sp-text-main, #18181b)' }}>
-                      Paramètres du salon
-                    </h2>
-                  </div>
-                  <span style={{ fontSize: '11.5px', fontWeight: '700', color: 'var(--sp-text-muted, #64748b)' }}>
-                    CA estimé : {formatEuroFr(simRdvMois * simPanier)} / mois
-                  </span>
-                </div>
+      {/* =================================================================== */}
+      {/* 2. SWITCHER PRINCIPAL DE SITUATION PROSPECT (PLANITY VS SANS LOGICIEL) */}
+      {/* =================================================================== */}
+      <div
+        className="sp-glass-panel"
+        style={{
+          padding: '6px',
+          borderRadius: '16px',
+          display: 'grid',
+          gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+          gap: '6px',
+          width: '100%',
+          boxSizing: 'border-box'
+        }}
+      >
+        <button
+          type="button"
+          onClick={() => setModeComparatif('PLANITY')}
+          style={{
+            padding: isMobile ? '11px 12px' : '12px 18px',
+            borderRadius: '12px',
+            border: modeComparatif === 'PLANITY' ? '1.5px solid #10b981' : '1px solid transparent',
+            backgroundColor: modeComparatif === 'PLANITY' ? 'rgba(16, 185, 129, 0.12)' : 'transparent',
+            color: modeComparatif === 'PLANITY' ? '#059669' : 'var(--sp-text-muted, #64748b)',
+            cursor: 'pointer',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '3px',
+            transition: 'all 0.15s ease'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '14px', fontWeight: '800' }}>Comparatif avec Planity</span>
+            <span style={{ fontSize: '11px', fontWeight: '800', padding: '1px 7px', borderRadius: '999px', backgroundColor: modeComparatif === 'PLANITY' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(148, 163, 184, 0.15)', color: modeComparatif === 'PLANITY' ? '#059669' : 'inherit' }}>
+              Salon equipe Planity
+            </span>
+          </div>
+          <span style={{ fontSize: '11.5px', color: 'var(--sp-text-muted, #64748b)', textAlign: 'center' }}>
+            Demonstration des economies massives realisees en passant sur STACK (0% commission & TPE offert)
+          </span>
+        </button>
 
-                <input
-                  type="text"
-                  placeholder="Nom du salon prospect (optionnel, ex : Atelier Saint-Germain)..."
-                  value={simNomProspect}
-                  onChange={e => setSimNomProspect(e.target.value)}
-                  className="sp-sim-input"
-                />
+        <button
+          type="button"
+          onClick={() => setModeComparatif('SANS_LOGICIEL')}
+          style={{
+            padding: isMobile ? '11px 12px' : '12px 18px',
+            borderRadius: '12px',
+            border: modeComparatif === 'SANS_LOGICIEL' ? '1.5px solid #10b981' : '1px solid transparent',
+            backgroundColor: modeComparatif === 'SANS_LOGICIEL' ? 'rgba(16, 185, 129, 0.12)' : 'transparent',
+            color: modeComparatif === 'SANS_LOGICIEL' ? '#059669' : 'var(--sp-text-muted, #64748b)',
+            cursor: 'pointer',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '3px',
+            transition: 'all 0.15s ease'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '14px', fontWeight: '800' }}>Salon sans logiciel de caisse</span>
+            <span style={{ fontSize: '11px', fontWeight: '800', padding: '1px 7px', borderRadius: '999px', backgroundColor: modeComparatif === 'SANS_LOGICIEL' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(148, 163, 184, 0.15)', color: modeComparatif === 'SANS_LOGICIEL' ? '#059669' : 'inherit' }}>
+              Cahier papier / Caisse simple
+            </span>
+          </div>
+          <span style={{ fontSize: '11.5px', color: 'var(--sp-text-muted, #64748b)', textAlign: 'center' }}>
+            Demonstration du Chiffre d Affaires supplementaire gagne grace a la reservation en ligne et aux acomptes
+          </span>
+        </button>
+      </div>
+
+      {/* =================================================================== */}
+      {/* 3. COCKPIT DU SIMULATEUR EN PLEINE LARGEUR (2 COLONNES EQUILIBREES) */}
+      {/* =================================================================== */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 1.05fr) minmax(0, 1.15fr)',
+          gap: isMobile ? '16px' : '20px',
+          alignItems: 'stretch',
+          width: '100%'
+        }}
+      >
+        {/* COLONNE GAUCHE : PARAMETRES DU SALON PROSPECT */}
+        <div
+          className="sp-glass-panel"
+          style={{
+            padding: isMobile ? '18px 16px' : '22px 24px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            gap: '16px'
+          }}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ color: '#059669', display: 'flex' }}>
+                  <Icon.Calculator />
+                </span>
+                <h2 style={{ margin: 0, fontSize: '16px', fontWeight: '800', color: 'var(--sp-text-main, #18181b)' }}>
+                  Parametres du salon
+                </h2>
               </div>
-
-              {/* Curseur 1 : RDV mensuels */}
-              <div className="sp-glass-pill" style={{ padding: '13px 15px', borderRadius: '14px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '8px', gap: '8px' }}>
-                  <span style={{ fontSize: '12.5px', fontWeight: '700', color: 'var(--sp-text-main, #18181b)' }}>
-                    Volume mensuel de rendez-vous
-                  </span>
-                  <strong style={{ fontSize: '15px', fontWeight: '800', color: 'var(--sp-text-main, #18181b)', fontVariantNumeric: 'tabular-nums' }}>
-                    {simRdvMois} RDV / mois
-                  </strong>
-                </div>
-                <input
-                  type="range"
-                  min="50"
-                  max="1000"
-                  step="10"
-                  value={simRdvMois}
-                  onChange={e => setSimRdvMois(parseInt(e.target.value, 10))}
-                  className="sp-sim-range"
-                />
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10.5px', color: 'var(--sp-text-muted, #64748b)', marginTop: '5px' }}>
-                  <span>50 (Indépendant)</span>
-                  <span>350 (Salon moyen)</span>
-                  <span>1 000 (Grosse équipe)</span>
-                </div>
-              </div>
-
-              {/* Curseur 2 : Nouveaux clients */}
-              <div className="sp-glass-pill" style={{ padding: '13px 15px', borderRadius: '14px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '8px', gap: '8px' }}>
-                  <span style={{ fontSize: '12.5px', fontWeight: '700', color: 'var(--sp-text-main, #18181b)' }}>
-                    Nouveaux clients en ligne
-                  </span>
-                  <strong style={{ fontSize: '14.5px', fontWeight: '800', color: 'var(--sp-text-main, #18181b)', fontVariantNumeric: 'tabular-nums' }}>
-                    {simPctNouveaux} % <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--sp-text-muted, #64748b)' }}>({nbNouveaux} / mois)</span>
-                  </strong>
-                </div>
-                <input
-                  type="range"
-                  min="5"
-                  max="50"
-                  step="1"
-                  value={simPctNouveaux}
-                  onChange={e => setSimPctNouveaux(parseInt(e.target.value, 10))}
-                  className="sp-sim-range"
-                />
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10.5px', color: 'var(--sp-text-muted, #64748b)', marginTop: '5px' }}>
-                  <span>5 % (Fidèle)</span>
-                  <span>20 % (Moyenne marché)</span>
-                  <span>50 % (En croissance)</span>
-                </div>
-              </div>
-
-              {/* Panier moyen + Forfait STACK */}
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '0.72fr 1.28fr', gap: '10px', alignItems: 'end' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '11.5px', fontWeight: '700', color: 'var(--sp-text-muted, #64748b)', marginBottom: '5px' }}>
-                    Panier moyen (€ TTC)
-                  </label>
-                  <input
-                    type="number"
-                    min="15"
-                    max="250"
-                    value={simPanier}
-                    onChange={e => setSimPanier(parseFloat(e.target.value) || 45)}
-                    className="sp-sim-input"
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '11.5px', fontWeight: '700', color: 'var(--sp-text-muted, #64748b)', marginBottom: '5px' }}>
-                    Forfait STACK proposé
-                  </label>
-                  <div
-                    className="sp-glass-pill"
-                    style={{
-                      display: 'grid',
-                      gridTemplateColumns: '1fr 1fr',
-                      gap: '3px',
-                      padding: '3px',
-                      borderRadius: '12px',
-                      height: '40px',
-                      boxSizing: 'border-box'
-                    }}
-                  >
-                    {[
-                      { id: 'ESSENTIAL', label: 'Essentiel · 39 €' },
-                      { id: 'PRO', label: 'Pro · 69 €' }
-                    ].map(plan => {
-                      const actif = simPlanStack === plan.id;
-                      return (
-                        <button
-                          key={plan.id}
-                          type="button"
-                          onClick={() => setSimPlanStack(plan.id)}
-                          style={{
-                            border: actif ? '1px solid rgba(16, 185, 129, 0.42)' : '1px solid transparent',
-                            backgroundColor: actif ? 'rgba(16, 185, 129, 0.14)' : 'transparent',
-                            color: actif ? '#059669' : 'var(--sp-text-muted, #64748b)',
-                            borderRadius: '9px',
-                            fontSize: '12px',
-                            fontWeight: actif ? '800' : '700',
-                            cursor: 'pointer',
-                            whiteSpace: 'nowrap',
-                            transition: 'all 0.14s ease'
-                          }}
-                        >
-                          {plan.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
+              <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--sp-text-muted, #64748b)', fontVariantNumeric: 'tabular-nums' }}>
+                CA estime : {formatEuroFr(caEstimeMois)} / mois
+              </span>
             </div>
 
-            {/* COLONNE DROITE : CARTE RÉSULTATS OBSIDIENNE ÉMERAUDE (STYLE INLINE + SCOPÉ GARANTI) */}
+            <input
+              type="text"
+              placeholder="Nom du salon prospect (optionnel, ex : Atelier Saint-Germain)..."
+              value={simNomProspect}
+              onChange={e => setSimNomProspect(e.target.value)}
+              className="sp-sim-input"
+            />
+          </div>
+
+          {/* Curseur 1 : Volume mensuel de RDV */}
+          <div className="sp-glass-pill" style={{ padding: '13px 16px', borderRadius: '14px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '8px', gap: '8px' }}>
+              <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--sp-text-main, #18181b)' }}>
+                Volume mensuel de rendez-vous
+              </span>
+              <strong style={{ fontSize: '16px', fontWeight: '800', color: '#059669', fontVariantNumeric: 'tabular-nums' }}>
+                {simRdvMois} RDV / mois
+              </strong>
+            </div>
+            <input
+              type="range"
+              min="50"
+              max="1000"
+              step="10"
+              value={simRdvMois}
+              onChange={e => setSimRdvMois(parseInt(e.target.value, 10))}
+              className="sp-sim-range"
+            />
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10.5px', color: 'var(--sp-text-muted, #64748b)', marginTop: '6px' }}>
+              <span>50 (Independant)</span>
+              <span>300 (Salon moyen)</span>
+              <span>1 000 (Grosse equipe)</span>
+            </div>
+          </div>
+
+          {/* Curseur 2 selon le mode : Nouveaux clients (Planity) OU Nb collaborateurs (Sans Caisse) */}
+          {modeComparatif === 'PLANITY' ? (
+            <div className="sp-glass-pill" style={{ padding: '13px 16px', borderRadius: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '8px', gap: '8px' }}>
+                <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--sp-text-main, #18181b)' }}>
+                  Nouveaux clients en ligne (ponctionnes par Planity)
+                </span>
+                <strong style={{ fontSize: '15px', fontWeight: '800', color: '#ef4444', fontVariantNumeric: 'tabular-nums' }}>
+                  {simPctNouveaux} % <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--sp-text-muted, #64748b)' }}>({nbNouveaux} clients / mois)</span>
+                </strong>
+              </div>
+              <input
+                type="range"
+                min="5"
+                max="50"
+                step="1"
+                value={simPctNouveaux}
+                onChange={e => setSimPctNouveaux(parseInt(e.target.value, 10))}
+                className="sp-sim-range"
+              />
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10.5px', color: 'var(--sp-text-muted, #64748b)', marginTop: '6px' }}>
+                <span>5 % (Fidele)</span>
+                <span>20 % (Moyenne du marche)</span>
+                <span>50 % (En forte croissance)</span>
+              </div>
+            </div>
+          ) : (
+            <div className="sp-glass-pill" style={{ padding: '13px 16px', borderRadius: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '8px', gap: '8px' }}>
+                <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--sp-text-main, #18181b)' }}>
+                  Nombre de collaborateurs au salon
+                </span>
+                <strong style={{ fontSize: '15px', fontWeight: '800', color: '#059669', fontVariantNumeric: 'tabular-nums' }}>
+                  {simNbCollaborateurs} coiffeur{simNbCollaborateurs > 1 ? 's' : ''} / barbier{simNbCollaborateurs > 1 ? 's' : ''}
+                </strong>
+              </div>
+              <input
+                type="range"
+                min="1"
+                max="8"
+                step="1"
+                value={simNbCollaborateurs}
+                onChange={e => setSimNbCollaborateurs(parseInt(e.target.value, 10))}
+                className="sp-sim-range"
+              />
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10.5px', color: 'var(--sp-text-muted, #64748b)', marginTop: '6px' }}>
+                <span>1 (Solo)</span>
+                <span>2 a 3 (Salon classique)</span>
+                <span>8 (Grand espace)</span>
+              </div>
+            </div>
+          )}
+
+          {/* Panier moyen */}
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr', gap: '10px' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: 'var(--sp-text-muted, #64748b)', marginBottom: '5px' }}>
+                Panier moyen par prestation (EUR TTC)
+              </label>
+              <input
+                type="number"
+                min="15"
+                max="250"
+                value={simPanier}
+                onChange={e => setSimPanier(parseFloat(e.target.value) || 40)}
+                className="sp-sim-input"
+              />
+            </div>
+          </div>
+
+          {/* Selecteur des 3 forfaits STACK : Essentiel, Pro, Premium */}
+          <div>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: 'var(--sp-text-muted, #64748b)', marginBottom: '6px' }}>
+              Forfait STACK propose au salon
+            </label>
             <div
-              className="sp-sim-roi-card"
+              className="sp-glass-pill"
               style={{
-                background: 'radial-gradient(120% 120% at 95% 10%, rgba(16, 185, 129, 0.28) 0%, rgba(16, 185, 129, 0) 58%), linear-gradient(145deg, #162420 0%, #0f1715 100%)',
-                padding: isMobile ? '18px 16px' : '22px 24px',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between',
-                gap: '16px'
+                display: 'grid',
+                gridTemplateColumns: 'repeat(3, 1fr)',
+                gap: '4px',
+                padding: '4px',
+                borderRadius: '12px',
+                boxSizing: 'border-box'
               }}
             >
-              {/* Gain annuel phare */}
+              {Object.values(TARIFS_STACK).map(plan => {
+                const actif = simPlanStack === plan.id;
+                return (
+                  <button
+                    key={plan.id}
+                    type="button"
+                    onClick={() => setSimPlanStack(plan.id)}
+                    style={{
+                      border: actif ? '1.5px solid #10b981' : '1px solid transparent',
+                      backgroundColor: actif ? 'rgba(16, 185, 129, 0.16)' : 'transparent',
+                      color: actif ? '#059669' : 'var(--sp-text-muted, #64748b)',
+                      borderRadius: '9px',
+                      padding: '8px 4px',
+                      fontSize: '12px',
+                      fontWeight: actif ? '800' : '700',
+                      cursor: 'pointer',
+                      textAlign: 'center',
+                      transition: 'all 0.14s ease'
+                    }}
+                  >
+                    <div>{plan.label}</div>
+                    <div style={{ fontSize: '11px', opacity: 0.85 }}>{plan.prix} EUR / mois</div>
+                  </button>
+                );
+              })}
+            </div>
+            <div style={{ fontSize: '11px', color: 'var(--sp-text-muted, #64748b)', marginTop: '4px', textAlign: 'center' }}>
+              {planActuel.description}
+            </div>
+          </div>
+        </div>
+
+        {/* COLONNE DROITE : RESULTATS DYNAMIQUES VISIBLES IMMEDIATEMENT */}
+        <div
+          className="sp-sim-roi-card"
+          style={{
+            padding: isMobile ? '20px 18px' : '24px 26px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            gap: '18px'
+          }}
+        >
+          {modeComparatif === 'PLANITY' ? (
+            /* RESULTAT MODE PLANITY : ECONOMIES REALISEES */
+            <>
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                  <span style={{ fontSize: '10.5px', fontWeight: '700', color: 'rgba(255, 255, 255, 0.68)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                    {simNomProspect.trim() ? `Économie · ${simNomProspect.trim()}` : 'Économie annuelle estimée'}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: '800', color: 'rgba(255, 255, 255, 0.72)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                    {simNomProspect.trim() ? `Economies · ${simNomProspect.trim()}` : 'Economie annuelle directe'}
                   </span>
-                  <span style={{ padding: '3px 10px', borderRadius: '999px', fontSize: '11px', fontWeight: '800', backgroundColor: 'rgba(16, 185, 129, 0.22)', color: '#34d399', border: '1px solid rgba(52, 211, 153, 0.32)' }}>
+                  <span style={{ padding: '3px 10px', borderRadius: '999px', fontSize: '11.5px', fontWeight: '800', backgroundColor: 'rgba(16, 185, 129, 0.24)', color: '#34d399', border: '1px solid rgba(52, 211, 153, 0.35)' }}>
                     -{pctEco} % de charges
                   </span>
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: isMobile ? '30px' : '36px', fontWeight: '800', color: '#ffffff', letterSpacing: '-0.03em', lineHeight: 1.05, fontVariantNumeric: 'tabular-nums' }}>
+                  <span style={{ fontSize: isMobile ? '34px' : '42px', fontWeight: '900', color: '#ffffff', letterSpacing: '-0.03em', lineHeight: 1.05, fontVariantNumeric: 'tabular-nums' }}>
                     +{formatEuroFr(ecoAn, 0)}
                   </span>
-                  <span style={{ fontSize: '13.5px', fontWeight: '700', color: '#34d399' }}>
+                  <span style={{ fontSize: '15px', fontWeight: '800', color: '#34d399' }}>
                     HT / an
                   </span>
                 </div>
 
-                <div style={{ fontSize: '12.5px', color: 'rgba(255, 255, 255, 0.74)', marginTop: '4px', fontVariantNumeric: 'tabular-nums' }}>
-                  Soit <strong style={{ color: '#ffffff' }}>+{formatEuroFr(ecoMois, 2)} HT / mois</strong> · 1re année : <strong style={{ color: '#34d399' }}>+{formatEuroFr(gainPremiereAnnee, 0)} HT</strong> · 3 ans : <strong style={{ color: '#ffffff' }}>+{formatEuroFr(eco3Ans, 0)} HT</strong>
+                <div style={{ fontSize: '13px', color: 'rgba(255, 255, 255, 0.78)', marginTop: '6px', fontVariantNumeric: 'tabular-nums' }}>
+                  Soit <strong style={{ color: '#ffffff' }}>+{formatEuroFr(ecoMois, 2)} HT / mois</strong> economises dans la tresorerie du salon.
                 </div>
               </div>
 
-              {/* Comparaison visuelle sobre des 2 coûts mensuels */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '11px', padding: '14px 16px', borderRadius: '14px', backgroundColor: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.09)' }}>
+              {/* Barres comparatives animées Planity vs STACK */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '14px 16px', borderRadius: '14px', backgroundColor: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.09)' }}>
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: '12px', marginBottom: '5px', gap: '8px' }}>
-                    <span style={{ color: 'rgba(255, 255, 255, 0.78)', fontWeight: '600' }}>
-                      Planity + TPE <span style={{ color: 'rgba(255, 255, 255, 0.48)', fontSize: '11px' }}>(269 € + {formatEuroFr(commPlanityMois, 0)} comm. + 39 € TPE)</span>
+                    <span style={{ color: 'rgba(255, 255, 255, 0.8)', fontWeight: '600' }}>
+                      Cout actuel Planity ({planActuel.planityRef} EUR + {formatEuroFr(commPlanityMois, 0)} com. + 39 EUR TPE)
                     </span>
-                    <strong style={{ color: '#fca5a5', fontWeight: '800', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+                    <strong style={{ color: '#fca5a5', fontWeight: '800', fontVariantNumeric: 'tabular-nums' }}>
                       {formatEuroFr(coutPlanityTotalMois, 2)} / mois
                     </strong>
                   </div>
-                  <div style={{ height: '5px', width: '100%', backgroundColor: 'rgba(255, 255, 255, 0.10)', borderRadius: '999px', overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: '100%', backgroundColor: 'rgba(248, 113, 113, 0.72)', borderRadius: '999px' }} />
+                  <div style={{ height: '6px', width: '100%', backgroundColor: 'rgba(255, 255, 255, 0.10)', borderRadius: '999px', overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: '100%', backgroundColor: 'rgba(248, 113, 113, 0.78)', borderRadius: '999px' }} />
                   </div>
                 </div>
 
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: '12px', marginBottom: '5px', gap: '8px' }}>
                     <span style={{ color: '#ffffff', fontWeight: '700' }}>
-                      STACK {simPlanStack === 'ESSENTIAL' ? 'Essentiel' : 'Pro'} <span style={{ color: '#34d399', fontSize: '11px', fontWeight: '600' }}>(0 % comm. · TPE inclus)</span>
+                      Cout global STACK {planActuel.label} (0% com. + TPE T600 offert)
                     </span>
-                    <strong style={{ color: '#34d399', fontWeight: '800', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+                    <strong style={{ color: '#34d399', fontWeight: '800', fontVariantNumeric: 'tabular-nums' }}>
                       {formatEuroFr(coutStackTotalMois, 2)} / mois
                     </strong>
                   </div>
-                  <div style={{ height: '5px', width: '100%', backgroundColor: 'rgba(255, 255, 255, 0.10)', borderRadius: '999px', overflow: 'hidden' }}>
+                  <div style={{ height: '6px', width: '100%', backgroundColor: 'rgba(255, 255, 255, 0.10)', borderRadius: '999px', overflow: 'hidden' }}>
                     <div style={{ height: '100%', width: `${ratioBarreStack}%`, backgroundColor: '#10b981', borderRadius: '999px', transition: 'width 0.25s ease' }} />
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'rgba(255, 255, 255, 0.54)', paddingTop: '4px', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
-                  <span>Planity / an : {formatEuroFr(coutPlanityAn, 0)} HT</span>
-                  <span>STACK / an : {formatEuroFr(coutStackAn, 0)} HT</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11.5px', color: 'rgba(255, 255, 255, 0.65)', paddingTop: '6px', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                  <span>Planity sur 1 an : <strong>{formatEuroFr(coutPlanityAn, 0)} HT</strong></span>
+                  <span>STACK sur 1 an : <strong>{formatEuroFr(coutStackAn, 0)} HT</strong></span>
                 </div>
               </div>
 
-              {/* Équivalences métier concrètes */}
+              {/* Equivalences financieres concretes pour convaincre le gerant */}
               <div>
-                <div style={{ fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.07em', color: 'rgba(255, 255, 255, 0.55)', marginBottom: '8px' }}>
-                  Équivalences concrètes financées chaque année
+                <div style={{ fontSize: '10.5px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.07em', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '8px' }}>
+                  Ce que ces economies financent chaque annee au salon
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
                   {[
                     { val: `${formatDecimalFr(moisLoyer, 1)} mois`, label: 'Loyer commercial (1 500 €)' },
                     { val: `${pairesCiseaux} paire${pairesCiseaux > 1 ? 's' : ''}`, label: 'Ciseaux Mizutani (650 €)' },
                     { val: `${bacsLavage} bac${bacsLavage > 1 ? 's' : ''}`, label: 'Bac massant neuf (2 200 €)' },
-                    { val: `${formationsPro} stage${formationsPro > 1 ? 's' : ''}`, label: 'Formations équipe (800 €)' }
+                    { val: `${formationsPro} stage${formationsPro > 1 ? 's' : ''}`, label: 'Formations equipe (800 €)' }
                   ].map((eq, i) => (
                     <div
                       key={i}
                       style={{
-                        padding: '8px 11px',
+                        padding: '8px 12px',
                         borderRadius: '11px',
                         backgroundColor: 'rgba(255, 255, 255, 0.05)',
                         border: '1px solid rgba(255, 255, 255, 0.08)'
@@ -683,200 +894,301 @@ VOS GAINS DIRECTS :
                       <div style={{ fontSize: '14px', fontWeight: '800', color: '#ffffff', fontVariantNumeric: 'tabular-nums' }}>
                         {eq.val}
                       </div>
-                      <div style={{ fontSize: '10.5px', color: 'rgba(255, 255, 255, 0.62)', marginTop: '1px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.62)', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {eq.label}
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
-            </div>
+            </>
+          ) : (
+            /* RESULTAT MODE SANS LOGICIEL : CHIFFRE D AFFAIRES GAGNE */
+            <>
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: '800', color: 'rgba(255, 255, 255, 0.72)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                    {simNomProspect.trim() ? `Gains nets · ${simNomProspect.trim()}` : 'Chiffre d affaires net supplementaire'}
+                  </span>
+                  <span style={{ padding: '3px 10px', borderRadius: '999px', fontSize: '11.5px', fontWeight: '800', backgroundColor: 'rgba(16, 185, 129, 0.24)', color: '#34d399', border: '1px solid rgba(52, 211, 153, 0.35)' }}>
+                    ROI x{multiplicateurRoi}
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: isMobile ? '34px' : '42px', fontWeight: '900', color: '#ffffff', letterSpacing: '-0.03em', lineHeight: 1.05, fontVariantNumeric: 'tabular-nums' }}>
+                    +{formatEuroFr(beneficeNetAn, 0)}
+                  </span>
+                  <span style={{ fontSize: '15px', fontWeight: '800', color: '#34d399' }}>
+                    NET / an
+                  </span>
+                </div>
+
+                <div style={{ fontSize: '13px', color: 'rgba(255, 255, 255, 0.78)', marginTop: '6px', fontVariantNumeric: 'tabular-nums' }}>
+                  Soit un benefice net de <strong style={{ color: '#ffffff' }}>+{formatEuroFr(beneficeNetMois, 0)} / mois</strong> apres deduction complete du forfait STACK.
+                </div>
+              </div>
+
+              {/* Decomposition des 3 gains cles pour un salon sans logiciel */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '14px 16px', borderRadius: '14px', backgroundColor: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.09)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <div style={{ fontSize: '12.5px', fontWeight: '700', color: '#ffffff' }}>
+                      No-shows eradiques (Acomptes en ligne)
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.62)' }}>
+                      {nbRdvSauvesNoShow} creneaux sauves / mois grace aux acomptes et rappels SMS
+                    </div>
+                  </div>
+                  <strong style={{ fontSize: '14px', color: '#34d399', fontVariantNumeric: 'tabular-nums' }}>
+                    +{formatEuroFr(gainNoShowMois, 0)} / mois
+                  </strong>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '8px', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                  <div>
+                    <div style={{ fontSize: '12.5px', fontWeight: '700', color: '#ffffff' }}>
+                      Reservations en ligne 24h/24
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.62)' }}>
+                      {nbRdvEnLigneCaptes} clients en plus / mois qui reservent le soir et le dimanche
+                    </div>
+                  </div>
+                  <strong style={{ fontSize: '14px', color: '#34d399', fontVariantNumeric: 'tabular-nums' }}>
+                    +{formatEuroFr(gainRdvEnLigneMois, 0)} / mois
+                  </strong>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '8px', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                  <div>
+                    <div style={{ fontSize: '12.5px', fontWeight: '700', color: '#ffffff' }}>
+                      Economie location TPE bancaire
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.62)' }}>
+                      Pret gratuit du lecteur Stripe T600 (vs 39 EUR / mois a la banque)
+                    </div>
+                  </div>
+                  <strong style={{ fontSize: '14px', color: '#34d399', fontVariantNumeric: 'tabular-nums' }}>
+                    +{formatEuroFr(gainTpeBancaireMois, 0)} / mois
+                  </strong>
+                </div>
+              </div>
+
+              {/* Bilan retour sur investissement & temps */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
+                <div style={{ padding: '8px 12px', borderRadius: '11px', backgroundColor: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                  <div style={{ fontSize: '15px', fontWeight: '800', color: '#ffffff' }}>
+                    x{multiplicateurRoi} le cout
+                  </div>
+                  <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.62)' }}>
+                    Chaque euro investi rapporte {multiplicateurRoi} EUR
+                  </div>
+                </div>
+
+                <div style={{ padding: '8px 12px', borderRadius: '11px', backgroundColor: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                  <div style={{ fontSize: '15px', fontWeight: '800', color: '#ffffff' }}>
+                    ~{heuresGagneesMois} h / mois
+                  </div>
+                  <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.62)' }}>
+                    Gagnees au fauteuil sans interruption
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* =================================================================== */}
+      {/* 4. BANDEAU DES 3 GARANTIES MAITRESSES STACK                        */}
+      {/* =================================================================== */}
+      <div
+        className="sp-glass-panel"
+        style={{
+          padding: isMobile ? '14px 16px' : '16px 24px',
+          display: 'grid',
+          gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
+          gap: isMobile ? '12px' : '20px',
+          width: '100%',
+          boxSizing: 'border-box'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+          <span style={{ color: '#059669', display: 'flex', marginTop: '2px' }}>
+            <Icon.Check />
+          </span>
+          <div>
+            <strong style={{ fontSize: '13.5px', color: 'var(--sp-text-main, #18181b)' }}>
+              TPE Stripe Reader T600 inclus
+            </strong>
+            <p style={{ margin: 0, fontSize: '12px', color: 'var(--sp-text-muted, #64748b)', lineHeight: 1.4 }}>
+              0 EUR / mois de location au lieu des 39 a 55 EUR HT factures par les banques et Planity.
+            </p>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+          <span style={{ color: '#059669', display: 'flex', marginTop: '2px' }}>
+            <Icon.Check />
+          </span>
+          <div>
+            <strong style={{ fontSize: '13.5px', color: 'var(--sp-text-main, #18181b)' }}>
+              Mise en service a 99 EUR HT
+            </strong>
+            <p style={{ margin: 0, fontSize: '12px', color: 'var(--sp-text-muted, #64748b)', lineHeight: 1.4 }}>
+              Import de l integralite de votre base clients, catalogue de prestations et formation sur site.
+            </p>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+          <span style={{ color: '#059669', display: 'flex', marginTop: '2px' }}>
+            <Icon.Check />
+          </span>
+          <div>
+            <strong style={{ fontSize: '13.5px', color: 'var(--sp-text-main, #18181b)' }}>
+              0 % de commission a vie
+            </strong>
+            <p style={{ margin: 0, fontSize: '12px', color: 'var(--sp-text-muted, #64748b)', lineHeight: 1.4 }}>
+              Aucun prelevement sur les nouveaux clients. Votre fichier reste 100% votre propriete.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* =================================================================== */}
+      {/* 5. TABLEAU COMPARATIF COMPLET CRITERE PAR CRITERE                  */}
+      {/* =================================================================== */}
+      <section
+        className="sp-glass-panel"
+        style={{
+          padding: isMobile ? '16px 14px' : '22px 24px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '16px',
+          width: '100%',
+          boxSizing: 'border-box'
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: isMobile ? 'column' : 'row',
+            justifyContent: 'space-between',
+            alignItems: isMobile ? 'flex-start' : 'center',
+            gap: '12px'
+          }}
+        >
+          <div>
+            <h3 style={{ margin: 0, fontSize: '17px', fontWeight: '800', color: 'var(--sp-text-main, #18181b)' }}>
+              {modeComparatif === 'PLANITY'
+                ? `Comparatif detaille : STACK ${planActuel.label} vs Planity (${criteresAffiches.length} criteres)`
+                : `Comparatif detaille : STACK ${planActuel.label} vs Salon sans logiciel (${criteresAffiches.length} criteres)`}
+            </h3>
+            <span style={{ fontSize: '12px', color: 'var(--sp-text-muted, #64748b)' }}>
+              Arguments techniques et financiers pour demontrer la superiorite de STACK
+            </span>
           </div>
 
-          {/* Bandeau discret des 3 avantages clés (sans cartes multicolores ni badges cassés) */}
           <div
-            className="sp-glass-panel"
+            className="sp-glass-pill"
             style={{
-              padding: isMobile ? '14px 16px' : '14px 22px',
-              display: 'grid',
-              gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
-              gap: isMobile ? '12px' : '18px'
+              display: 'inline-flex',
+              padding: '3px',
+              borderRadius: '999px',
+              gap: '2px'
             }}
           >
             {[
-              {
-                titre: 'TPE Stripe Reader T600 inclus',
-                detail: '0 € / mois au lieu de 39 à 55 € HT de location bancaire.'
-              },
-              {
-                titre: 'Mise en service à 99 € HT',
-                detail: 'Import des données et formation inclus (vs 250 à 490 € HT).'
-              },
-              {
-                titre: '0 % de commission à vie',
-                detail: 'Aucune taxe par nouveau client, fichier 100 % propriétaire.'
-              }
-            ].map((item, idx) => (
-              <div
-                key={idx}
-                style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: '10px',
-                  paddingLeft: !isMobile && idx > 0 ? '18px' : 0,
-                  borderLeft: !isMobile && idx > 0 ? '1px solid rgba(148, 163, 184, 0.22)' : 'none'
-                }}
-              >
-                <span style={{ color: '#059669', marginTop: '2px', flexShrink: 0, display: 'inline-flex' }}>
-                  <Icon.Check />
-                </span>
-                <div>
-                  <strong style={{ display: 'block', fontSize: '13px', fontWeight: '800', color: 'var(--sp-text-main, #18181b)' }}>
-                    {item.titre}
-                  </strong>
-                  <span style={{ fontSize: '11.5px', color: 'var(--sp-text-muted, #64748b)', lineHeight: 1.4 }}>
-                    {item.detail}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
-
-      {/* ================================================================= */}
-      {/* VUE 2 : TABLEAU COMPARATIF DÉTAILLÉ (DÉDIÉ ET AÉRÉ)               */}
-      {/* ================================================================= */}
-      {vueActive === 'comparatif' && (
-        <div className="sp-glass-panel" style={{ padding: isMobile ? '16px 14px' : '22px 24px' }}>
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: isMobile ? 'column' : 'row',
-              justifyContent: 'space-between',
-              alignItems: isMobile ? 'stretch' : 'center',
-              gap: '12px',
-              marginBottom: '16px'
-            }}
-          >
-            <div>
-              <h2 style={{ fontSize: '16px', fontWeight: '800', margin: 0, color: 'var(--sp-text-main, #18181b)' }}>
-                Comparatif détaillé : STACK vs Planity
-              </h2>
-              <span style={{ fontSize: '12px', color: 'var(--sp-text-muted, #64748b)' }}>
-                {criteresComparatifs.length} critères financiers, techniques et juridiques.
-              </span>
-            </div>
-
-            <div
-              className="sp-glass-pill"
-              style={{
-                display: isMobile ? 'grid' : 'inline-flex',
-                gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : undefined,
-                padding: '3px',
-                borderRadius: '999px',
-                gap: '2px'
-              }}
-            >
-              {[
-                { id: 'TOUS', label: `Tous (${criteresComparatifs.length})` },
-                { id: 'BUSINESS', label: 'Business' },
-                { id: 'TECH_LEGAL', label: 'Technique & Légal' }
-              ].map(tab => {
-                const actif = simFiltreCritere === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => setSimFiltreCritere(tab.id)}
-                    style={{
-                      border: actif ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid transparent',
-                      backgroundColor: actif ? 'rgba(16, 185, 129, 0.14)' : 'transparent',
-                      color: actif ? '#059669' : 'var(--sp-text-muted, #64748b)',
-                      padding: '5px 12px',
-                      borderRadius: '999px',
-                      fontSize: '11.5px',
-                      fontWeight: actif ? '800' : '700',
-                      cursor: 'pointer',
-                      whiteSpace: 'nowrap',
-                      textAlign: 'center',
-                      transition: 'all 0.14s ease'
-                    }}
-                  >
-                    {tab.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div style={{ overflowX: 'auto' }}>
-            <table className="sp-sim-table" style={{ width: '100%', minWidth: '640px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
-              <thead>
-                <tr>
-                  <th style={{ padding: '10px 12px 12px 4px', fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--sp-text-muted, #64748b)', width: '26%' }}>
-                    Critère
-                  </th>
-                  <th style={{ padding: '10px 14px 12px 14px', fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--sp-text-muted, #64748b)', width: '34%' }}>
-                    Planity
-                  </th>
-                  <th style={{ padding: '10px 12px 12px 14px', fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#059669', width: '40%' }}>
-                    STACK
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {criteresFiltres.map(c => (
-                  <tr key={c.id}>
-                    <td style={{ padding: '13px 12px 13px 4px', verticalAlign: 'top' }}>
-                      <div style={{ fontWeight: '700', color: 'var(--sp-text-main, #18181b)', fontSize: '13px', lineHeight: 1.35 }}>
-                        {c.titre}
-                      </div>
-                    </td>
-
-                    <td style={{ padding: '13px 14px', verticalAlign: 'top' }}>
-                      <div style={{ fontWeight: '600', color: 'var(--sp-text-muted, #64748b)', fontSize: '13px', lineHeight: 1.35 }}>
-                        {c.planity}
-                      </div>
-                      <div style={{ fontSize: '11.5px', color: 'var(--sp-text-muted, #64748b)', opacity: 0.8, marginTop: '2px', lineHeight: 1.4 }}>
-                        {c.planityDetail}
-                      </div>
-                    </td>
-
-                    <td style={{ padding: '13px 12px 13px 14px', verticalAlign: 'top' }}>
-                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '7px' }}>
-                        <span style={{ color: '#059669', marginTop: '2px', flexShrink: 0, display: 'inline-flex' }}>
-                          <Icon.Check />
-                        </span>
-                        <div>
-                          <div style={{ fontWeight: '800', color: 'var(--sp-text-main, #18181b)', fontSize: '13px', lineHeight: 1.35 }}>
-                            {c.stack}
-                          </div>
-                          <div style={{ fontSize: '11.5px', color: 'var(--sp-text-muted, #64748b)', marginTop: '2px', lineHeight: 1.4 }}>
-                            {c.stackDetail}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <div
-            style={{
-              marginTop: '14px',
-              paddingTop: '12px',
-              borderTop: '1px solid rgba(148, 163, 184, 0.16)',
-              fontSize: '11.5px',
-              color: 'var(--sp-text-muted, #64748b)'
-            }}
-          >
-            Base de calcul : forfait public avec prise de RDV (269 € HT/mois) + commission moyenne 2,90 € HT par nouveau client + location TPE standard (39 € HT/mois).
+              { id: 'TOUS', label: 'Tous' },
+              { id: 'BUSINESS', label: 'Business & Finances' },
+              { id: 'TECH_LEGAL', label: 'Legal & Technique' }
+            ].map(f => {
+              const actif = simFiltreCritere === f.id;
+              return (
+                <button
+                  key={f.id}
+                  type="button"
+                  onClick={() => setSimFiltreCritere(f.id)}
+                  style={{
+                    border: actif ? '1px solid rgba(16, 185, 129, 0.42)' : '1px solid transparent',
+                    backgroundColor: actif ? 'rgba(16, 185, 129, 0.14)' : 'transparent',
+                    color: actif ? '#059669' : 'var(--sp-text-muted, #64748b)',
+                    padding: '4px 11px',
+                    borderRadius: '999px',
+                    fontSize: '11.5px',
+                    fontWeight: actif ? '800' : '600',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    transition: 'all 0.14s ease'
+                  }}
+                >
+                  {f.label}
+                </button>
+              );
+            })}
           </div>
         </div>
-      )}
+
+        {/* Table responsive */}
+        <div style={{ width: '100%', overflowX: 'auto', boxSizing: 'border-box' }}>
+          <table
+            className="sp-sim-table"
+            style={{
+              width: '100%',
+              borderCollapse: 'collapse',
+              fontSize: '13px',
+              textAlign: 'left'
+            }}
+          >
+            <thead>
+              <tr style={{ borderBottom: '1.5px solid rgba(148, 163, 184, 0.25)' }}>
+                <th style={{ padding: '10px 12px', fontWeight: '800', color: 'var(--sp-text-muted, #64748b)', width: '28%' }}>
+                  Critere
+                </th>
+                <th style={{ padding: '10px 12px', fontWeight: '800', color: '#ef4444', width: '36%' }}>
+                  {modeComparatif === 'PLANITY' ? 'Planity' : 'Salon sans logiciel (Papier / Simple)'}
+                </th>
+                <th style={{ padding: '10px 12px', fontWeight: '800', color: '#059669', width: '36%' }}>
+                  STACK ({planActuel.label})
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {criteresAffiches.map(critere => (
+                <tr key={critere.id}>
+                  <td style={{ padding: '14px 12px', verticalAlign: 'top' }}>
+                    <div style={{ fontWeight: '800', color: 'var(--sp-text-main, #18181b)' }}>
+                      {critere.titre}
+                    </div>
+                    <span style={{ fontSize: '10.5px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.04em', color: critere.categorie === 'BUSINESS' ? '#3b82f6' : '#8b5cf6' }}>
+                      {critere.categorie === 'BUSINESS' ? 'Business' : 'Legal & Tech'}
+                    </span>
+                  </td>
+
+                  <td style={{ padding: '14px 12px', verticalAlign: 'top', backgroundColor: 'rgba(239, 68, 68, 0.03)' }}>
+                    <div style={{ fontWeight: '700', color: '#b91c1c', marginBottom: '3px' }}>
+                      {critere.planity}
+                    </div>
+                    <div style={{ fontSize: '12px', color: 'var(--sp-text-muted, #64748b)', lineHeight: 1.4 }}>
+                      {critere.planityDetail}
+                    </div>
+                  </td>
+
+                  <td style={{ padding: '14px 12px', verticalAlign: 'top', backgroundColor: 'rgba(16, 185, 129, 0.04)' }}>
+                    <div style={{ fontWeight: '800', color: '#059669', marginBottom: '3px' }}>
+                      {critere.stack}
+                    </div>
+                    <div style={{ fontSize: '12px', color: 'var(--sp-text-main, #18181b)', lineHeight: 1.4 }}>
+                      {critere.stackDetail}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
     </div>
   );
 }

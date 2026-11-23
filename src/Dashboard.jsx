@@ -1746,7 +1746,7 @@ export default function Dashboard() {
           />
         )}
 
-        {/* Onglet : Simulateur d'Économies Anti-Planity */}
+        {/* Onglet : Simulateur */}
         {activeTab === 'simulateur' && (
           <TabSimulateur
             isMobile={isMobile}

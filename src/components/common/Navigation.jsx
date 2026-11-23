@@ -53,7 +53,7 @@ export default function Navigation({
     { key: 'bord', label: 'Tableau de bord', shortLabel: 'Bord', icon: <Icon.Bord /> },
     { key: 'prospects', label: 'Mes Prospects', shortLabel: 'Leads', icon: <Icon.Prospects /> },
     { key: 'carte', label: 'Carte & Prospection', shortLabel: 'Carte', icon: <Icon.MapPin /> },
-    { key: 'simulateur', label: 'Simulateur Anti-Planity', shortLabel: 'Simulateur', icon: <Icon.Calculator /> },
+    { key: 'simulateur', label: 'Simulateur', shortLabel: 'Simulateur', icon: <Icon.Calculator /> },
     { key: 'factures', label: 'Factures Onboarding', shortLabel: 'Factures', icon: <Icon.Factures /> },
     { key: 'stock', label: 'Stock & TPE', shortLabel: 'Stock', icon: <Icon.Stock /> },
     { key: 'academie', label: 'Académie & Tutos', shortLabel: 'Tutos', icon: <Icon.Academie /> }
