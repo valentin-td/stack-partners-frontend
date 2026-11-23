@@ -10,15 +10,19 @@ const isLocalhost = typeof window !== 'undefined' &&
 
 export function getPartnersApiUrl() {
   if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL.replace(/\/$/, '');
+    const raw = import.meta.env.VITE_API_URL.replace(/\/$/, '');
+    return raw.endsWith('/api/partners') ? raw : `${raw}/api/partners`;
   }
   if (isLocalhost) {
     return 'http://localhost:3000/api/partners';
   }
   if (typeof window !== 'undefined') {
     const host = window.location.hostname.toLowerCase();
-    if (host === 'stack.fr' || host.endsWith('.stack.fr')) {
-      return 'https://api.stack.fr/api/partners';
+    if (
+      host === 'stack.fr' || host.endsWith('.stack.fr') ||
+      host === 'stack-app.fr' || host.endsWith('.stack-app.fr')
+    ) {
+      return 'https://api.stack-app.fr/api/partners';
     }
   }
   return 'https://api-salon-backend.onrender.com/api/partners';
