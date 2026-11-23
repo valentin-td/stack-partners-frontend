@@ -713,8 +713,12 @@ export default function Dashboard() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       navigator.clipboard?.writeText(data.lien);
-      notify(`Lien copié : ${data.lien}`);
+      notify(`Lien d'onboarding copié : ${data.lien}`);
       fetchProspects();
+      fetchLeadsAmbassadeurs();
+      if (data.lien) {
+        window.open(data.lien, '_blank');
+      }
     } catch (err) {
       notify(err.message, true);
     }

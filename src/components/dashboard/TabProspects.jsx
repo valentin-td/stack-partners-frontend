@@ -78,6 +78,22 @@ export default function TabProspects({
     return Array.from(map.values());
   }, [leadsAmbassadeurs, listeProspects]);
 
+  const leadsParrainageConfirmes = useMemo(() => {
+    const map = new Map();
+    (leadsAmbassadeurs?.leads_confirmes || []).forEach((l) => {
+      if (l.id_prospect) map.set(l.id_prospect, l);
+    });
+    listeProspects.forEach((p) => {
+      if (
+        p.id_prospect &&
+        (p.statut_prospect === 'RDV_CONFIRME' || p.statut_prospect === 'ASSIGNE_RDV_PLANIFIE' || p.statut_prospect === 'ONBOARDING_EN_COURS')
+      ) {
+        if (!map.has(p.id_prospect)) map.set(p.id_prospect, p);
+      }
+    });
+    return Array.from(map.values());
+  }, [leadsAmbassadeurs, listeProspects]);
+
   const estLeadParraine = (p) => {
     return Boolean(
       p?.id_salon_parrain ||
@@ -303,7 +319,7 @@ export default function TabProspects({
       </header>
 
       {/* 1.5. SECTION LEADS CHAUDS PARRAINÉS PAR CONFRÈRE (SECTEUR & RÉSERVATION 45 MIN) */}
-      {(leadsParrainageReserves.length > 0 || leadsParrainageDisponibles.length > 0) && (
+      {(leadsParrainageReserves.length > 0 || leadsParrainageDisponibles.length > 0 || leadsParrainageConfirmes.length > 0) && (
         <div
           style={{
             marginBottom: '20px',
@@ -545,6 +561,106 @@ export default function TabProspects({
                   >
                     Confirmer le RDV & Verrouiller la commission
                   </button>
+                </div>
+              </div>
+            );
+          })}
+
+          {/* LEADS PARRAINÉS AVEC RDV CONFIRMÉ — PRÊTS POUR L'ONBOARDING */}
+          {leadsParrainageConfirmes.map((lead) => {
+            const nomParrain = lead.nom_parrain_verifie || lead.nom_salon_parrain || 'Salon Confrère';
+            let dateRdvFormatee = 'À planifier';
+            if (lead.date_rdv_installation) {
+              try {
+                dateRdvFormatee = new Date(lead.date_rdv_installation).toLocaleString('fr-FR', {
+                  day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                });
+              } catch (e) {
+                dateRdvFormatee = String(lead.date_rdv_installation);
+              }
+            }
+
+            return (
+              <div
+                key={`confirme-${lead.id_prospect}`}
+                style={{
+                  backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                  border: '1px solid rgba(16, 185, 129, 0.35)',
+                  borderRadius: '12px',
+                  padding: '16px',
+                  marginBottom: '12px'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '14.5px', fontWeight: '800', color: '#ecfdf5' }}>
+                      {lead.nom_salon}
+                    </span>
+                    <span style={{ fontSize: '12px', color: '#6ee7b7' }}>
+                      ({lead.code_postal || lead.departement || ''} {lead.ville || ''})
+                    </span>
+                    <span style={{
+                      fontSize: '10.5px',
+                      padding: '2px 8px',
+                      borderRadius: '999px',
+                      backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                      color: '#34d399',
+                      border: '1px solid rgba(16, 185, 129, 0.4)',
+                      fontWeight: '700'
+                    }}>
+                      Parrainé par {nomParrain}
+                    </span>
+                    <span style={{
+                      fontSize: '10.5px',
+                      padding: '2px 8px',
+                      borderRadius: '999px',
+                      backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                      color: '#93c5fd',
+                      border: '1px solid rgba(59, 130, 246, 0.3)',
+                      fontWeight: '700'
+                    }}>
+                      RDV : {dateRdvFormatee}
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleOnboarding(lead.id_prospect)}
+                    style={{
+                      padding: '8px 16px',
+                      borderRadius: '8px',
+                      backgroundColor: '#10b981',
+                      color: '#ffffff',
+                      border: 'none',
+                      fontSize: '12px',
+                      fontWeight: '800',
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 10px rgba(16, 185, 129, 0.35)',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    <Icon.ArrowUpRight />
+                    <span>Lancer l'onboarding du salon parrainé</span>
+                  </button>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', fontSize: '12px', color: '#cbd5e1' }}>
+                  <div>
+                    Contact : <strong>{lead.prenom_contact || lead.nom_contact ? `${lead.prenom_contact || ''} ${lead.nom_contact || ''}`.trim() : 'Gérant du salon'}</strong>
+                    {lead.telephone_salon && (
+                      <span> — Tél : <a href={`tel:${lead.telephone_salon}`} style={{ color: '#6ee7b7', textDecoration: 'none', fontWeight: '700' }}>{lead.telephone_salon}</a></span>
+                    )}
+                    {lead.email_gerant && (
+                      <span style={{ opacity: 0.85 }}> — Email : {lead.email_gerant}</span>
+                    )}
+                  </div>
+                  {lead.adresse_rue && (
+                    <span style={{ fontSize: '11.5px', color: '#94a3b8' }}>
+                      Adresse : {lead.adresse_rue}
+                    </span>
+                  )}
                 </div>
               </div>
             );
