@@ -13,7 +13,9 @@ export default function Navigation({
   isSuperAdmin,
   onLogout,
   isDarkMode = false,
-  onToggleTheme = () => {}
+  onToggleTheme = () => {},
+  nbAlertesInterventions = 0,
+  nbAlertesLeads = 0
 }) {
   // Style doux et non agressif pour les éléments de navigation de la barre latérale
   const getSoftNavBtnStyle = (isActive) => ({
@@ -376,15 +378,43 @@ export default function Navigation({
                         {item.label}
                       </span>
                     </span>
-                    {isActif && (
-                      <span style={{
-                        width: '6px',
-                        height: '6px',
-                        borderRadius: '50%',
-                        background: '#10b981',
-                        flexShrink: 0
-                      }} />
-                    )}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      {item.key === 'bord' && nbAlertesInterventions > 0 && (
+                        <span style={{
+                          fontSize: '10px',
+                          fontWeight: '800',
+                          color: '#ffffff',
+                          background: '#f59e0b',
+                          padding: '1px 6px',
+                          borderRadius: '999px',
+                          lineHeight: '1.2'
+                        }}>
+                          {nbAlertesInterventions}
+                        </span>
+                      )}
+                      {item.key === 'prospects' && nbAlertesLeads > 0 && (
+                        <span style={{
+                          fontSize: '10px',
+                          fontWeight: '800',
+                          color: '#ffffff',
+                          background: '#10b981',
+                          padding: '1px 6px',
+                          borderRadius: '999px',
+                          lineHeight: '1.2'
+                        }}>
+                          {nbAlertesLeads}
+                        </span>
+                      )}
+                      {isActif && (
+                        <span style={{
+                          width: '6px',
+                          height: '6px',
+                          borderRadius: '50%',
+                          background: '#10b981',
+                          flexShrink: 0
+                        }} />
+                      )}
+                    </div>
                   </button>
                 );
               })}
@@ -542,8 +572,30 @@ export default function Navigation({
                   transition: 'all 0.15s ease'
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {item.icon}
+                  {item.key === 'bord' && nbAlertesInterventions > 0 && (
+                    <span style={{
+                      position: 'absolute',
+                      top: '-2px',
+                      right: '-4px',
+                      width: '7px',
+                      height: '7px',
+                      borderRadius: '50%',
+                      backgroundColor: '#f59e0b'
+                    }} />
+                  )}
+                  {item.key === 'prospects' && nbAlertesLeads > 0 && (
+                    <span style={{
+                      position: 'absolute',
+                      top: '-2px',
+                      right: '-4px',
+                      width: '7px',
+                      height: '7px',
+                      borderRadius: '50%',
+                      backgroundColor: '#10b981'
+                    }} />
+                  )}
                 </div>
                 <span>{item.label}</span>
               </button>

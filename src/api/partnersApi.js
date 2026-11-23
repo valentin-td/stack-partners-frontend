@@ -258,6 +258,53 @@ export const partnersApi = {
       body: JSON.stringify(payload)
     });
     return handleResponse(res);
+  },
+
+  // Interventions Techniques & Depannages Terrain
+  async getInterventions(token) {
+    const res = await fetch(`${API_URL}/interventions`, { headers: getHeaders(token) });
+    return handleResponse(res);
+  },
+
+  async accepterIntervention(token, idIntervention, creneauPassage) {
+    const res = await fetch(`${API_URL}/interventions/${idIntervention}/accepter`, {
+      method: 'PATCH',
+      headers: getHeaders(token),
+      body: JSON.stringify({ creneau_passage: creneauPassage })
+    });
+    return handleResponse(res);
+  },
+
+  async resoudreIntervention(token, idIntervention, rapportIntervention) {
+    const res = await fetch(`${API_URL}/interventions/${idIntervention}/resoudre`, {
+      method: 'PATCH',
+      headers: getHeaders(token),
+      body: JSON.stringify({ rapport_intervention: rapportIntervention })
+    });
+    return handleResponse(res);
+  },
+
+  // Leads Parrainage Ambassadeur
+  async getLeadsAmbassadeurs(token) {
+    const res = await fetch(`${API_URL}/leads-ambassadeurs`, { headers: getHeaders(token) });
+    return handleResponse(res);
+  },
+
+  async reserverLeadAmbassadeur(token, idProspect) {
+    const res = await fetch(`${API_URL}/leads-ambassadeurs/${idProspect}/reserver`, {
+      method: 'POST',
+      headers: getHeaders(token)
+    });
+    return handleResponse(res);
+  },
+
+  async confirmerRdvLeadAmbassadeur(token, idProspect, payload) {
+    const res = await fetch(`${API_URL}/leads-ambassadeurs/${idProspect}/confirmer-rdv`, {
+      method: 'POST',
+      headers: getHeaders(token),
+      body: JSON.stringify(payload)
+    });
+    return handleResponse(res);
   }
 };
 

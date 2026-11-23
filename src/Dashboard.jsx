@@ -1,7 +1,7 @@
 // src/Dashboard.jsx
 // Orchestrateur principal du portail STACK Partners
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { API_URL } from './api/config';
 import { getCardStyle, inputStyle, primaryBtn, secondaryBtn } from './styles/commonStyles';
 import { Icon } from './components/common/Icons';
@@ -150,6 +150,19 @@ export default function Dashboard() {
     email_gerant: ''
   });
   const [prospectError, setProspectError] = useState('');
+  const [leadsAmbassadeurs, setLeadsAmbassadeurs] = useState({
+    leads_disponibles: [],
+    leads_reserves_en_cours: [],
+    leads_confirmes: []
+  });
+  const [interventionsData, setInterventionsData] = useState({
+    missions_prioritaires: [],
+    missions_secteur: [],
+    missions_en_cours: [],
+    missions_resolues: []
+  });
+  const [loadingInterventions, setLoadingInterventions] = useState(false);
+  const previousAlertsRef = useRef({ interventions: null, leads: null });
 
   // Etats Profil & KYC (Etapes 1 a 6)
   const [profilData, setProfilData] = useState({
@@ -312,12 +325,89 @@ export default function Dashboard() {
       window.scrollTo(0, 0);
     }
     fetchProfil();
-    if (activeTab === 'bord') fetchStats();
+    let bordInterval = null;
+    if (activeTab === 'bord') {
+      fetchStats();
+      fetchLeadsAmbassadeurs();
+      fetchInterventions();
+      bordInterval = setInterval(() => {
+        fetchLeadsAmbassadeurs();
+        fetchInterventions();
+      }, 15000);
+    }
     if (activeTab === 'factures') fetchFactures();
-    if (activeTab === 'prospects') fetchProspects();
+    let prospectInterval = null;
+    if (activeTab === 'prospects') {
+      fetchProspects();
+      fetchLeadsAmbassadeurs();
+      fetchInterventions();
+      prospectInterval = setInterval(() => {
+        fetchProspects();
+        fetchLeadsAmbassadeurs();
+        fetchInterventions();
+      }, 20000);
+    }
     if (activeTab === 'carte') fetchMapSalons(mapCenter.lat, mapCenter.lng, mapRadius, true);
     if (activeTab === 'godmode' && isSuperAdmin) fetchAdminData();
+
+    return () => {
+      if (bordInterval) clearInterval(bordInterval);
+      if (prospectInterval) clearInterval(prospectInterval);
+    };
   }, [activeTab, isSuperAdmin]);
+
+  // Demande de permission pour les notifications navigateur au montage
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission().catch(() => {});
+    }
+  }, []);
+
+  // Polling persistant d arriere-plan pour les alertes operationnelles (interventions & leads)
+  useEffect(() => {
+    if (!token) return;
+    const alertInterval = setInterval(() => {
+      fetchInterventions();
+      fetchLeadsAmbassadeurs();
+    }, 15000);
+    return () => clearInterval(alertInterval);
+  }, [token]);
+
+  // Detection des nouvelles alertes pour declenchement de Toast et Notification Push navigateur
+  useEffect(() => {
+    const totalInterventions = (interventionsData?.missions_prioritaires?.length || 0) + (interventionsData?.missions_secteur?.length || 0);
+    const totalLeads = (leadsAmbassadeurs?.leads_disponibles?.length || 0) + (leadsAmbassadeurs?.leads_reserves_en_cours?.length || 0);
+
+    if (previousAlertsRef.current.interventions !== null) {
+      if (totalInterventions > previousAlertsRef.current.interventions) {
+        notify("Nouvelle alerte d intervention technique disponible sur votre secteur !");
+        if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+          try {
+            new Notification("STACK Partners - Depannage Terrain", {
+              body: "Une nouvelle mission d intervention technique (39 EUR Net) vient d etre emise.",
+              icon: "/favicon.ico"
+            });
+          } catch (_) {}
+        }
+      }
+    }
+
+    if (previousAlertsRef.current.leads !== null) {
+      if (totalLeads > previousAlertsRef.current.leads) {
+        notify("Nouveau salon parraine disponible dans vos leads !");
+        if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+          try {
+            new Notification("STACK Partners - Nouveau Lead Parraine", {
+              body: "Un nouveau salon filleul a valide son activation (50 EUR Net + 20% recurrent).",
+              icon: "/favicon.ico"
+            });
+          } catch (_) {}
+        }
+      }
+    }
+
+    previousAlertsRef.current = { interventions: totalInterventions, leads: totalLeads };
+  }, [interventionsData, leadsAmbassadeurs]);
 
   // Synchronisation du formulaire de visite lors du clic sur un salon de la carte
   useEffect(() => {
@@ -466,6 +556,121 @@ export default function Dashboard() {
       if (res.ok) setProspects(await res.json());
     } catch (e) {
       console.error('Erreur chargement prospects:', e);
+    }
+  };
+
+  const fetchLeadsAmbassadeurs = async () => {
+    try {
+      const res = await fetch(`${API_URL}/leads-ambassadeurs`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        setLeadsAmbassadeurs(await res.json());
+      }
+    } catch (e) {
+      console.error('Erreur chargement leads ambassadeurs:', e);
+    }
+  };
+
+  const handleReserverLeadAmbassadeur = async (idProspect) => {
+    try {
+      const res = await fetch(`${API_URL}/leads-ambassadeurs/${idProspect}/reserver`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        notify(data.error || 'Ce lead a déjà été réservé ou n est plus disponible.', true);
+        fetchLeadsAmbassadeurs();
+        return;
+      }
+      notify('Lead réservé ! Vous avez 45 minutes pour caler la date d installation.');
+      fetchLeadsAmbassadeurs();
+      fetchProspects();
+    } catch (e) {
+      notify('Erreur lors de la réservation du lead.', true);
+    }
+  };
+
+  const handleConfirmerRdvLeadAmbassadeur = async (idProspect, dateRdv, notes) => {
+    try {
+      const res = await fetch(`${API_URL}/leads-ambassadeurs/${idProspect}/confirmer-rdv`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ date_rdv_installation: dateRdv, notes })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        notify(data.error || 'Impossible de confirmer le RDV.', true);
+        return;
+      }
+      notify(data.message || 'Rendez-vous confirmé avec succès !');
+      fetchLeadsAmbassadeurs();
+      fetchProspects();
+    } catch (e) {
+      notify('Erreur réseau lors de la confirmation du RDV.', true);
+    }
+  };
+
+  const fetchInterventions = async () => {
+    try {
+      setLoadingInterventions(true);
+      const res = await fetch(`${API_URL}/interventions`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setInterventionsData({
+          missions_prioritaires: data.missions_prioritaires || [],
+          missions_secteur: data.missions_secteur || [],
+          missions_en_cours: data.missions_en_cours || [],
+          missions_resolues: data.missions_resolues || []
+        });
+      }
+    } catch (e) {
+      console.error('Erreur chargement interventions:', e);
+    } finally {
+      setLoadingInterventions(false);
+    }
+  };
+
+  const handleAccepterIntervention = async (idIntervention, creneauPassage) => {
+    try {
+      const res = await fetch(`${API_URL}/interventions/${idIntervention}/accepter`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ creneau_passage: creneauPassage })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        notify(data.error || 'Impossible d accepter cette intervention.', true);
+        fetchInterventions();
+        return;
+      }
+      notify(data.message || 'Mission d intervention acceptée avec succès !');
+      fetchInterventions();
+    } catch (e) {
+      notify("Erreur réseau lors de l'acceptation de la mission.", true);
+    }
+  };
+
+  const handleResoudreIntervention = async (idIntervention, rapportIntervention) => {
+    try {
+      const res = await fetch(`${API_URL}/interventions/${idIntervention}/resoudre`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ rapport_intervention: rapportIntervention })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        notify(data.error || 'Impossible de clôturer cette intervention.', true);
+        return;
+      }
+      notify(data.message || 'Intervention clôturée et facture générée.');
+      fetchInterventions();
+      fetchFactures();
+    } catch (e) {
+      notify("Erreur lors de la résolution de l'intervention.", true);
     }
   };
 
@@ -1386,6 +1591,9 @@ export default function Dashboard() {
     Math.round((stats.kpis.nb_salons_actifs / stats.kpis.seuil_deblocage) * 100)
   );
 
+  const nbAlertesInterventions = (interventionsData?.missions_prioritaires?.length || 0) + (interventionsData?.missions_secteur?.length || 0);
+  const nbAlertesLeads = (leadsAmbassadeurs?.leads_disponibles?.length || 0) + (leadsAmbassadeurs?.leads_reserves_en_cours?.length || 0);
+
   const cardStyle = useMemo(() => getCardStyle(isMobile), [isMobile]);
 
   return (
@@ -1414,6 +1622,8 @@ export default function Dashboard() {
         onLogout={logout}
         isDarkMode={themeState.isDarkMode}
         onToggleTheme={toggleTheme}
+        nbAlertesInterventions={nbAlertesInterventions}
+        nbAlertesLeads={nbAlertesLeads}
       />
 
       {/* Zone de contenu principale calibrée pour tenir sans scroll inutile */}
@@ -1442,6 +1652,15 @@ export default function Dashboard() {
             isSmall={isSmall}
             cardStyle={cardStyle}
             progressionPourcent={progressionPourcent}
+            interventionsData={interventionsData}
+            leadsAmbassadeurs={leadsAmbassadeurs}
+            fetchInterventions={fetchInterventions}
+            fetchLeadsAmbassadeurs={fetchLeadsAmbassadeurs}
+            handleAccepterIntervention={handleAccepterIntervention}
+            handleResoudreIntervention={handleResoudreIntervention}
+            handleReserverLeadAmbassadeur={handleReserverLeadAmbassadeur}
+            handleConfirmerRdvLeadAmbassadeur={handleConfirmerRdvLeadAmbassadeur}
+            setActiveTab={setActiveTab}
           />
         )}
 
@@ -1449,6 +1668,10 @@ export default function Dashboard() {
         {activeTab === 'prospects' && (
           <TabProspects
             prospects={prospects}
+            leadsAmbassadeurs={leadsAmbassadeurs}
+            fetchLeadsAmbassadeurs={fetchLeadsAmbassadeurs}
+            handleReserverLeadAmbassadeur={handleReserverLeadAmbassadeur}
+            handleConfirmerRdvLeadAmbassadeur={handleConfirmerRdvLeadAmbassadeur}
             showProspectForm={showProspectForm}
             setShowProspectForm={setShowProspectForm}
             prospectData={prospectData}

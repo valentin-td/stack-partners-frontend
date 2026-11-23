@@ -27,6 +27,10 @@ const getInitialesSalon = (nom = '') => {
 
 export default function TabProspects({
   prospects = [],
+  leadsAmbassadeurs = { leads_disponibles: [], leads_reserves_en_cours: [], leads_confirmes: [] },
+  fetchLeadsAmbassadeurs,
+  handleReserverLeadAmbassadeur,
+  handleConfirmerRdvLeadAmbassadeur,
   showProspectForm,
   setShowProspectForm,
   prospectData = {},
@@ -39,8 +43,51 @@ export default function TabProspects({
   const [filtreStatut, setFiltreStatut] = useState('TOUS'); // 'TOUS' | 'PROTEGES' | 'SIGNES' | 'EXPIRES'
   const [rechercheLead, setRechercheLead] = useState('');
   const [afficherInfosSiret, setAfficherInfosSiret] = useState(false);
+  const [formRdv, setFormRdv] = useState({});
+  const [pitchCopieId, setPitchCopieId] = useState(null);
 
   const listeProspects = Array.isArray(prospects) ? prospects : [];
+
+  // Agrégation robuste des leads parrainés (combiner leadsAmbassadeurs + listeProspects)
+  const leadsParrainageReserves = useMemo(() => {
+    const map = new Map();
+    (leadsAmbassadeurs?.leads_reserves_en_cours || []).forEach((l) => {
+      if (l.id_prospect) map.set(l.id_prospect, l);
+    });
+    listeProspects.forEach((p) => {
+      if (
+        p.id_prospect &&
+        (p.statut_prospect === 'RESERVE_CONTACT' || p.statut_prospect === 'LEAD_CHAUD_PARRAINAGE')
+      ) {
+        if (!map.has(p.id_prospect)) map.set(p.id_prospect, p);
+      }
+    });
+    return Array.from(map.values());
+  }, [leadsAmbassadeurs, listeProspects]);
+
+  const leadsParrainageDisponibles = useMemo(() => {
+    const map = new Map();
+    (leadsAmbassadeurs?.leads_disponibles || []).forEach((l) => {
+      if (l.id_prospect) map.set(l.id_prospect, l);
+    });
+    listeProspects.forEach((p) => {
+      if (p.id_prospect && p.statut_prospect === 'DISPONIBLE_SECTEUR') {
+        if (!map.has(p.id_prospect)) map.set(p.id_prospect, p);
+      }
+    });
+    return Array.from(map.values());
+  }, [leadsAmbassadeurs, listeProspects]);
+
+  const estLeadParraine = (p) => {
+    return Boolean(
+      p?.id_salon_parrain ||
+      p?.nom_salon_parrain ||
+      p?.nom_parrain_verifie ||
+      p?.source_lead === 'MISE_EN_RELATION_ASSISTEE' ||
+      p?.source_lead === 'PARRAINAGE_SALON' ||
+      p?.source_lead === 'LIEN_PARRAINAGE_AMBASSADEUR'
+    );
+  };
 
   const { nbTotal, nbProteges, nbSignes, nbExpires, nbUrgents, tauxConversion, relancesPrioritaires } = useMemo(() => {
     let proteges = 0;
@@ -254,6 +301,316 @@ export default function TabProspects({
           <span>{isMobile ? 'Réserver' : 'Réserver un Lead'}</span>
         </button>
       </header>
+
+      {/* 1.5. SECTION LEADS CHAUDS PARRAINÉS PAR CONFRÈRE (SECTEUR & RÉSERVATION 45 MIN) */}
+      {(leadsParrainageReserves.length > 0 || leadsParrainageDisponibles.length > 0) && (
+        <div
+          style={{
+            marginBottom: '20px',
+            borderRadius: '16px',
+            background: 'linear-gradient(135deg, rgba(24, 24, 27, 0.96) 0%, rgba(9, 9, 11, 0.98) 100%)',
+            border: '1px solid rgba(16, 185, 129, 0.40)',
+            boxShadow: '0 12px 30px -8px rgba(0, 0, 0, 0.45)',
+            padding: isMobile ? '16px' : '20px 24px',
+            color: '#f8fafc'
+          }}
+        >
+          {/* En-tête de section avec alerte visuelle */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', marginBottom: '14px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span
+                style={{
+                  display: 'inline-block',
+                  width: '9px',
+                  height: '9px',
+                  borderRadius: '50%',
+                  backgroundColor: '#10b981',
+                  boxShadow: '0 0 12px #10b981'
+                }}
+              />
+              <span style={{ fontSize: '11px', fontWeight: '800', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#34d399' }}>
+                Alerte Salons Parrainés — Nouveaux Leads Chauds à Contacter
+              </span>
+            </div>
+
+            <div style={{ fontSize: '11.5px', color: '#94a3b8' }}>
+              Commission : <strong style={{ color: '#f8fafc' }}>50,00 €</strong> installation + <strong style={{ color: '#34d399' }}>20% HT</strong> dès le 4e mois (24 mois)
+            </div>
+          </div>
+
+          {/* LEADS ACTUELLEMENT RÉSERVÉS PAR CET AGENT (COMPTE À REBOURS 45 MIN) */}
+          {leadsParrainageReserves.map((lead) => {
+            const nomParrain = lead.nom_parrain_verifie || lead.nom_salon_parrain || 'Salon Confrère';
+            const accrocheTexte = lead.accroche_commerciale || `Bonjour, j'ai été mandaté par votre confrère ${nomParrain} pour vous activer vos 3 mois offerts sur STACK et vous déposer votre terminal TPE.`;
+            const estCopie = pitchCopieId === lead.id_prospect;
+
+            return (
+              <div
+                key={`reserve-${lead.id_prospect}`}
+                style={{
+                  backgroundColor: 'rgba(217, 119, 6, 0.12)',
+                  border: '1px solid rgba(245, 158, 11, 0.4)',
+                  borderRadius: '12px',
+                  padding: '16px',
+                  marginBottom: '12px'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '14.5px', fontWeight: '800', color: '#fef3c7' }}>
+                      {lead.nom_salon}
+                    </span>
+                    <span style={{ fontSize: '12px', color: '#d97706' }}>
+                      ({lead.code_postal || lead.departement || ''} {lead.ville || ''})
+                    </span>
+                    <span style={{
+                      fontSize: '10.5px',
+                      padding: '2px 8px',
+                      borderRadius: '999px',
+                      backgroundColor: 'rgba(16, 185, 129, 0.16)',
+                      color: '#34d399',
+                      border: '1px solid rgba(16, 185, 129, 0.35)',
+                      fontWeight: '700'
+                    }}>
+                      Parrainé par {nomParrain}
+                    </span>
+                  </div>
+
+                  <div style={{
+                    padding: '4px 10px',
+                    borderRadius: '20px',
+                    backgroundColor: 'rgba(245, 158, 11, 0.25)',
+                    border: '1px solid #f59e0b',
+                    fontSize: '11.5px',
+                    fontWeight: '700',
+                    color: '#fbbf24'
+                  }}>
+                    Compte à rebours : {lead.minutes_restantes || 45} min restantes pour caler le passage
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', fontSize: '12.5px', color: '#e2e8f0', marginBottom: '10px', lineHeight: 1.4 }}>
+                  <div>
+                    Contact : <strong>{lead.prenom_contact || lead.nom_contact ? `${lead.prenom_contact || ''} ${lead.nom_contact || ''}`.trim() : 'Gérant du salon'}</strong>
+                    {lead.telephone_salon && (
+                      <span> — Tél : <a href={`tel:${lead.telephone_salon}`} style={{ color: '#6ee7b7', textDecoration: 'none', fontWeight: '700' }}>{lead.telephone_salon}</a></span>
+                    )}
+                    {lead.email_gerant && (
+                      <span style={{ opacity: 0.85 }}> — Email : {lead.email_gerant}</span>
+                    )}
+                  </div>
+
+                  {lead.telephone_salon && (
+                    <a
+                      href={`tel:${lead.telephone_salon}`}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        backgroundColor: '#059669',
+                        color: '#ffffff',
+                        textDecoration: 'none',
+                        padding: '5px 12px',
+                        borderRadius: '6px',
+                        fontWeight: '700',
+                        fontSize: '11.5px'
+                      }}
+                    >
+                      Appeler le gérant
+                    </a>
+                  )}
+                </div>
+
+                {/* Accroche Commerciale en or avec bouton de copie */}
+                <div style={{
+                  fontSize: '11.5px',
+                  backgroundColor: 'rgba(0, 0, 0, 0.35)',
+                  padding: '10px 14px',
+                  borderRadius: '8px',
+                  color: '#e2e8f0',
+                  marginBottom: '12px',
+                  borderLeft: '3px solid #f59e0b',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '12px',
+                  flexWrap: 'wrap'
+                }}>
+                  <div style={{ fontStyle: 'italic', flex: 1, minWidth: '220px' }}>
+                    Accroche en or : "{accrocheTexte}"
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (navigator?.clipboard) {
+                        navigator.clipboard.writeText(accrocheTexte);
+                        setPitchCopieId(lead.id_prospect);
+                        setTimeout(() => setPitchCopieId(null), 2500);
+                      }
+                    }}
+                    style={{
+                      padding: '4px 10px',
+                      borderRadius: '6px',
+                      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      color: '#ffffff',
+                      fontSize: '11px',
+                      fontWeight: '700',
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {estCopie ? 'Accroche copiée !' : 'Copier l\'accroche'}
+                  </button>
+                </div>
+
+                {/* Formulaire de calage du rendez-vous */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: '10px',
+                  backgroundColor: 'rgba(0,0,0,0.4)',
+                  padding: '12px',
+                  borderRadius: '8px'
+                }}>
+                  <div style={{ flex: '1 1 200px' }}>
+                    <label style={{ display: 'block', fontSize: '11px', color: '#94a3b8', marginBottom: '4px' }}>
+                      Date et heure du rendez-vous d'installation *
+                    </label>
+                    <input
+                      type="datetime-local"
+                      value={formRdv[lead.id_prospect]?.date || ''}
+                      onChange={(e) => setFormRdv(prev => ({
+                        ...prev,
+                        [lead.id_prospect]: { ...prev[lead.id_prospect], date: e.target.value }
+                      }))}
+                      style={{
+                        width: '100%',
+                        padding: '8px 10px',
+                        borderRadius: '6px',
+                        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                        color: '#ffffff',
+                        fontSize: '12px'
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ flex: '1 1 200px' }}>
+                    <label style={{ display: 'block', fontSize: '11px', color: '#94a3b8', marginBottom: '4px' }}>
+                      Notes / Précisions
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="ex. Passage en matinée, gérant sur place"
+                      value={formRdv[lead.id_prospect]?.notes || ''}
+                      onChange={(e) => setFormRdv(prev => ({
+                        ...prev,
+                        [lead.id_prospect]: { ...prev[lead.id_prospect], notes: e.target.value }
+                      }))}
+                      style={{
+                        width: '100%',
+                        padding: '8px 10px',
+                        borderRadius: '6px',
+                        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                        color: '#ffffff',
+                        fontSize: '12px'
+                      }}
+                    />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const data = formRdv[lead.id_prospect];
+                      if (!data?.date) {
+                        alert("Veuillez sélectionner la date et l'heure convenues pour le rendez-vous d'installation.");
+                        return;
+                      }
+                      handleConfirmerRdvLeadAmbassadeur(lead.id_prospect, data.date, data.notes || '');
+                    }}
+                    style={{
+                      alignSelf: 'flex-end',
+                      padding: '8px 16px',
+                      borderRadius: '6px',
+                      backgroundColor: '#10b981',
+                      color: '#ffffff',
+                      border: 'none',
+                      fontSize: '12px',
+                      fontWeight: '700',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Confirmer le RDV & Verrouiller la commission
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+
+          {/* LEADS DISPONIBLES SUR LE SECTEUR À RÉSERVER */}
+          {leadsParrainageDisponibles.map((lead) => {
+            const nomParrain = lead.nom_parrain_verifie || lead.nom_salon_parrain || 'Salon Confrère';
+
+            return (
+              <div
+                key={`dispo-${lead.id_prospect}`}
+                style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '12px',
+                  padding: '14px 16px',
+                  marginBottom: '10px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: '12px'
+                }}
+              >
+                <div style={{ flex: '1 1 300px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '13.5px', fontWeight: '800', color: '#ffffff' }}>
+                      {lead.nom_salon}
+                    </span>
+                    <span style={{ fontSize: '11px', color: '#94a3b8' }}>
+                      {lead.ville ? `${lead.code_postal || ''} ${lead.ville}` : `Dép. ${lead.departement || ''}`}
+                    </span>
+                    <span style={{ fontSize: '10.5px', padding: '2px 8px', borderRadius: '10px', backgroundColor: 'rgba(52, 211, 153, 0.15)', color: '#34d399', fontWeight: '700' }}>
+                      Parrainé par {nomParrain}
+                    </span>
+                  </div>
+
+                  <div style={{ fontSize: '12px', color: '#cbd5e1' }}>
+                    Contact : {lead.prenom_contact || lead.nom_contact ? `${lead.prenom_contact || ''} ${lead.nom_contact || ''}`.trim() : 'Gérant du salon'} — Tél : {lead.telephone_salon}
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => handleReserverLeadAmbassadeur(lead.id_prospect)}
+                  style={{
+                    padding: '9px 18px',
+                    borderRadius: '8px',
+                    backgroundColor: '#10b981',
+                    color: '#ffffff',
+                    border: 'none',
+                    fontSize: '12px',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  Réserver ce lead (45 min pour caler le RDV)
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* 2. LES 4 KPIS HIÉRARCHISÉS (CARTE MAÎTRESSE ÉMERAUDE + 3 CARTES ÉPURÉES) */}
       <div
@@ -634,6 +991,23 @@ export default function TabProspects({
                               {estSigne ? 'Signé' : estProtege ? 'Protégé' : 'Expiré'}
                             </span>
 
+                            {estLeadParraine(p) && (
+                              <span
+                                style={{
+                                  padding: '2px 8px',
+                                  borderRadius: '999px',
+                                  fontSize: '10px',
+                                  fontWeight: '800',
+                                  flexShrink: 0,
+                                  backgroundColor: 'rgba(52, 211, 153, 0.15)',
+                                  color: '#059669',
+                                  border: '1px solid rgba(52, 211, 153, 0.35)'
+                                }}
+                              >
+                                Parrainé par {p.nom_parrain_verifie || p.nom_salon_parrain || 'Confrère'} • Offre 3 mois (50 € + 20%)
+                              </span>
+                            )}
+
                             {villePropre && (
                               <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--sp-text-muted, #64748b)' }}>
                                 • {villePropre}
@@ -705,6 +1079,49 @@ export default function TabProspects({
                               • Déclaré le {formatDate(p.date_declaration)}
                             </span>
                           </div>
+
+                          {estLeadParraine(p) && p.accroche_commerciale && (
+                            <div
+                              style={{
+                                marginTop: '6px',
+                                fontSize: '11px',
+                                fontStyle: 'italic',
+                                color: '#059669',
+                                backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                                padding: '4px 10px',
+                                borderRadius: '6px',
+                                borderLeft: '3px solid #10b981',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                gap: '8px'
+                              }}
+                            >
+                              <span>Accroche : "{p.accroche_commerciale}"</span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (navigator?.clipboard) {
+                                    navigator.clipboard.writeText(p.accroche_commerciale);
+                                    setPitchCopieId(p.id_prospect);
+                                    setTimeout(() => setPitchCopieId(null), 2500);
+                                  }
+                                }}
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  color: '#059669',
+                                  fontWeight: '700',
+                                  fontSize: '10.5px',
+                                  cursor: 'pointer',
+                                  textDecoration: 'underline',
+                                  whiteSpace: 'nowrap'
+                                }}
+                              >
+                                {pitchCopieId === p.id_prospect ? 'Copié !' : 'Copier'}
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </div>
 

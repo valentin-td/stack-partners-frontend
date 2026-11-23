@@ -3,6 +3,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { formatDate } from '../../utils/formatters';
+import { Icon } from '../common/Icons';
 
 const formatMontant = (val) => {
   const n = parseFloat(val) || 0;
@@ -18,11 +19,29 @@ const getInitialesSalon = (nom = '') => {
 export default function TabBord({
   stats = { kpis: {}, salons: [], commissions: [] },
   isMobile,
-  progressionPourcent = 0
+  progressionPourcent = 0,
+  interventionsData = { missions_prioritaires: [], missions_secteur: [], missions_en_cours: [], missions_resolues: [] },
+  leadsAmbassadeurs = { leads_disponibles: [], leads_reserves_en_cours: [], leads_confirmes: [] },
+  fetchInterventions,
+  fetchLeadsAmbassadeurs,
+  handleAccepterIntervention,
+  handleResoudreIntervention,
+  handleReserverLeadAmbassadeur,
+  handleConfirmerRdvLeadAmbassadeur,
+  setActiveTab
 }) {
   const [afficherDetailPalier, setAfficherDetailPalier] = useState(false);
   const [filtreCommissions, setFiltreCommissions] = useState('TOUTES'); // 'TOUTES' | 'PAYEE' | 'ATTENTE'
   const [rechercheSalon, setRechercheSalon] = useState('');
+
+  // Gestion des actions d alertes
+  const [creneauxPassage, setCreneauxPassage] = useState({});
+  const [acceptationEnCours, setAcceptationEnCours] = useState({});
+  const [formRdvLead, setFormRdvLead] = useState({});
+  const [reservationEnCours, setReservationEnCours] = useState({});
+  const [confirmationRdvEnCours, setConfirmationRdvEnCours] = useState({});
+  const [modalResolution, setModalResolution] = useState({ ouverte: false, intervention: null, rapport: '', enCours: false });
+  const [pitchCopieId, setPitchCopieId] = useState(null);
 
   const kpis = stats?.kpis || {};
   const salonsListe = Array.isArray(stats?.salons) ? stats.salons : [];
@@ -386,6 +405,816 @@ export default function TabBord({
           </div>
         </div>
       </div>
+
+      {/* 2.5 CENTRE D'ALERTES OPERATIONNELLES (INTERVENTIONS TECHNIQUES & SALONS PARRAINES) */}
+      {(() => {
+        const missionsPrioritaires = interventionsData?.missions_prioritaires || [];
+        const missionsSecteur = interventionsData?.missions_secteur || [];
+        const missionsEnCours = interventionsData?.missions_en_cours || [];
+        const leadsDispo = leadsAmbassadeurs?.leads_disponibles || [];
+        const leadsReserves = leadsAmbassadeurs?.leads_reserves_en_cours || [];
+
+        const totalInterventions = missionsPrioritaires.length + missionsSecteur.length + missionsEnCours.length;
+        const totalLeads = leadsDispo.length + leadsReserves.length;
+        const totalAlertes = totalInterventions + totalLeads;
+
+        return (
+          <section
+            style={{
+              marginBottom: isMobile ? '16px' : '22px',
+              borderRadius: '24px',
+              background: 'linear-gradient(135deg, rgba(24, 24, 27, 0.94) 0%, rgba(9, 9, 11, 0.98) 100%)',
+              border: totalAlertes > 0 ? '1px solid rgba(16, 185, 129, 0.45)' : '1px solid rgba(255, 255, 255, 0.1)',
+              boxShadow: '0 14px 34px -10px rgba(0, 0, 0, 0.5)',
+              padding: isMobile ? '16px 14px' : '22px 26px',
+              color: '#f8fafc',
+              position: 'relative',
+              overflow: 'hidden'
+            }}
+          >
+            {/* Barre de titre et badges de statut */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: isMobile ? 'flex-start' : 'center',
+                justifyContent: 'space-between',
+                flexDirection: isMobile ? 'column' : 'row',
+                gap: '12px',
+                marginBottom: totalAlertes > 0 ? '18px' : '0',
+                paddingBottom: totalAlertes > 0 ? '14px' : '0',
+                borderBottom: totalAlertes > 0 ? '1px solid rgba(255, 255, 255, 0.08)' : 'none'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span
+                  style={{
+                    display: 'inline-block',
+                    width: '10px',
+                    height: '10px',
+                    borderRadius: '50%',
+                    backgroundColor: totalAlertes > 0 ? '#10b981' : '#64748b',
+                    boxShadow: totalAlertes > 0 ? '0 0 12px #10b981' : 'none'
+                  }}
+                />
+                <div>
+                  <h2
+                    style={{
+                      margin: 0,
+                      fontSize: isMobile ? '15px' : '17px',
+                      fontWeight: '800',
+                      letterSpacing: '-0.02em',
+                      color: '#ffffff'
+                    }}
+                  >
+                    Alertes Opérationnelles & Terrain
+                  </h2>
+                  <div style={{ fontSize: '11.5px', color: '#94a3b8', marginTop: '2px' }}>
+                    Dépannages techniques prioritaires (39 € Net) & leads chauds parrainés
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                {missionsPrioritaires.length > 0 && (
+                  <span
+                    style={{
+                      fontSize: '11px',
+                      fontWeight: '800',
+                      padding: '3px 10px',
+                      borderRadius: '999px',
+                      background: 'rgba(245, 158, 11, 0.20)',
+                      color: '#fbbf24',
+                      border: '1px solid rgba(245, 158, 11, 0.40)'
+                    }}
+                  >
+                    {missionsPrioritaires.length} intervention(s) exclusive(s)
+                  </span>
+                )}
+                {totalAlertes > 0 ? (
+                  <span
+                    style={{
+                      fontSize: '11px',
+                      fontWeight: '800',
+                      padding: '3px 10px',
+                      borderRadius: '999px',
+                      background: 'rgba(16, 185, 129, 0.20)',
+                      color: '#34d399',
+                      border: '1px solid rgba(16, 185, 129, 0.40)'
+                    }}
+                  >
+                    {totalAlertes} alerte(s) active(s)
+                  </span>
+                ) : (
+                  <span
+                    style={{
+                      fontSize: '11px',
+                      fontWeight: '700',
+                      padding: '3px 10px',
+                      borderRadius: '999px',
+                      background: 'rgba(255, 255, 255, 0.06)',
+                      color: '#94a3b8'
+                    }}
+                  >
+                    À jour
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (typeof fetchInterventions === 'function') fetchInterventions();
+                    if (typeof fetchLeadsAmbassadeurs === 'function') fetchLeadsAmbassadeurs();
+                  }}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.08)',
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    color: '#f8fafc',
+                    padding: '5px 11px',
+                    borderRadius: '8px',
+                    fontSize: '11px',
+                    fontWeight: '700',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Actualiser
+                </button>
+              </div>
+            </div>
+
+            {/* ÉTAT VIDE : AUCUNE ALERTE */}
+            {totalAlertes === 0 && (
+              <div
+                style={{
+                  padding: '14px 16px',
+                  borderRadius: '14px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                  border: '1px dashed rgba(255, 255, 255, 0.10)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px'
+                }}
+              >
+                <div style={{ color: '#34d399', flexShrink: 0 }}>
+                  <Icon.Shield />
+                </div>
+                <div style={{ fontSize: '12px', color: '#cbd5e1' }}>
+                  Aucune intervention technique urgente ni demande de salon parrainé en attente sur votre secteur. Vous serez notifié dès qu'un ticket ou qu'un lead confrère est émis.
+                </div>
+              </div>
+            )}
+
+            {/* SECTION 1 : DEMANDES D'INTERVENTION TECHNIQUE (39 € NET) */}
+            {totalInterventions > 0 && (
+              <div style={{ marginBottom: totalLeads > 0 ? '22px' : '0' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                  <Icon.Wrench />
+                  <span style={{ fontSize: '12px', fontWeight: '800', letterSpacing: '0.06em', textTransform: 'uppercase', color: '#fbbf24' }}>
+                    Demandes d'Intervention Technique & Dépannage (Forfait 39,00 € Net)
+                  </span>
+                </div>
+
+                {/* A. Missions Prioritaires exclusives 45 min (pour l'agent d'onboarding) */}
+                {missionsPrioritaires.map((m) => {
+                  const enCoursAcceptation = Boolean(acceptationEnCours[m.id_intervention]);
+                  const minutesRestantes = m.minutes_restantes || 45;
+
+                  return (
+                    <div
+                      key={`m-prio-${m.id_intervention}`}
+                      style={{
+                        backgroundColor: 'rgba(245, 158, 11, 0.08)',
+                        border: '1.5px solid rgba(245, 158, 11, 0.45)',
+                        borderRadius: '16px',
+                        padding: '14px 16px',
+                        marginBottom: '10px'
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px', marginBottom: '6px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                          <span
+                            style={{
+                              fontSize: '10px',
+                              fontWeight: '800',
+                              letterSpacing: '0.05em',
+                              padding: '2px 8px',
+                              borderRadius: '8px',
+                              backgroundColor: '#fbbf24',
+                              color: '#000000',
+                              textTransform: 'uppercase'
+                            }}
+                          >
+                            Priorité Onboarding (Exclusivité 45 min)
+                          </span>
+                          <span style={{ fontSize: '13.5px', fontWeight: '800', color: '#ffffff' }}>
+                            {m.nom_salon}
+                          </span>
+                          <span style={{ fontSize: '11px', color: '#94a3b8' }}>
+                            Ticket : {m.numero_ticket}
+                          </span>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', color: '#fbbf24', fontWeight: '800' }}>
+                          <Icon.Clock />
+                          <span>Reste {minutesRestantes} min pour réserver</span>
+                        </div>
+                      </div>
+
+                      <div style={{ fontSize: '12px', color: '#cbd5e1', marginBottom: '8px', lineHeight: 1.45 }}>
+                        <strong>Panne signalée :</strong> {m.description_panne}
+                      </div>
+
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', fontSize: '11.5px', color: '#94a3b8' }}>
+                        <div>
+                          <span>Adresse : {m.adresse_salon || 'Non renseignée'}</span>
+                          <span style={{ marginLeft: '12px' }}>
+                            Imputabilité : <strong style={{ color: m.payeur === 'STACK' ? '#34d399' : '#f8fafc' }}>
+                              {m.payeur === 'STACK' ? 'Prise en charge STACK (0 € salon)' : 'À la charge du salon (39 €)'}
+                            </strong>
+                          </span>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: isMobile ? '100%' : 'auto' }}>
+                          <input
+                            type="text"
+                            placeholder="Créneau de passage (ex: Aujourd'hui 16h)"
+                            value={creneauxPassage[m.id_intervention] || ''}
+                            onChange={(e) => setCreneauxPassage(prev => ({ ...prev, [m.id_intervention]: e.target.value }))}
+                            style={{
+                              flex: isMobile ? 1 : 'none',
+                              width: isMobile ? 'auto' : '230px',
+                              backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                              border: '1px solid rgba(255, 255, 255, 0.2)',
+                              borderRadius: '8px',
+                              padding: '6px 10px',
+                              fontSize: '11.5px',
+                              color: '#ffffff',
+                              outline: 'none'
+                            }}
+                          />
+                          <button
+                            type="button"
+                            disabled={enCoursAcceptation}
+                            onClick={async () => {
+                              const creneau = (creneauxPassage[m.id_intervention] || '').trim();
+                              if (!creneau || creneau.length < 3) {
+                                alert("Veuillez indiquer votre heure ou date de passage estimée.");
+                                return;
+                              }
+                              setAcceptationEnCours(prev => ({ ...prev, [m.id_intervention]: true }));
+                              if (typeof handleAccepterIntervention === 'function') {
+                                await handleAccepterIntervention(m.id_intervention, creneau);
+                              }
+                              setAcceptationEnCours(prev => ({ ...prev, [m.id_intervention]: false }));
+                            }}
+                            style={{
+                              backgroundColor: '#10b981',
+                              color: '#ffffff',
+                              border: 'none',
+                              borderRadius: '8px',
+                              padding: '7px 14px',
+                              fontSize: '11.5px',
+                              fontWeight: '800',
+                              cursor: 'pointer',
+                              whiteSpace: 'nowrap'
+                            }}
+                          >
+                            {enCoursAcceptation ? 'Validation...' : 'Accepter & Caler passage'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {/* B. Missions Ouvertes sur le Secteur (Premier arrivé, premier servi) */}
+                {missionsSecteur.map((m) => {
+                  const enCoursAcceptation = Boolean(acceptationEnCours[m.id_intervention]);
+
+                  return (
+                    <div
+                      key={`m-sec-${m.id_intervention}`}
+                      style={{
+                        backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                        border: '1px solid rgba(16, 185, 129, 0.35)',
+                        borderRadius: '16px',
+                        padding: '14px 16px',
+                        marginBottom: '10px'
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px', marginBottom: '6px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                          <span
+                            style={{
+                              fontSize: '10px',
+                              fontWeight: '800',
+                              letterSpacing: '0.05em',
+                              padding: '2px 8px',
+                              borderRadius: '8px',
+                              backgroundColor: 'rgba(16, 185, 129, 0.20)',
+                              color: '#34d399',
+                              textTransform: 'uppercase'
+                            }}
+                          >
+                            Ouvert Secteur (39,00 € Net)
+                          </span>
+                          <span style={{ fontSize: '13.5px', fontWeight: '800', color: '#ffffff' }}>
+                            {m.nom_salon}
+                          </span>
+                          <span style={{ fontSize: '11px', color: '#94a3b8' }}>
+                            Ticket : {m.numero_ticket}
+                          </span>
+                        </div>
+
+                        <span style={{ fontSize: '11px', color: '#34d399', fontWeight: '700' }}>
+                          Premier arrivé, premier servi
+                        </span>
+                      </div>
+
+                      <div style={{ fontSize: '12px', color: '#cbd5e1', marginBottom: '8px' }}>
+                        <strong>Panne :</strong> {m.description_panne}
+                      </div>
+
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', fontSize: '11.5px', color: '#94a3b8' }}>
+                        <div>
+                          <span>Adresse : {m.adresse_salon || 'Non renseignée'}</span>
+                          <span style={{ marginLeft: '12px' }}>
+                            Payeur : <strong>{m.payeur === 'STACK' ? 'Garantie STACK (0 € salon)' : 'Facturé au salon'}</strong>
+                          </span>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: isMobile ? '100%' : 'auto' }}>
+                          <input
+                            type="text"
+                            placeholder="Créneau de passage (ex: Demain 11h)"
+                            value={creneauxPassage[m.id_intervention] || ''}
+                            onChange={(e) => setCreneauxPassage(prev => ({ ...prev, [m.id_intervention]: e.target.value }))}
+                            style={{
+                              flex: isMobile ? 1 : 'none',
+                              width: isMobile ? 'auto' : '230px',
+                              backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                              border: '1px solid rgba(255, 255, 255, 0.2)',
+                              borderRadius: '8px',
+                              padding: '6px 10px',
+                              fontSize: '11.5px',
+                              color: '#ffffff',
+                              outline: 'none'
+                            }}
+                          />
+                          <button
+                            type="button"
+                            disabled={enCoursAcceptation}
+                            onClick={async () => {
+                              const creneau = (creneauxPassage[m.id_intervention] || '').trim();
+                              if (!creneau || creneau.length < 3) {
+                                alert("Veuillez indiquer votre heure ou date de passage estimée.");
+                                return;
+                              }
+                              setAcceptationEnCours(prev => ({ ...prev, [m.id_intervention]: true }));
+                              if (typeof handleAccepterIntervention === 'function') {
+                                await handleAccepterIntervention(m.id_intervention, creneau);
+                              }
+                              setAcceptationEnCours(prev => ({ ...prev, [m.id_intervention]: false }));
+                            }}
+                            style={{
+                              backgroundColor: '#10b981',
+                              color: '#ffffff',
+                              border: 'none',
+                              borderRadius: '8px',
+                              padding: '7px 14px',
+                              fontSize: '11.5px',
+                              fontWeight: '800',
+                              cursor: 'pointer',
+                              whiteSpace: 'nowrap'
+                            }}
+                          >
+                            {enCoursAcceptation ? 'Validation...' : 'Prendre cette mission'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {/* C. Missions En Cours Planifiées (À clôturer et facturer 39 €) */}
+                {missionsEnCours.map((m) => (
+                  <div
+                    key={`m-encours-${m.id_intervention}`}
+                    style={{
+                      backgroundColor: 'rgba(59, 130, 246, 0.08)',
+                      border: '1px solid rgba(59, 130, 246, 0.35)',
+                      borderRadius: '16px',
+                      padding: '14px 16px',
+                      marginBottom: '10px'
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '6px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span
+                          style={{
+                            fontSize: '10px',
+                            fontWeight: '800',
+                            padding: '2px 8px',
+                            borderRadius: '8px',
+                            backgroundColor: 'rgba(59, 130, 246, 0.25)',
+                            color: '#93c5fd',
+                            textTransform: 'uppercase'
+                          }}
+                        >
+                          Mission Planifiée pour vous
+                        </span>
+                        <span style={{ fontSize: '13.5px', fontWeight: '800', color: '#ffffff' }}>
+                          {m.nom_salon}
+                        </span>
+                      </div>
+
+                      <span style={{ fontSize: '12px', fontWeight: '700', color: '#93c5fd' }}>
+                        Passage calé : {m.creneau_passage || 'À convenir'}
+                      </span>
+                    </div>
+
+                    <div style={{ fontSize: '12px', color: '#cbd5e1', marginBottom: '8px' }}>
+                      <strong>Panne :</strong> {m.description_panne}
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                      <span style={{ fontSize: '11.5px', color: '#94a3b8' }}>
+                        Facture à émettre : <strong>39,00 € Net ({m.payeur === 'STACK' ? 'STACK Software' : 'Salon'})</strong>
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={() => setModalResolution({ ouverte: true, intervention: m, rapport: '', enCours: false })}
+                        style={{
+                          backgroundColor: '#3b82f6',
+                          color: '#ffffff',
+                          border: 'none',
+                          borderRadius: '8px',
+                          padding: '7px 14px',
+                          fontSize: '11.5px',
+                          fontWeight: '800',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Clôturer & Émettre la facture 39 €
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* SECTION 2 : DEMANDES DE CRÉATION DE SALON VIA PARRAINAGE (50 € + 20% HT) */}
+            {totalLeads > 0 && (
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                  <Icon.Zap />
+                  <span style={{ fontSize: '12px', fontWeight: '800', letterSpacing: '0.06em', textTransform: 'uppercase', color: '#34d399' }}>
+                    Salons Parrainés — Nouveaux Leads Chauds (Commission 50,00 € + 20 % HT dès le 4e mois)
+                  </span>
+                </div>
+
+                {/* A. Leads Réservés en cours (Compte à rebours 45 min) */}
+                {leadsReserves.map((lead) => {
+                  const minutesRestantes = Math.max(0, Math.ceil(Number(lead.secondes_restantes || 0) / 60));
+                  const nomParrain = lead.nom_parrain_verifie || lead.nom_salon_parrain || 'Salon Confrère';
+                  const accroche = `Bonjour, j'ai été mandaté par votre confrère ${nomParrain} pour vous activer vos 3 mois offerts sur STACK et vous déposer votre terminal TPE.`;
+                  const enCoursValidationRdv = Boolean(confirmationRdvEnCours[lead.id_prospect]);
+
+                  return (
+                    <div
+                      key={`lead-res-${lead.id_prospect}`}
+                      style={{
+                        backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                        border: '1.5px solid rgba(16, 185, 129, 0.45)',
+                        borderRadius: '16px',
+                        padding: '14px 16px',
+                        marginBottom: '10px'
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px', marginBottom: '6px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                          <span
+                            style={{
+                              fontSize: '10px',
+                              fontWeight: '800',
+                              letterSpacing: '0.05em',
+                              padding: '2px 8px',
+                              borderRadius: '8px',
+                              backgroundColor: '#10b981',
+                              color: '#ffffff',
+                              textTransform: 'uppercase'
+                            }}
+                          >
+                            Lead Réservé (45 min)
+                          </span>
+                          <span style={{ fontSize: '13.5px', fontWeight: '800', color: '#ffffff' }}>
+                            {lead.nom_salon}
+                          </span>
+                          <span style={{ fontSize: '11px', color: '#94a3b8' }}>
+                            {lead.ville ? `${lead.code_postal || ''} ${lead.ville}` : `Dép. ${lead.departement || ''}`}
+                          </span>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', color: '#34d399', fontWeight: '800' }}>
+                          <Icon.Clock />
+                          <span>Reste {minutesRestantes} min pour caler le RDV</span>
+                        </div>
+                      </div>
+
+                      {/* Coordonnées & Accroche en or */}
+                      <div style={{ fontSize: '12px', color: '#cbd5e1', marginBottom: '8px' }}>
+                        Contact : <strong>{lead.prenom_contact || lead.nom_contact ? `${lead.prenom_contact || ''} ${lead.nom_contact || ''}`.trim() : 'Gérant'}</strong>
+                        {lead.telephone_salon && (
+                          <span style={{ marginLeft: '10px' }}>
+                            Tél : <a href={`tel:${lead.telephone_salon}`} style={{ color: '#34d399', fontWeight: '700', textDecoration: 'underline' }}>{lead.telephone_salon}</a>
+                          </span>
+                        )}
+                      </div>
+
+                      <div
+                        style={{
+                          backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                          borderRadius: '10px',
+                          padding: '10px 12px',
+                          marginBottom: '10px',
+                          fontSize: '11.5px',
+                          color: '#e2e8f0',
+                          border: '1px solid rgba(255, 255, 255, 0.08)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: '10px'
+                        }}
+                      >
+                        <div>
+                          <strong style={{ color: '#fbbf24' }}>Accroche téléphonique : </strong>
+                          "{accroche}"
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(accroche);
+                            setPitchCopieId(lead.id_prospect);
+                            setTimeout(() => setPitchCopieId(null), 3000);
+                          }}
+                          style={{
+                            background: pitchCopieId === lead.id_prospect ? 'rgba(16, 185, 129, 0.25)' : 'rgba(255, 255, 255, 0.1)',
+                            border: '1px solid rgba(255, 255, 255, 0.15)',
+                            color: pitchCopieId === lead.id_prospect ? '#34d399' : '#cbd5e1',
+                            padding: '4px 8px',
+                            borderRadius: '6px',
+                            fontSize: '10.5px',
+                            fontWeight: '700',
+                            cursor: 'pointer',
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          {pitchCopieId === lead.id_prospect ? 'Copié !' : 'Copier'}
+                        </button>
+                      </div>
+
+                      {/* Confirmation de RDV en 1 clic */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                        <input
+                          type="text"
+                          placeholder="Date & heure du RDV convenu (ex: Demain 14h30)"
+                          value={formRdvLead[lead.id_prospect]?.date || ''}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setFormRdvLead(prev => ({
+                              ...prev,
+                              [lead.id_prospect]: { ...(prev[lead.id_prospect] || {}), date: val }
+                            }));
+                          }}
+                          style={{
+                            flex: isMobile ? 1 : 'none',
+                            width: isMobile ? 'auto' : '280px',
+                            backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                            border: '1px solid rgba(255, 255, 255, 0.2)',
+                            borderRadius: '8px',
+                            padding: '6px 10px',
+                            fontSize: '11.5px',
+                            color: '#ffffff',
+                            outline: 'none'
+                          }}
+                        />
+                        <button
+                          type="button"
+                          disabled={enCoursValidationRdv}
+                          onClick={async () => {
+                            const dateRdv = (formRdvLead[lead.id_prospect]?.date || '').trim();
+                            if (!dateRdv) {
+                              alert("Veuillez indiquer la date et l'heure convenues avec le salon.");
+                              return;
+                            }
+                            setConfirmationRdvEnCours(prev => ({ ...prev, [lead.id_prospect]: true }));
+                            if (typeof handleConfirmerRdvLeadAmbassadeur === 'function') {
+                              await handleConfirmerRdvLeadAmbassadeur(lead.id_prospect, dateRdv, 'RDV confirmé depuis le tableau de bord');
+                            }
+                            setConfirmationRdvEnCours(prev => ({ ...prev, [lead.id_prospect]: false }));
+                          }}
+                          style={{
+                            backgroundColor: '#10b981',
+                            color: '#ffffff',
+                            border: 'none',
+                            borderRadius: '8px',
+                            padding: '7px 14px',
+                            fontSize: '11.5px',
+                            fontWeight: '800',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {enCoursValidationRdv ? 'Validation...' : 'Confirmer le RDV'}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {/* B. Leads Disponibles sur le Secteur */}
+                {leadsDispo.map((lead) => {
+                  const nomParrain = lead.nom_parrain_verifie || lead.nom_salon_parrain || 'Salon Confrère';
+                  const enCoursResa = Boolean(reservationEnCours[lead.id_prospect]);
+
+                  return (
+                    <div
+                      key={`lead-dispo-${lead.id_prospect}`}
+                      style={{
+                        backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                        border: '1px solid rgba(255, 255, 255, 0.12)',
+                        borderRadius: '16px',
+                        padding: '14px 16px',
+                        marginBottom: '10px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        flexWrap: 'wrap',
+                        gap: '12px'
+                      }}
+                    >
+                      <div style={{ flex: '1 1 300px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', flexWrap: 'wrap' }}>
+                          <span style={{ fontSize: '13.5px', fontWeight: '800', color: '#ffffff' }}>
+                            {lead.nom_salon}
+                          </span>
+                          <span style={{ fontSize: '11px', color: '#94a3b8' }}>
+                            {lead.ville ? `${lead.code_postal || ''} ${lead.ville}` : `Dép. ${lead.departement || ''}`}
+                          </span>
+                          <span style={{ fontSize: '10.5px', padding: '2px 8px', borderRadius: '10px', backgroundColor: 'rgba(52, 211, 153, 0.15)', color: '#34d399', fontWeight: '700' }}>
+                            Parrainé par {nomParrain}
+                          </span>
+                        </div>
+
+                        <div style={{ fontSize: '12px', color: '#cbd5e1' }}>
+                          Contact : {lead.prenom_contact || lead.nom_contact ? `${lead.prenom_contact || ''} ${lead.nom_contact || ''}`.trim() : 'Gérant'} — Tél : {lead.telephone_salon}
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{ fontSize: '11.5px', color: '#34d399', fontWeight: '700' }}>
+                          50,00 € + 20% HT
+                        </span>
+                        <button
+                          type="button"
+                          disabled={enCoursResa}
+                          onClick={async () => {
+                            setReservationEnCours(prev => ({ ...prev, [lead.id_prospect]: true }));
+                            if (typeof handleReserverLeadAmbassadeur === 'function') {
+                              await handleReserverLeadAmbassadeur(lead.id_prospect);
+                            }
+                            setReservationEnCours(prev => ({ ...prev, [lead.id_prospect]: false }));
+                          }}
+                          style={{
+                            backgroundColor: '#10b981',
+                            color: '#ffffff',
+                            border: 'none',
+                            borderRadius: '8px',
+                            padding: '7px 14px',
+                            fontSize: '11.5px',
+                            fontWeight: '800',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {enCoursResa ? 'Réservation...' : 'Réserver ce lead (45 min)'}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* MODALE DE CLÔTURE ET DE FACTURATION INTERVENTION (39 € NET) */}
+            {modalResolution.ouverte && (
+              <div
+                style={{
+                  position: 'fixed',
+                  inset: 0,
+                  backgroundColor: 'rgba(0, 0, 0, 0.75)',
+                  backdropFilter: 'blur(8px)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  zIndex: 9999,
+                  padding: '16px'
+                }}
+              >
+                <div
+                  style={{
+                    backgroundColor: '#18181b',
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    borderRadius: '20px',
+                    padding: '24px',
+                    width: '100%',
+                    maxWidth: '520px',
+                    boxShadow: '0 25px 50px rgba(0, 0, 0, 0.5)'
+                  }}
+                >
+                  <h3 style={{ margin: '0 0 10px 0', fontSize: '17px', fontWeight: '800', color: '#ffffff' }}>
+                    Clôturer l'intervention & Émettre la facture
+                  </h3>
+                  <p style={{ fontSize: '12.5px', color: '#94a3b8', margin: '0 0 16px 0', lineHeight: 1.45 }}>
+                    Salon : <strong>{modalResolution.intervention?.nom_salon}</strong><br />
+                    Montant de l'intervention : <strong>39,00 € Net</strong><br />
+                    Destinataire : <strong>{modalResolution.intervention?.payeur === 'STACK' ? 'STACK Software (Pris en charge à 100%)' : 'Salon (Facture émise au salon)'}</strong>
+                  </p>
+
+                  <div style={{ marginBottom: '16px' }}>
+                    <label style={{ display: 'block', fontSize: '11.5px', fontWeight: '700', color: '#cbd5e1', marginBottom: '6px' }}>
+                      Rapport d'intervention (obligatoire, min. 8 caractères) *
+                    </label>
+                    <textarea
+                      rows={4}
+                      placeholder="Décrivez les réparations effectuées (ex: Échange bloc d'alimentation TPE réalisé avec succès, test d'impression et encaissement validés)."
+                      value={modalResolution.rapport}
+                      onChange={(e) => setModalResolution(prev => ({ ...prev, rapport: e.target.value }))}
+                      style={{
+                        width: '100%',
+                        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                        borderRadius: '10px',
+                        padding: '10px 12px',
+                        color: '#ffffff',
+                        fontSize: '12px',
+                        outline: 'none',
+                        resize: 'vertical',
+                        boxSizing: 'border-box'
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                    <button
+                      type="button"
+                      disabled={modalResolution.enCours}
+                      onClick={() => setModalResolution({ ouverte: false, intervention: null, rapport: '', enCours: false })}
+                      style={{
+                        background: 'rgba(255, 255, 255, 0.08)',
+                        border: '1px solid rgba(255, 255, 255, 0.15)',
+                        color: '#cbd5e1',
+                        borderRadius: '8px',
+                        padding: '8px 16px',
+                        fontSize: '12px',
+                        fontWeight: '700',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Annuler
+                    </button>
+                    <button
+                      type="button"
+                      disabled={modalResolution.enCours}
+                      onClick={async () => {
+                        const rap = (modalResolution.rapport || '').trim();
+                        if (rap.length < 8) {
+                          alert("Veuillez saisir un rapport d'intervention d'au moins 8 caractères.");
+                          return;
+                        }
+                        setModalResolution(prev => ({ ...prev, enCours: true }));
+                        if (typeof handleResoudreIntervention === 'function') {
+                          await handleResoudreIntervention(modalResolution.intervention.id_intervention, rap);
+                        }
+                        setModalResolution({ ouverte: false, intervention: null, rapport: '', enCours: false });
+                      }}
+                      style={{
+                        backgroundColor: '#10b981',
+                        border: 'none',
+                        color: '#ffffff',
+                        borderRadius: '8px',
+                        padding: '8px 16px',
+                        fontSize: '12px',
+                        fontWeight: '800',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {modalResolution.enCours ? 'Validation...' : 'Valider & Émettre la facture 39 €'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </section>
+        );
+      })()}
 
       {/* 3. GRILLE BENTO 2 COLONNES */}
       <div
