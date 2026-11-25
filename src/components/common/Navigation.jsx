@@ -74,6 +74,11 @@ export default function Navigation({
         .sp-sidebar-link:hover {
           background: rgba(148, 163, 184, 0.12) !important;
         }
+        .sp-sidebar-scroll::-webkit-scrollbar {
+          display: none;
+          width: 0;
+          height: 0;
+        }
         .sp-logout-btn {
           background: transparent;
           color: var(--sp-text-muted, #64748b);
@@ -245,29 +250,43 @@ export default function Navigation({
 
       {/* DOCK LATÉRAL GAUCHE FLOTTANT EN VERRE (DESKTOP) */}
       {!isMobile && (
-        <div
-          style={{
-            width: '248px',
-            padding: '16px 0 16px 16px',
-            flexShrink: 0,
-            position: 'sticky',
-            top: 0,
-            height: '100vh',
-            boxSizing: 'border-box',
-            zIndex: 10
-          }}
-        >
+        <>
+          {/* Espace réservé dans le flux flex pour préserver la mise en page et les marges du contenu */}
           <div
-            className="sp-glass-panel"
+            aria-hidden="true"
             style={{
-              height: '100%',
-              padding: '20px 14px',
-              display: 'flex',
-              flexDirection: 'column',
+              width: '248px',
+              flexShrink: 0,
+              pointerEvents: 'none'
+            }}
+          />
+
+          {/* Dock fixe qui reste parfaitement immobile au scroll de la page */}
+          <aside
+            style={{
+              width: '248px',
+              padding: '16px 0 16px 16px',
+              flexShrink: 0,
+              position: 'fixed',
+              top: 0,
+              bottom: 0,
+              left: 0,
+              height: '100vh',
               boxSizing: 'border-box',
-              borderRadius: '24px'
+              zIndex: 100
             }}
           >
+            <div
+              className="sp-glass-panel"
+              style={{
+                height: '100%',
+                padding: '20px 14px',
+                display: 'flex',
+                flexDirection: 'column',
+                boxSizing: 'border-box',
+                borderRadius: '24px'
+              }}
+            >
             {/* En-tête Logo */}
             <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '2px 6px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -358,7 +377,18 @@ export default function Navigation({
             </button>
 
             {/* Navigation des modules principaux (Sans barre noire agressive) */}
-            <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: '4px', overflowY: 'auto' }}>
+            <div
+              className="sp-sidebar-scroll"
+              style={{
+                flexGrow: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '4px',
+                overflowY: 'auto',
+                scrollbarWidth: 'none',
+                msOverflowStyle: 'none'
+              }}
+            >
               {navItems.map((item) => {
                 const isActif = activeTab === item.key;
                 return (
@@ -514,8 +544,9 @@ export default function Navigation({
               </button>
             </div>
           </div>
-        </div>
-      )}
+        </aside>
+      </>
+    )}
 
       {/* BARRE DE NAVIGATION MOBILE FLOTTANTE EN BAS */}
       {isMobile && (
