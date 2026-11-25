@@ -454,27 +454,29 @@ VOTRE BENEFICE NET SUPPLEMENTAIRE :
       <header
         style={{
           display: 'flex',
-          flexDirection: isMobile ? 'column' : 'row',
+          flexDirection: 'row',
           justifyContent: 'space-between',
-          alignItems: isMobile ? 'flex-start' : 'center',
-          gap: '14px',
+          alignItems: 'center',
+          gap: '12px',
+          marginBottom: isMobile ? '12px' : '16px',
+          flexWrap: 'wrap',
           width: '100%'
         }}
       >
-        <div>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', flexWrap: 'wrap', minWidth: 0 }}>
           <h1
             style={{
-              fontSize: isMobile ? '24px' : '28px',
+              fontSize: isMobile ? '22px' : '27px',
               fontWeight: '800',
               margin: 0,
               letterSpacing: '-0.03em',
               color: 'var(--sp-text-main, #18181b)',
-              lineHeight: 1.15
+              lineHeight: 1.1
             }}
           >
             Simulateur
           </h1>
-          <span style={{ fontSize: '13px', color: 'var(--sp-text-muted, #64748b)', fontWeight: '600' }}>
+          <span style={{ fontSize: '12.5px', color: 'var(--sp-text-muted, #64748b)', fontWeight: '600' }}>
             Calculateur de rentabilite, d economies et de retour sur investissement salon
           </span>
         </div>
@@ -804,12 +806,15 @@ VOTRE BENEFICE NET SUPPLEMENTAIRE :
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
-            gap: '18px'
+            gap: '16px',
+            borderRadius: '20px',
+            boxSizing: 'border-box'
           }}
         >
           {modeComparatif === 'PLANITY' ? (
             /* RESULTAT MODE PLANITY : ECONOMIES REALISEES */
             <>
+              {/* En-tete du KPI phare */}
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                   <span style={{ fontSize: '11px', fontWeight: '800', color: 'rgba(255, 255, 255, 0.72)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
@@ -829,29 +834,111 @@ VOTRE BENEFICE NET SUPPLEMENTAIRE :
                   </span>
                 </div>
 
-                <div style={{ fontSize: '13px', color: 'rgba(255, 255, 255, 0.78)', marginTop: '6px', fontVariantNumeric: 'tabular-nums' }}>
-                  Soit <strong style={{ color: '#ffffff' }}>+{formatEuroFr(ecoMois, 2)} HT / mois</strong> economises dans la tresorerie du salon.
+                <div style={{ fontSize: '13px', color: 'rgba(255, 255, 255, 0.82)', marginTop: '6px', fontVariantNumeric: 'tabular-nums' }}>
+                  Soit <strong style={{ color: '#ffffff' }}>+{formatEuroFr(ecoMois, 2)} HT / mois</strong> d'economies directes dans la tresorerie du salon.
+                </div>
+              </div>
+
+              {/* DETAIL POSTE PAR POSTE DES ECONOMIES REALISEES */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '14px 16px', borderRadius: '14px', backgroundColor: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.09)' }}>
+                <div style={{ fontSize: '10.5px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.07em', color: '#34d399', marginBottom: '2px' }}>
+                  Detail de vos economies mensuelles :
+                </div>
+
+                {/* 1. Commissions sur nouveaux clients */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
+                  <div>
+                    <div style={{ fontSize: '12.5px', fontWeight: '700', color: '#ffffff' }}>
+                      Commissions nouveaux clients (0% a vie)
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.65)' }}>
+                      Planity ponctionne 2,90 EUR / client ({nbNouveaux} clients = {formatEuroFr(commPlanityMois, 2)} / mois) vs 0 EUR STACK
+                    </div>
+                  </div>
+                  <strong style={{ fontSize: '13.5px', color: '#34d399', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
+                    +{formatEuroFr(commPlanityMois, 2)} / mois
+                  </strong>
+                </div>
+
+                {/* 2. Ecart d abonnement logiciel */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', paddingTop: '7px', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                  <div>
+                    <div style={{ fontSize: '12.5px', fontWeight: '700', color: '#ffffff' }}>
+                      Abonnement mensuel logiciel
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.65)' }}>
+                      Planity {planActuel.planityRef} EUR / mois vs STACK {planActuel.label} {planActuel.prix} EUR / mois
+                    </div>
+                  </div>
+                  <strong style={{ fontSize: '13.5px', color: '#34d399', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
+                    +{formatEuroFr(planActuel.planityRef - planActuel.prix, 0)} / mois
+                  </strong>
+                </div>
+
+                {/* 3. Terminal TPE inclus */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', paddingTop: '7px', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                  <div>
+                    <div style={{ fontSize: '12.5px', fontWeight: '700', color: '#ffffff' }}>
+                      Terminal TPE Stripe Reader T600
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.65)' }}>
+                      Pret gratuit 0 EUR / mois vs 39 EUR / mois de location bancaire (engagement 36 mois)
+                    </div>
+                  </div>
+                  <strong style={{ fontSize: '13.5px', color: '#34d399', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
+                    +39,00 € / mois
+                  </strong>
+                </div>
+
+                {/* 4. Frais de mise en service & formation */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', paddingTop: '7px', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                  <div>
+                    <div style={{ fontSize: '12.5px', fontWeight: '700', color: '#ffffff' }}>
+                      Frais de mise en service & formation
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.65)' }}>
+                      Forfait 99 EUR HT chez STACK vs 350 EUR HT en moyenne constatee chez Planity
+                    </div>
+                  </div>
+                  <strong style={{ fontSize: '13.5px', color: '#34d399', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
+                    +{formatEuroFr(ecoInstall, 0)} (1re annee)
+                  </strong>
+                </div>
+
+                {/* 5. Packs SMS & Rappels */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', paddingTop: '7px', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                  <div>
+                    <div style={{ fontSize: '12.5px', fontWeight: '700', color: '#ffffff' }}>
+                      SMS de rappel & notifications
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.65)' }}>
+                      Quota inclus avec nom du salon vs packs SMS hors-forfait surtaxes chez Planity
+                    </div>
+                  </div>
+                  <span style={{ fontSize: '11.5px', fontWeight: '700', color: '#34d399', padding: '2px 8px', borderRadius: '6px', backgroundColor: 'rgba(16, 185, 129, 0.15)' }}>
+                    Inclus sans surcout
+                  </span>
                 </div>
               </div>
 
               {/* Barres comparatives animées Planity vs STACK */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '14px 16px', borderRadius: '14px', backgroundColor: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.09)' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '12px 14px', borderRadius: '12px', backgroundColor: 'rgba(0, 0, 0, 0.25)', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: '12px', marginBottom: '5px', gap: '8px' }}>
-                    <span style={{ color: 'rgba(255, 255, 255, 0.8)', fontWeight: '600' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: '11.5px', marginBottom: '4px', gap: '8px' }}>
+                    <span style={{ color: 'rgba(255, 255, 255, 0.75)' }}>
                       Cout actuel Planity ({planActuel.planityRef} EUR + {formatEuroFr(commPlanityMois, 0)} com. + 39 EUR TPE)
                     </span>
                     <strong style={{ color: '#fca5a5', fontWeight: '800', fontVariantNumeric: 'tabular-nums' }}>
                       {formatEuroFr(coutPlanityTotalMois, 2)} / mois
                     </strong>
                   </div>
-                  <div style={{ height: '6px', width: '100%', backgroundColor: 'rgba(255, 255, 255, 0.10)', borderRadius: '999px', overflow: 'hidden' }}>
+                  <div style={{ height: '5px', width: '100%', backgroundColor: 'rgba(255, 255, 255, 0.10)', borderRadius: '999px', overflow: 'hidden' }}>
                     <div style={{ height: '100%', width: '100%', backgroundColor: 'rgba(248, 113, 113, 0.78)', borderRadius: '999px' }} />
                   </div>
                 </div>
 
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: '12px', marginBottom: '5px', gap: '8px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: '11.5px', marginBottom: '4px', gap: '8px' }}>
                     <span style={{ color: '#ffffff', fontWeight: '700' }}>
                       Cout global STACK {planActuel.label} (0% com. + TPE T600 offert)
                     </span>
@@ -859,23 +946,24 @@ VOTRE BENEFICE NET SUPPLEMENTAIRE :
                       {formatEuroFr(coutStackTotalMois, 2)} / mois
                     </strong>
                   </div>
-                  <div style={{ height: '6px', width: '100%', backgroundColor: 'rgba(255, 255, 255, 0.10)', borderRadius: '999px', overflow: 'hidden' }}>
+                  <div style={{ height: '5px', width: '100%', backgroundColor: 'rgba(255, 255, 255, 0.10)', borderRadius: '999px', overflow: 'hidden' }}>
                     <div style={{ height: '100%', width: `${ratioBarreStack}%`, backgroundColor: '#10b981', borderRadius: '999px', transition: 'width 0.25s ease' }} />
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11.5px', color: 'rgba(255, 255, 255, 0.65)', paddingTop: '6px', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'rgba(255, 255, 255, 0.65)', paddingTop: '4px', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
                   <span>Planity sur 1 an : <strong>{formatEuroFr(coutPlanityAn, 0)} HT</strong></span>
                   <span>STACK sur 1 an : <strong>{formatEuroFr(coutStackAn, 0)} HT</strong></span>
+                  <span>Gain 3 ans : <strong style={{ color: '#34d399' }}>+{formatEuroFr(eco3Ans, 0)} HT</strong></span>
                 </div>
               </div>
 
               {/* Equivalences financieres concretes pour convaincre le gerant */}
               <div>
-                <div style={{ fontSize: '10.5px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.07em', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '8px' }}>
-                  Ce que ces economies financent chaque annee au salon
+                <div style={{ fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.07em', color: 'rgba(255, 255, 255, 0.55)', marginBottom: '6px' }}>
+                  Ce que ces economies financent chaque annee au salon :
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px' }}>
                   {[
                     { val: `${formatDecimalFr(moisLoyer, 1)} mois`, label: 'Loyer commercial (1 500 €)' },
                     { val: `${pairesCiseaux} paire${pairesCiseaux > 1 ? 's' : ''}`, label: 'Ciseaux Mizutani (650 €)' },
@@ -885,16 +973,16 @@ VOTRE BENEFICE NET SUPPLEMENTAIRE :
                     <div
                       key={i}
                       style={{
-                        padding: '8px 12px',
-                        borderRadius: '11px',
+                        padding: '6px 10px',
+                        borderRadius: '9px',
                         backgroundColor: 'rgba(255, 255, 255, 0.05)',
                         border: '1px solid rgba(255, 255, 255, 0.08)'
                       }}
                     >
-                      <div style={{ fontSize: '14px', fontWeight: '800', color: '#ffffff', fontVariantNumeric: 'tabular-nums' }}>
+                      <div style={{ fontSize: '13px', fontWeight: '800', color: '#ffffff', fontVariantNumeric: 'tabular-nums' }}>
                         {eq.val}
                       </div>
-                      <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.62)', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <div style={{ fontSize: '10.5px', color: 'rgba(255, 255, 255, 0.6)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {eq.label}
                       </div>
                     </div>
@@ -905,6 +993,7 @@ VOTRE BENEFICE NET SUPPLEMENTAIRE :
           ) : (
             /* RESULTAT MODE SANS LOGICIEL : CHIFFRE D AFFAIRES GAGNE */
             <>
+              {/* En-tete du KPI phare */}
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                   <span style={{ fontSize: '11px', fontWeight: '800', color: 'rgba(255, 255, 255, 0.72)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
@@ -924,53 +1013,90 @@ VOTRE BENEFICE NET SUPPLEMENTAIRE :
                   </span>
                 </div>
 
-                <div style={{ fontSize: '13px', color: 'rgba(255, 255, 255, 0.78)', marginTop: '6px', fontVariantNumeric: 'tabular-nums' }}>
+                <div style={{ fontSize: '13px', color: 'rgba(255, 255, 255, 0.82)', marginTop: '6px', fontVariantNumeric: 'tabular-nums' }}>
                   Soit un benefice net de <strong style={{ color: '#ffffff' }}>+{formatEuroFr(beneficeNetMois, 0)} / mois</strong> apres deduction complete du forfait STACK.
                 </div>
               </div>
 
-              {/* Decomposition des 3 gains cles pour un salon sans logiciel */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '14px 16px', borderRadius: '14px', backgroundColor: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.09)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              {/* DETAIL POSTE PAR POSTE POUR SALON SANS LOGICIEL */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '14px 16px', borderRadius: '14px', backgroundColor: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.09)' }}>
+                <div style={{ fontSize: '10.5px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.07em', color: '#34d399', marginBottom: '2px' }}>
+                  Ce que STACK fait gagner au salon chaque mois :
+                </div>
+
+                {/* 1. Temps libere au fauteuil */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
                   <div>
                     <div style={{ fontSize: '12.5px', fontWeight: '700', color: '#ffffff' }}>
-                      No-shows eradiques (Acomptes en ligne)
+                      Temps libere au fauteuil sans interruption
                     </div>
-                    <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.62)' }}>
-                      {nbRdvSauvesNoShow} creneaux sauves / mois grace aux acomptes et rappels SMS
+                    <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.65)' }}>
+                      ~1h30 a 2h par jour sans lacher vos ciseaux : 70% des RDV se prennent en ligne
                     </div>
                   </div>
-                  <strong style={{ fontSize: '14px', color: '#34d399', fontVariantNumeric: 'tabular-nums' }}>
-                    +{formatEuroFr(gainNoShowMois, 0)} / mois
+                  <strong style={{ fontSize: '13.5px', color: '#34d399', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
+                    ~{heuresGagneesMois} h / mois
                   </strong>
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '8px', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                {/* 2. Nouveaux clients & RDV captés en ligne */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', paddingTop: '7px', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
                   <div>
                     <div style={{ fontSize: '12.5px', fontWeight: '700', color: '#ffffff' }}>
-                      Reservations en ligne 24h/24
+                      Nouveaux clients & RDV soir & dimanche
                     </div>
-                    <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.62)' }}>
-                      {nbRdvEnLigneCaptes} clients en plus / mois qui reservent le soir et le dimanche
+                    <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.65)' }}>
+                      {nbRdvEnLigneCaptes} reservations captees en ligne 24h/24 en dehors des horaires d ouverture
                     </div>
                   </div>
-                  <strong style={{ fontSize: '14px', color: '#34d399', fontVariantNumeric: 'tabular-nums' }}>
+                  <strong style={{ fontSize: '13.5px', color: '#34d399', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
                     +{formatEuroFr(gainRdvEnLigneMois, 0)} / mois
                   </strong>
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '8px', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                {/* 3. No-shows éradiqués */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', paddingTop: '7px', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
                   <div>
                     <div style={{ fontSize: '12.5px', fontWeight: '700', color: '#ffffff' }}>
-                      Economie location TPE bancaire
+                      No-shows eradiques (Acomptes CB & rappels)
                     </div>
-                    <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.62)' }}>
-                      Pret gratuit du lecteur Stripe T600 (vs 39 EUR / mois a la banque)
+                    <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.65)' }}>
+                      {nbRdvSauvesNoShow} creneaux sauves par mois : fini les lapins sans indemnisation
                     </div>
                   </div>
-                  <strong style={{ fontSize: '14px', color: '#34d399', fontVariantNumeric: 'tabular-nums' }}>
+                  <strong style={{ fontSize: '13.5px', color: '#34d399', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
+                    +{formatEuroFr(gainNoShowMois, 0)} / mois
+                  </strong>
+                </div>
+
+                {/* 4. Economie boitier bancaire */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', paddingTop: '7px', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                  <div>
+                    <div style={{ fontSize: '12.5px', fontWeight: '700', color: '#ffffff' }}>
+                      Economie sur le boitier bancaire TPE
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.65)' }}>
+                      Lecteur tactile Stripe T600 prete 0 EUR / mois au lieu des 39 EUR / mois a la banque
+                    </div>
+                  </div>
+                  <strong style={{ fontSize: '13.5px', color: '#34d399', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
                     +{formatEuroFr(gainTpeBancaireMois, 0)} / mois
                   </strong>
+                </div>
+
+                {/* 5. Conformite NF525 */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', paddingTop: '7px', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                  <div>
+                    <div style={{ fontSize: '12.5px', fontWeight: '700', color: '#ffffff' }}>
+                      Conformite fiscale & Caisse NF525
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.65)' }}>
+                      Certification legale obligatoire evitant l amende DGFiP de 7 500 EUR par caisse
+                    </div>
+                  </div>
+                  <span style={{ fontSize: '11.5px', fontWeight: '700', color: '#34d399', padding: '2px 8px', borderRadius: '6px', backgroundColor: 'rgba(16, 185, 129, 0.15)' }}>
+                    Conforme NF525
+                  </span>
                 </div>
               </div>
 
