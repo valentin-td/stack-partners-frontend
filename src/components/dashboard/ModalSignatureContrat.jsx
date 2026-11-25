@@ -180,43 +180,54 @@ export default function ModalSignatureContrat({
             backgroundColor: '#f8fafc'
           }}
         >
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-              <span
-                style={{
-                  fontSize: '11px',
-                  fontWeight: '800',
-                  color: '#2563eb',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.06em',
-                  backgroundColor: 'rgba(37, 99, 235, 0.1)',
-                  padding: '3px 8px',
-                  borderRadius: '999px'
-                }}
-              >
-                Cadre Légal • Code de commerce L.134-1+
-              </span>
-              {isContratDejaSigne && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <img
+              src="/icon-client-512.png"
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = '/favicon-client.svg';
+              }}
+              alt="STACK"
+              style={{ width: '42px', height: '42px', borderRadius: '12px', objectFit: 'contain', flexShrink: 0 }}
+            />
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                 <span
                   style={{
                     fontSize: '11px',
                     fontWeight: '800',
-                    color: '#059669',
-                    backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                    color: '#2563eb',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.06em',
+                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
                     padding: '3px 8px',
-                    borderRadius: '999px',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '4px'
+                    borderRadius: '999px'
                   }}
                 >
-                  <Icon.Check /> Scellé et Archivé
+                  Cadre Légal • Code de commerce L.134-1+
                 </span>
-              )}
+                {isContratDejaSigne && (
+                  <span
+                    style={{
+                      fontSize: '11px',
+                      fontWeight: '800',
+                      color: '#059669',
+                      backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                      padding: '3px 8px',
+                      borderRadius: '999px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    <Icon.Check /> Scellé et Archivé
+                  </span>
+                )}
+              </div>
+              <h2 style={{ margin: 0, fontSize: isMobile ? '17px' : '20px', fontWeight: '800', color: '#0f172a' }}>
+                Contrat de Mandat Commercial Indépendant
+              </h2>
             </div>
-            <h2 style={{ margin: 0, fontSize: isMobile ? '17px' : '20px', fontWeight: '800', color: '#0f172a' }}>
-              Contrat de Mandat Commercial Indépendant
-            </h2>
           </div>
 
           <button
@@ -267,9 +278,20 @@ export default function ModalSignatureContrat({
           >
             {/* MANDANT */}
             <div style={{ backgroundColor: '#f8fafc', padding: '14px', borderRadius: '14px', border: '1px solid #e2e8f0' }}>
-              <span style={{ fontSize: '10.5px', fontWeight: '800', color: '#2563eb', textTransform: 'uppercase' }}>
-                Le Mandant
-              </span>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2px' }}>
+                <span style={{ fontSize: '10.5px', fontWeight: '800', color: '#2563eb', textTransform: 'uppercase' }}>
+                  Le Mandant
+                </span>
+                <img
+                  src="/icon-client-512.png"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = '/favicon-client.svg';
+                  }}
+                  alt="STACK"
+                  style={{ width: '20px', height: '20px', objectFit: 'contain' }}
+                />
+              </div>
               <div style={{ fontSize: '13.5px', fontWeight: '800', color: '#0f172a', marginTop: '3px' }}>
                 STACK SAS
               </div>

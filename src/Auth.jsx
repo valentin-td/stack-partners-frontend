@@ -34,8 +34,13 @@ export default function Auth() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Erreur serveur');
+      let data = {};
+      try {
+        data = await res.json();
+      } catch (jsonErr) {
+        throw new Error("[AUTH-503] Le serveur d'authentification est momentanément indisponible. Veuillez réessayer dans quelques instants.");
+      }
+      if (!res.ok) throw new Error(data.error || data.erreur || `[AUTH-${res.status}] Identifiants ou accès non autorisé.`);
       
       if (resetToken) {
         setMessage('Mot de passe réinitialisé. Vous allez être redirigé.');
@@ -52,7 +57,12 @@ export default function Auth() {
         setIsLogin(true);
       }
     } catch (err) {
-      setError(err.message);
+      const msg = err?.message || 'Erreur inconnue';
+      if (msg.includes('Unexpected token') || msg.includes('is not valid JSON')) {
+        setError("[AUTH-503] Le serveur est momentanément indisponible. Veuillez réessayer dans quelques instants.");
+      } else {
+        setError(msg);
+      }
     }
   };
 

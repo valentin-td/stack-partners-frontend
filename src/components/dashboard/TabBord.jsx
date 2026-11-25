@@ -42,6 +42,7 @@ export default function TabBord({
   const [confirmationRdvEnCours, setConfirmationRdvEnCours] = useState({});
   const [modalResolution, setModalResolution] = useState({ ouverte: false, intervention: null, rapport: '', enCours: false });
   const [pitchCopieId, setPitchCopieId] = useState(null);
+  const [alertesOuvertes, setAlertesOuvertes] = useState(false);
 
   const kpis = stats?.kpis || {};
   const salonsListe = Array.isArray(stats?.salons) ? stats.salons : [];
@@ -422,60 +423,92 @@ export default function TabBord({
           <section
             style={{
               marginBottom: isMobile ? '16px' : '22px',
-              borderRadius: '24px',
+              borderRadius: '20px',
               background: 'linear-gradient(135deg, rgba(24, 24, 27, 0.94) 0%, rgba(9, 9, 11, 0.98) 100%)',
-              border: totalAlertes > 0 ? '1px solid rgba(16, 185, 129, 0.45)' : '1px solid rgba(255, 255, 255, 0.1)',
-              boxShadow: '0 14px 34px -10px rgba(0, 0, 0, 0.5)',
-              padding: isMobile ? '16px 14px' : '22px 26px',
+              border: totalAlertes > 0 ? '1px solid rgba(16, 185, 129, 0.35)' : '1px solid rgba(255, 255, 255, 0.1)',
+              boxShadow: '0 10px 28px -8px rgba(0, 0, 0, 0.45)',
+              padding: alertesOuvertes
+                ? (isMobile ? '16px 14px' : '20px 24px')
+                : (isMobile ? '12px 14px' : '14px 20px'),
               color: '#f8fafc',
               position: 'relative',
-              overflow: 'hidden'
+              overflow: 'hidden',
+              transition: 'all 0.25s ease'
             }}
           >
-            {/* Barre de titre et badges de statut */}
+            {/* Barre de titre et badges de statut cliquable pour déplier/replier */}
             <div
+              onClick={() => setAlertesOuvertes(prev => !prev)}
               style={{
                 display: 'flex',
                 alignItems: isMobile ? 'flex-start' : 'center',
                 justifyContent: 'space-between',
                 flexDirection: isMobile ? 'column' : 'row',
                 gap: '12px',
-                marginBottom: totalAlertes > 0 ? '18px' : '0',
-                paddingBottom: totalAlertes > 0 ? '14px' : '0',
-                borderBottom: totalAlertes > 0 ? '1px solid rgba(255, 255, 255, 0.08)' : 'none'
+                cursor: 'pointer',
+                marginBottom: alertesOuvertes ? '16px' : '0',
+                paddingBottom: alertesOuvertes ? '14px' : '0',
+                borderBottom: alertesOuvertes ? '1px solid rgba(255, 255, 255, 0.08)' : 'none',
+                userSelect: 'none'
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <span
                   style={{
                     display: 'inline-block',
-                    width: '10px',
-                    height: '10px',
+                    width: '9px',
+                    height: '9px',
                     borderRadius: '50%',
                     backgroundColor: totalAlertes > 0 ? '#10b981' : '#64748b',
-                    boxShadow: totalAlertes > 0 ? '0 0 12px #10b981' : 'none'
+                    boxShadow: totalAlertes > 0 ? '0 0 10px #10b981' : 'none',
+                    flexShrink: 0
                   }}
                 />
                 <div>
-                  <h2
-                    style={{
-                      margin: 0,
-                      fontSize: isMobile ? '15px' : '17px',
-                      fontWeight: '800',
-                      letterSpacing: '-0.02em',
-                      color: '#ffffff'
-                    }}
-                  >
-                    Alertes Opérationnelles & Terrain
-                  </h2>
-                  <div style={{ fontSize: '11.5px', color: '#94a3b8', marginTop: '2px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <h2
+                      style={{
+                        margin: 0,
+                        fontSize: isMobile ? '14px' : '15.5px',
+                        fontWeight: '800',
+                        letterSpacing: '-0.02em',
+                        color: '#ffffff'
+                      }}
+                    >
+                      Alertes Opérationnelles & Terrain
+                    </h2>
+                    {!alertesOuvertes && totalAlertes > 0 && (
+                      <span
+                        style={{
+                          fontSize: '10.5px',
+                          fontWeight: '800',
+                          padding: '2px 8px',
+                          borderRadius: '999px',
+                          background: 'rgba(16, 185, 129, 0.20)',
+                          color: '#34d399',
+                          border: '1px solid rgba(16, 185, 129, 0.35)'
+                        }}
+                      >
+                        {totalAlertes} active(s)
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>
                     Dépannages techniques prioritaires (39 € Net) & leads chauds parrainés
                   </div>
                 </div>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                {missionsPrioritaires.length > 0 && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  flexWrap: 'wrap',
+                  alignSelf: isMobile ? 'flex-end' : 'center'
+                }}
+              >
+                {alertesOuvertes && missionsPrioritaires.length > 0 && (
                   <span
                     style={{
                       fontSize: '11px',
@@ -490,7 +523,7 @@ export default function TabBord({
                     {missionsPrioritaires.length} intervention(s) exclusive(s)
                   </span>
                 )}
-                {totalAlertes > 0 ? (
+                {alertesOuvertes && (totalAlertes > 0 ? (
                   <span
                     style={{
                       fontSize: '11px',
@@ -517,10 +550,11 @@ export default function TabBord({
                   >
                     À jour
                   </span>
-                )}
+                ))}
                 <button
                   type="button"
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     if (typeof fetchInterventions === 'function') fetchInterventions();
                     if (typeof fetchLeadsAmbassadeurs === 'function') fetchLeadsAmbassadeurs();
                   }}
@@ -537,9 +571,44 @@ export default function TabBord({
                 >
                   Actualiser
                 </button>
+                <div
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    padding: '5px 10px',
+                    borderRadius: '8px',
+                    background: alertesOuvertes ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255, 255, 255, 0.08)',
+                    color: alertesOuvertes ? '#34d399' : '#f8fafc',
+                    border: alertesOuvertes ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(255, 255, 255, 0.15)',
+                    fontSize: '11px',
+                    fontWeight: '700'
+                  }}
+                >
+                  <span>{alertesOuvertes ? 'Réduire' : 'Déplier'}</span>
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    style={{
+                      transform: alertesOuvertes ? 'rotate(180deg)' : 'rotate(0deg)',
+                      transition: 'transform 0.25s ease'
+                    }}
+                  >
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </div>
               </div>
             </div>
 
+            {/* CORPS DEPLIABLE DES ALERTES */}
+            {alertesOuvertes && (
+              <>
             {/* ÉTAT VIDE : AUCUNE ALERTE */}
             {totalAlertes === 0 && (
               <div
@@ -1101,6 +1170,8 @@ export default function TabBord({
                   );
                 })}
               </div>
+            )}
+              </>
             )}
 
             {/* MODALE DE CLÔTURE ET DE FACTURATION INTERVENTION (39 € NET) */}
