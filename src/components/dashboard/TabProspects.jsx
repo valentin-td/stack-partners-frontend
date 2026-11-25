@@ -45,6 +45,7 @@ export default function TabProspects({
   const [afficherInfosSiret, setAfficherInfosSiret] = useState(false);
   const [formRdv, setFormRdv] = useState({});
   const [pitchCopieId, setPitchCopieId] = useState(null);
+  const [alertesOuvertes, setAlertesOuvertes] = useState(false);
 
   const listeProspects = Array.isArray(prospects) ? prospects : [];
 
@@ -93,6 +94,8 @@ export default function TabProspects({
     });
     return Array.from(map.values());
   }, [leadsAmbassadeurs, listeProspects]);
+
+  const totalLeadsParraines = leadsParrainageReserves.length + leadsParrainageDisponibles.length + leadsParrainageConfirmes.length;
 
   const estLeadParraine = (p) => {
     return Boolean(
@@ -320,19 +323,38 @@ export default function TabProspects({
 
       {/* 1.5. SECTION LEADS CHAUDS PARRAINÉS PAR CONFRÈRE (SECTEUR & RÉSERVATION 45 MIN) */}
       {(leadsParrainageReserves.length > 0 || leadsParrainageDisponibles.length > 0 || leadsParrainageConfirmes.length > 0) && (
-        <div
+        <section
           style={{
-            marginBottom: '20px',
-            borderRadius: '16px',
-            background: 'linear-gradient(135deg, rgba(24, 24, 27, 0.96) 0%, rgba(9, 9, 11, 0.98) 100%)',
-            border: '1px solid rgba(16, 185, 129, 0.40)',
-            boxShadow: '0 12px 30px -8px rgba(0, 0, 0, 0.45)',
-            padding: isMobile ? '16px' : '20px 24px',
-            color: '#f8fafc'
+            marginBottom: isMobile ? '16px' : '22px',
+            borderRadius: '20px',
+            background: 'linear-gradient(135deg, rgba(24, 24, 27, 0.94) 0%, rgba(9, 9, 11, 0.98) 100%)',
+            border: totalLeadsParraines > 0 ? '1px solid rgba(16, 185, 129, 0.35)' : '1px solid rgba(255, 255, 255, 0.1)',
+            boxShadow: '0 10px 28px -8px rgba(0, 0, 0, 0.45)',
+            padding: alertesOuvertes
+              ? (isMobile ? '16px 14px' : '20px 24px')
+              : (isMobile ? '12px 14px' : '14px 20px'),
+            color: '#f8fafc',
+            position: 'relative',
+            overflow: 'hidden',
+            transition: 'all 0.25s ease'
           }}
         >
-          {/* En-tête de section avec alerte visuelle */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', marginBottom: '14px' }}>
+          {/* Barre de titre et badges de statut cliquable pour déplier/replier */}
+          <div
+            onClick={() => setAlertesOuvertes(prev => !prev)}
+            style={{
+              display: 'flex',
+              alignItems: isMobile ? 'flex-start' : 'center',
+              justifyContent: 'space-between',
+              flexDirection: isMobile ? 'column' : 'row',
+              gap: '12px',
+              cursor: 'pointer',
+              marginBottom: alertesOuvertes ? '16px' : '0',
+              paddingBottom: alertesOuvertes ? '14px' : '0',
+              borderBottom: alertesOuvertes ? '1px solid rgba(255, 255, 255, 0.08)' : 'none',
+              userSelect: 'none'
+            }}
+          >
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <span
                 style={{
@@ -340,19 +362,129 @@ export default function TabProspects({
                   width: '9px',
                   height: '9px',
                   borderRadius: '50%',
-                  backgroundColor: '#10b981',
-                  boxShadow: '0 0 12px #10b981'
+                  backgroundColor: totalLeadsParraines > 0 ? '#10b981' : '#64748b',
+                  boxShadow: totalLeadsParraines > 0 ? '0 0 10px #10b981' : 'none',
+                  flexShrink: 0
                 }}
               />
-              <span style={{ fontSize: '11px', fontWeight: '800', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#34d399' }}>
-                Alerte Salons Parrainés — Nouveaux Leads Chauds à Contacter
-              </span>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <h2
+                    style={{
+                      margin: 0,
+                      fontSize: isMobile ? '14px' : '15.5px',
+                      fontWeight: '800',
+                      letterSpacing: '-0.02em',
+                      color: '#ffffff'
+                    }}
+                  >
+                    Alerte Salons Parrainés — Nouveaux Leads Chauds à Contacter
+                  </h2>
+                  {!alertesOuvertes && totalLeadsParraines > 0 && (
+                    <span
+                      style={{
+                        fontSize: '10.5px',
+                        fontWeight: '800',
+                        padding: '2px 8px',
+                        borderRadius: '999px',
+                        background: 'rgba(16, 185, 129, 0.20)',
+                        color: '#34d399',
+                        border: '1px solid rgba(16, 185, 129, 0.35)'
+                      }}
+                    >
+                      {totalLeadsParraines} actif{totalLeadsParraines > 1 ? 's' : ''}
+                    </span>
+                  )}
+                </div>
+                <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>
+                  Commission : <strong style={{ color: '#f8fafc' }}>50,00 €</strong> installation + <strong style={{ color: '#34d399' }}>20% HT</strong> dès le 4e mois (24 mois)
+                </div>
+              </div>
             </div>
 
-            <div style={{ fontSize: '11.5px', color: '#94a3b8' }}>
-              Commission : <strong style={{ color: '#f8fafc' }}>50,00 €</strong> installation + <strong style={{ color: '#34d399' }}>20% HT</strong> dès le 4e mois (24 mois)
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                flexWrap: 'wrap',
+                alignSelf: isMobile ? 'flex-end' : 'center'
+              }}
+            >
+              {alertesOuvertes && totalLeadsParraines > 0 && (
+                <span
+                  style={{
+                    fontSize: '11px',
+                    fontWeight: '800',
+                    padding: '3px 10px',
+                    borderRadius: '999px',
+                    background: 'rgba(16, 185, 129, 0.20)',
+                    color: '#34d399',
+                    border: '1px solid rgba(16, 185, 129, 0.40)'
+                  }}
+                >
+                  {totalLeadsParraines} lead{totalLeadsParraines > 1 ? 's' : ''} chaud{totalLeadsParraines > 1 ? 's' : ''}
+                </span>
+              )}
+              {typeof fetchLeadsAmbassadeurs === 'function' && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    fetchLeadsAmbassadeurs();
+                  }}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.08)',
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    color: '#f8fafc',
+                    padding: '5px 11px',
+                    borderRadius: '8px',
+                    fontSize: '11px',
+                    fontWeight: '700',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Actualiser
+                </button>
+              )}
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '5px 10px',
+                  borderRadius: '8px',
+                  background: alertesOuvertes ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255, 255, 255, 0.08)',
+                  color: alertesOuvertes ? '#34d399' : '#f8fafc',
+                  border: alertesOuvertes ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(255, 255, 255, 0.15)',
+                  fontSize: '11px',
+                  fontWeight: '700'
+                }}
+              >
+                <span>{alertesOuvertes ? 'Réduire' : 'Déplier'}</span>
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  style={{
+                    transform: alertesOuvertes ? 'rotate(180deg)' : 'rotate(0deg)',
+                    transition: 'transform 0.25s ease'
+                  }}
+                >
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </div>
             </div>
           </div>
+
+          {/* CORPS DEPLIABLE DES LEADS PARRAINES */}
+          {alertesOuvertes && (
+            <>
 
           {/* LEADS ACTUELLEMENT RÉSERVÉS PAR CET AGENT (COMPTE À REBOURS 45 MIN) */}
           {leadsParrainageReserves.map((lead) => {
@@ -725,7 +857,9 @@ export default function TabProspects({
               </div>
             );
           })}
-        </div>
+            </>
+          )}
+        </section>
       )}
 
       {/* 2. LES 4 KPIS HIÉRARCHISÉS (CARTE MAÎTRESSE ÉMERAUDE + 3 CARTES ÉPURÉES) */}
