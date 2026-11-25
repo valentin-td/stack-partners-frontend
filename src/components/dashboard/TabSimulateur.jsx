@@ -613,10 +613,11 @@ VOTRE BENEFICE NET SUPPLEMENTAIRE :
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 1.05fr) minmax(0, 1.15fr)',
+          gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
           gap: isMobile ? '16px' : '20px',
           alignItems: 'stretch',
-          width: '100%'
+          width: '100%',
+          boxSizing: 'border-box'
         }}
       >
         {/* COLONNE GAUCHE : PARAMETRES DU SALON PROSPECT */}
@@ -627,7 +628,9 @@ VOTRE BENEFICE NET SUPPLEMENTAIRE :
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
-            gap: '16px'
+            gap: '16px',
+            boxSizing: 'border-box',
+            minWidth: 0
           }}
         >
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -800,7 +803,7 @@ VOTRE BENEFICE NET SUPPLEMENTAIRE :
 
         {/* COLONNE DROITE : RESULTATS DYNAMIQUES VISIBLES IMMEDIATEMENT */}
         <div
-          className="sp-sim-roi-card"
+          className="sp-glass-panel-dark"
           style={{
             padding: isMobile ? '20px 18px' : '24px 26px',
             display: 'flex',
@@ -808,7 +811,12 @@ VOTRE BENEFICE NET SUPPLEMENTAIRE :
             justifyContent: 'space-between',
             gap: '16px',
             borderRadius: '20px',
-            boxSizing: 'border-box'
+            boxSizing: 'border-box',
+            minWidth: 0,
+            background: 'radial-gradient(120% 120% at 95% 10%, rgba(16, 185, 129, 0.28) 0%, rgba(16, 185, 129, 0) 58%), linear-gradient(145deg, #162420 0%, #0f1715 100%)',
+            border: '1px solid rgba(52, 211, 153, 0.32)',
+            boxShadow: '0 16px 36px -10px rgba(15, 23, 21, 0.30), inset 0 1px 0 rgba(255, 255, 255, 0.14)',
+            color: '#ffffff'
           }}
         >
           {modeComparatif === 'PLANITY' ? (
